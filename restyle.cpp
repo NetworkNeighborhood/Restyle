@@ -85,17 +85,19 @@ int wmain(int argc, wchar_t *argv[])
 		if (argc < 3 || !LoadThemeModule(argv[2]) || !ParseClassMap() || !ParseBaseClassMap())
 			return 1;
 
-		wprintf(L"Base class (ID) -> Derived class (ID)\n");
 		for (int i = 0; i < g_baseClassMap.size(); i++)
 		{
 			BASECLASS &bc = g_baseClassMap.at(i);
 			wprintf(
-				L"'%s' (%u) -> '%s' (%u)\n",
+				L"Base class:    '%s' (%u)\n"
+				L"Derived class: '%s' (% u)\n",
 				NameOfClass(bc.dwBaseId),
 				bc.dwBaseId,
 				NameOfClass(bc.dwDerivedId),
 				bc.dwDerivedId
 			);
+			if (i != (g_baseClassMap.size() - 1))
+				wprintf(L"------------------------------\n");
 		}
 	}
 	else
