@@ -89,7 +89,7 @@ bool ParseVariantMap(void)
 			break;
 
 		// if string exceeds bounds
-		if ((long long)lpEntry + sizeof(DWORD) + lpEntry->dwLength > ((long long)lpVMap + dwSize))
+		if ((long long)lpEntry + sizeof(DWORD) + (sizeof(WCHAR) * lpEntry->dwLength) > ((long long)lpVMap + dwSize))
 			break;
 
 		LPWSTR pszBuffer = new WCHAR[lpEntry->dwLength];
