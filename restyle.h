@@ -25,16 +25,28 @@ typedef struct _VMAPENTRY
 	WCHAR pszString[1];
 } VMAPENTRY, *LPVMAPENTRY;
 
-typedef struct _VS_VARIANT
+typedef struct _VSVARIANT
 {
 	std::wstring resourceName;
 	std::wstring sizeName;
 	std::wstring colorName;
-} VS_VARIANT;
+} VSVARIANT;
+
+typedef struct _VSRECORD
+{
+	long lSymbolVal;
+	long lType;
+	int iClass;
+	int iPart;
+	int iState;
+	UINT uResID;
+	long lReserved;
+	int cbData;
+} VSRECORD;
 
 extern std::vector<std::wstring> g_classMap;
 extern std::vector<BASECLASS> g_baseClassMap;
-extern std::vector<VS_VARIANT> g_variantMap;
+extern std::vector<VSVARIANT> g_variantMap;
 
 #ifndef NDEBUG
 #define DEBUG 1
@@ -61,3 +73,4 @@ __forceinline LPCWSTR NameOfClass(int id)
 bool ParseClassMap(void);
 bool ParseBaseClassMap(void);
 bool ParseVariantMap(void);
+bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName);

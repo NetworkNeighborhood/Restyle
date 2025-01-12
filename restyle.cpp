@@ -5,7 +5,7 @@ HMODULE g_hThemeModule = NULL;
 
 std::vector<std::wstring> g_classMap;
 std::vector<BASECLASS> g_baseClassMap;
-std::vector<VS_VARIANT> g_variantMap;
+std::vector<VSVARIANT> g_variantMap;
 
 void PrintUsage(void)
 {
@@ -19,6 +19,8 @@ void PrintUsage(void)
 		L"    /pcmap: Print the CMAP (class map) of a compiled .MSSTYLES theme.\n"
 		L"    /pbcmap: Print the BCMAP (base class map) of a compiled .MSSTYLES theme.\n"
 		L"    /pvmap: Print the VMAP (variant map) of a compiled .MSSTYLES theme.\n"
+		L"    /precord: Print a record resource (VARIANT, AMAP, RMAP) from a compiled .MSSTYLES theme.\n"
+		L"        Usage: restyle /precord <file> <resource type> <resource name>\n"
 		L"\n"
 		L"Options:\n"
 		L"    /out: Output file or folder of the /c and /d actions.\n"
@@ -109,7 +111,7 @@ int wmain(int argc, wchar_t *argv[])
 
 		for (int i = 0; i < g_variantMap.size(); i++)
 		{
-			VS_VARIANT &var = g_variantMap.at(i);
+			VSVARIANT &var = g_variantMap.at(i);
 			wprintf(
 				L"Resource name: %s\n"
 				L"Size name:     %s\n"
@@ -121,6 +123,11 @@ int wmain(int argc, wchar_t *argv[])
 			if (i != (g_variantMap.size() - 1))
 				wprintf(L"------------------------------\n");
 		}
+	}
+	else if (IsArg(argv[1], "precord"))
+	{
+		if (argc < 5 || !LoadThemeModule(argv[2]) || !ParseRecordResource(argv[3], argv[4]))
+			return 1;
 	}
 	else
 	{

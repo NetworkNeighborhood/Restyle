@@ -8,7 +8,7 @@ bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pc
 	*ppvOut = nullptr;
 	*pcbOut = 0;
 
-	HRSRC hrSrc = FindResourceW(g_hThemeModule, lpType, lpName);
+	HRSRC hrSrc = FindResourceExW(g_hThemeModule, lpType, lpName, 0);
 	if (!hrSrc)
 	{
 		fwprintf(stderr, L"Fatal: Failed to find %s resource.\n", lpType);
@@ -37,13 +37,13 @@ bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pc
 
 bool ParseClassMap(void)
 {
-	LPVOID lpBase;
+	LPVOID lpResource;
 	DWORD dwSize;
-	if (!GetBinaryResource(L"CMAP", L"CMAP", &lpBase, &dwSize))
+	if (!GetBinaryResource(L"CMAP", L"CMAP", &lpResource, &dwSize))
 		return false;
 
-	LPWSTR pszClass = (LPWSTR)lpBase;
-	while ((UINT_PTR)pszClass < ((UINT_PTR)lpBase + dwSize))
+	LPWSTR pszClass = (LPWSTR)lpResource;
+	while ((UINT_PTR)pszClass < ((UINT_PTR)lpResource + dwSize))
 	{
 		if (*pszClass)
 			g_classMap.push_back(pszClass);
@@ -80,7 +80,7 @@ bool ParseVariantMap(void)
 	if (!GetBinaryResource(L"VMAP", L"VMAP", (LPVOID *)&lpVMap, &dwSize))
 		return false;
 
-	VS_VARIANT var;
+	VSVARIANT var;
 	LPVMAPENTRY lpEntry = lpVMap;
 	for (int i = 0;; i++)
 	{
@@ -114,5 +114,46 @@ bool ParseVariantMap(void)
 		lpNewEntry += sizeof(DWORD);
 		lpNewEntry += sizeof(WCHAR) * (lpEntry->dwLength + 1);
 		lpEntry = (LPVMAPENTRY)lpNewEntry;
+	}
+}
+
+bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
+{
+	LPVOID lpResource;
+	DWORD dwSize;
+	if (!GetBinaryResource(lpType, lpName, &lpResource, &dwSize))
+		return false;
+	
+	VSRECORD *lpRecord = (VSRECORD *)lpResource;
+	while ((long long)lpRecord < ((long long)lpResource + dwSize))
+	{
+		wprintf(
+			L"====================\n"
+			L"lSymbolVal: %d\n"
+			L"lType: %d\n"
+			L"iClass: %d\n"
+			L"iPart: %d\n"
+			L"iState: %d\n"
+			L"uResID: %u\n"
+			L"lReserved: %d\n"
+			L"cbData: %d\n",
+			lpRecord->lSymbolVal,
+			lpRecord->lType,
+			lpRecord->iClass,
+			lpRecord->iPart,
+			lpRecord->iState,
+			lpRecord->uResID,
+			lpRecord->lReserved,
+			lpRecord->cbData
+		);
+
+		DWORD dwNextOffset = 0;
+		if (!lpRecord->uResID)
+			dwNextOffset = lpRecord->cbData;
+		// ????????
+		// this is what uxtheme does soooooooo
+		dwNextOffset = (dwNextOffset + (sizeof(VSRECORD) | 7)) & 0xFFFFFFF8;
+
+		lpRecord = (VSRECORD *)((char *)lpRecord + dwNextOffset);
 	}
 }
