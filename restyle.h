@@ -25,16 +25,16 @@ typedef struct _VMAPENTRY
 	WCHAR pszString[1];
 } VMAPENTRY, *LPVMAPENTRY;
 
-typedef struct _MSSTYLES_VARIANT
+typedef struct _VS_VARIANT
 {
 	std::wstring resourceName;
 	std::wstring sizeName;
 	std::wstring colorName;
-} MSSTYLES_VARIANT;
+} VS_VARIANT;
 
 extern std::vector<std::wstring> g_classMap;
 extern std::vector<BASECLASS> g_baseClassMap;
-extern std::vector<MSSTYLES_VARIANT> g_variantMap;
+extern std::vector<VS_VARIANT> g_variantMap;
 
 #ifndef NDEBUG
 #define DEBUG 1

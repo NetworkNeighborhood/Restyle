@@ -5,7 +5,7 @@ HMODULE g_hThemeModule = NULL;
 
 std::vector<std::wstring> g_classMap;
 std::vector<BASECLASS> g_baseClassMap;
-std::vector<MSSTYLES_VARIANT> g_variantMap;
+std::vector<VS_VARIANT> g_variantMap;
 
 void PrintUsage(void)
 {
@@ -109,7 +109,7 @@ int wmain(int argc, wchar_t *argv[])
 
 		for (int i = 0; i < g_variantMap.size(); i++)
 		{
-			MSSTYLES_VARIANT &var = g_variantMap.at(i);
+			VS_VARIANT &var = g_variantMap.at(i);
 			wprintf(
 				L"Resource name: %s\n"
 				L"Size name:     %s\n"

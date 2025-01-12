@@ -80,7 +80,7 @@ bool ParseVariantMap(void)
 	if (!GetBinaryResource(L"VMAP", L"VMAP", (LPVOID *)&lpVMap, &dwSize))
 		return false;
 
-	MSSTYLES_VARIANT var;
+	VS_VARIANT var;
 	LPVMAPENTRY lpEntry = lpVMap;
 	for (int i = 0;; i++)
 	{
