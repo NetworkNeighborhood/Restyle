@@ -18,6 +18,15 @@
     <ClInclude Include="restyle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="restyle_SchemaDef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="restyle_TmSchema.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaPriv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc">
@@ -29,6 +38,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="symbol.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,5 +1,7 @@
 #include "restyle.h"
 
+#include "schemapriv.h" // TODO: restructure?
+
 //---------------------------------------------------------------------------
 #ifndef SCHEMA_STRINGS           // FIRST PASS of this header file
 //---------------------------------------------------------------------------
@@ -79,13 +81,13 @@ namespace Restyle
 
 //---------------------------------------------------------------------------
 
-#define BEGIN_TM_SCHEMA(name)  static const TMPROPINFO name[] = {
+#define BEGIN_TM_SCHEMA(name)  static const Restyle::TMPROPINFO name[] = {
 #define BEGIN_TM_PROPS()
 #define BEGIN_TM_ENUM(name, prefCap) { L#name, TMT_ENUMDEF, TMT_ENUMDEF, L#prefCap },
 #define BEGIN_TM_CLASS_PARTS(name)    \
     { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, ESupportedOS::All },
 #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
-    { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, ESupportedOS::##supportedOS },
+    { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, supportedOS },
 #define BEGIN_TM_PART_STATES(name)    \
     { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF, nullptr },
     

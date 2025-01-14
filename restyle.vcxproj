@@ -128,6 +128,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="restyle.h" />
+    <ClInclude Include="restyle_SchemaDef.h" />
+    <ClInclude Include="restyle_TmSchema.h" />
+    <ClInclude Include="SchemaPriv.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc" />
@@ -135,6 +138,7 @@
   <ItemGroup>
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="restyle.cpp" />
+    <ClCompile Include="symbol.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

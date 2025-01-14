@@ -1,7 +1,5 @@
 #pragma once
 
-//#define SCHEMA_STRINGS // testing
-
 //-----------------------------------------------------------------
 //   TmSchema.h - Theme Manager schema (properties, parts, etc)
 //-----------------------------------------------------------------
@@ -21,6 +19,8 @@ namespace Restyle
 #define TMSCHEMA_H
 //-----------------------------------------------------------------
 #include "restyle_SchemaDef.h"
+// #define SCHEMA_STRINGS // testing
+// #include "restyle_SchemaDef.h"
 //-----------------------------------------------------------------
 #define THEMEMGR_VERSION 1  // increment if order of props changes or 
                             // any props are deleted (will prevent loading
