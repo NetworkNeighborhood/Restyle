@@ -43,5 +43,8 @@
     <ClCompile Include="schematest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="schematest.h">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

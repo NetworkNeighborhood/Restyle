@@ -31,8 +31,10 @@ namespace Restyle
         LPCWSTR pszName;
         SHORT sEnumVal;
         BYTE bPrimVal;
-        LPCWSTR szCapitalizedName = nullptr;
-        ESupportedOS supportedOS = ESupportedOS::NotSet;
+#ifdef DEBUG
+        LPCWSTR szPreferredCapitalization;
+#endif
+        ESupportedOS supportedOS;
     };
     
     struct TMSCHEMAINFO
@@ -87,23 +89,46 @@ namespace Restyle
 
 #define BEGIN_TM_SCHEMA(name)  static const TMPROPINFO name[] = {
 #define BEGIN_TM_PROPS()
-#define BEGIN_TM_ENUM(name, prefCap) { L#name, TMT_ENUMDEF, TMT_ENUMDEF, L##prefCap },
-#define BEGIN_TM_CLASS_PARTS(name)    \
-    { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, ESupportedOS::All },
-#define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
-    { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, supportedOS },
-#define BEGIN_TM_PART_STATES(name)    \
-    { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF, nullptr },
-    
-    
-#define TM_PROP(val, prefix, name, prefCap, primval) \
-    { L#name, prefix##_##name, TMT_##primval, L##prefCap },
-#define TM_PART(val, prefix, name, prefCap) \
-    { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap },
-#define TM_STATE(val, prefix, name, prefCap) \
-    { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap },
-#define TM_ENUM(val, prefix, name, prefCap) \
-    { L#name, prefix##_##name, TMT_ENUMDEF, L##prefCap  },
+
+#ifndef DEBUG
+    #define BEGIN_TM_ENUM(name, prefCap) { L##prefCap, TMT_ENUMDEF, TMT_ENUMDEF },
+#else
+    #define BEGIN_TM_ENUM(name, prefCap) { L#name, TMT_ENUMDEF, TMT_ENUMDEF, L##prefCap },
+#endif
+
+#ifndef DEBUG
+    #define BEGIN_TM_CLASS_PARTS(name)    \
+        { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, ESupportedOS::All },
+    #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
+        { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, supportedOS },
+    #define BEGIN_TM_PART_STATES(name)    \
+        { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF },
+
+    #define TM_PROP(val, prefix, name, prefCap, primval) \
+        { L##prefCap, prefix##_##name, TMT_##primval },
+    #define TM_PART(val, prefix, name, prefCap) \
+        { L##prefCap, prefix##_##name, TMT_ENUMVAL },
+    #define TM_STATE(val, prefix, name, prefCap) \
+        { L##prefCap, prefix##_##name, TMT_ENUMVAL, },
+    #define TM_ENUM(val, prefix, name, prefCap) \
+        { L##prefCap, prefix##_##name, TMT_ENUMDEF  },
+#else
+    #define BEGIN_TM_CLASS_PARTS(name)    \
+            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, ESupportedOS::All },
+    #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
+            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, supportedOS },
+    #define BEGIN_TM_PART_STATES(name)    \
+            { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF },
+
+    #define TM_PROP(val, prefix, name, prefCap, primval) \
+            { L#name, prefix##_##name, TMT_##primval, L##prefCap },
+    #define TM_PART(val, prefix, name, prefCap) \
+            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap },
+    #define TM_STATE(val, prefix, name, prefCap) \
+            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap },
+    #define TM_ENUM(val, prefix, name, prefCap) \
+            { L#name, prefix##_##name, TMT_ENUMDEF, L##prefCap  },
+#endif
 
 
 

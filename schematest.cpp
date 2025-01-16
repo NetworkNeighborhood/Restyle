@@ -1,5 +1,7 @@
 #include "restyle.h"
 #ifdef DEBUG
+
+#include "schematest.h"
 #include "restyle_TmSchema.h"
 #define SCHEMA_STRINGS
 #include "restyle_TmSchema.h"
@@ -27,13 +29,40 @@ static LPCWSTR GetPrimValueName(BYTE bPrimVal)
 	}
 
 	return L"Unknown primitive type";
-} 
+}
 
-void TestSchema(bool fPrintEntry, unsigned uEntryId)
+// TODO: Move. The parser needs this too.
+#define __ascii_towlower(c)  ( (((c) >= L'A') && ((c) <= L'Z')) ? ((c) - L'A' + L'a') : (c) )
+int AsciiStrCmpI(const WCHAR *dst, const WCHAR *src)
+{
+	WCHAR a, b;
+
+	if (!dst)
+	{
+		return src ? -1 : 0;
+	}
+	else if (!src)
+	{
+		return 1;
+	}
+
+	do
+	{
+		a = __ascii_towlower(*dst);
+		b = __ascii_towlower(*src);
+		dst++;
+		src++;
+	}
+	while (a && (a == b));
+
+	return (int)(a - b);
+}
+
+void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 {
 	const TMSCHEMAINFO *pSchemaInfo = GetSchemaInfo();
 
-	if (!fPrintEntry)
+	if (eMode == ESchemaTestMode::PrintHelpMessage)
 	{
 		wprintf(L"Schema information:\n");
 		wprintf(L" - Size of TMSCHEMAINFO structure in bytes: %d\n", pSchemaInfo->dwSize);
@@ -42,7 +71,7 @@ void TestSchema(bool fPrintEntry, unsigned uEntryId)
 		wprintf(L"\n");
 		wprintf(L"To see information about an individual item, run with /pschema <id>.\n");
 	}
-	else if (uEntryId <= pSchemaInfo->iPropCount)
+	else if (eMode == ESchemaTestMode::PrintEntryInfo && uEntryId <= pSchemaInfo->iPropCount)
 	{
 		const TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable + uEntryId;
 
@@ -50,7 +79,6 @@ void TestSchema(bool fPrintEntry, unsigned uEntryId)
 		wprintf(L" - Name of entry: %s\n", pPropInfo->pszName);
 		wprintf(L" - Value: %d\n", pPropInfo->sEnumVal);
         wprintf(L" - Primitive type: %s\n", GetPrimValueName(pPropInfo->bPrimVal));
-		wprintf(L" - Capitalized name: %s\n", pPropInfo->szCapitalizedName ? pPropInfo->szCapitalizedName : L"(N/A)");
 		wprintf(L" - Supported OS: ");
 
 		bool fPrintedSupportedOs = false;
@@ -129,9 +157,33 @@ void TestSchema(bool fPrintEntry, unsigned uEntryId)
 
 		wprintf(L"\n");
 	}
-	else
+	else if (eMode == ESchemaTestMode::PrintEntryInfo)
 	{
 		fwprintf(stderr, L"Invalid entry name.\n");
+	}
+	else if (eMode == ESchemaTestMode::ValidateSymbols)
+	{
+		wprintf(L"Validating schema symbols...\n");
+		bool fAnyMismatch = false;
+
+		for (unsigned i = 0; i < pSchemaInfo->iPropCount; i++)
+		{
+			const TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable + i;
+			if (pPropInfo->szPreferredCapitalization && AsciiStrCmpI(pPropInfo->pszName, pPropInfo->szPreferredCapitalization) != 0)
+			{
+				wprintf(L"Mismatch for pair { \"%s\", \"%s\" }\n", pPropInfo->pszName, pPropInfo->szPreferredCapitalization);
+				fAnyMismatch = true;
+			}
+		}
+
+		if (!fAnyMismatch)
+		{
+			wprintf(L"Validated table contents successfully without any error detected.\n");
+		}
+		else
+		{
+			wprintf(L"Errors present in table.\n");
+		}
 	}
 }
 #endif
