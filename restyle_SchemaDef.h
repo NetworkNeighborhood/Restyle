@@ -90,13 +90,13 @@ namespace Restyle
 #define BEGIN_TM_SCHEMA(name)  static const TMPROPINFO name[] = {
 #define BEGIN_TM_PROPS()
 
-#ifndef DEBUG
+#if !DEBUG
     #define BEGIN_TM_ENUM(name, prefCap) { L##prefCap, TMT_ENUMDEF, TMT_ENUMDEF },
 #else
     #define BEGIN_TM_ENUM(name, prefCap) { L#name, TMT_ENUMDEF, TMT_ENUMDEF, L##prefCap },
 #endif
 
-#ifndef DEBUG
+#if !DEBUG
     #define BEGIN_TM_CLASS_PARTS(name)    \
         { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, ESupportedOS::All },
     #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \

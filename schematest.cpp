@@ -1,5 +1,5 @@
 #include "restyle.h"
-#ifdef DEBUG
+#if DEBUG
 
 #include "schematest.h"
 #include "restyle_TmSchema.h"
@@ -76,7 +76,13 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 		const TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable + uEntryId;
 
 		wprintf(L"Information for entry #%d\n", uEntryId);
-		wprintf(L" - Name of entry: %s\n", pPropInfo->pszName);
+		wprintf(L" - Name of entry: %s\n", 
+#if DEBUG
+			pPropInfo->szPreferredCapitalization ? pPropInfo->szPreferredCapitalization : pPropInfo->pszName
+#else
+			pPropInfo->pszName
+#endif
+		);
 		wprintf(L" - Value: %d\n", pPropInfo->sEnumVal);
         wprintf(L" - Primitive type: %s\n", GetPrimValueName(pPropInfo->bPrimVal));
 		wprintf(L" - Supported OS: ");

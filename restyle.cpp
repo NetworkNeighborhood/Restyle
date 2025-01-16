@@ -22,7 +22,7 @@ void PrintUsage(void)
 		L"    /pvmap: Print the VMAP (variant map) of a compiled .MSSTYLES theme.\n"
 		L"    /precord: Print a record resource (VARIANT, AMAP, RMAP) from a compiled .MSSTYLES theme.\n"
 		L"        Usage: restyle /precord <file> <resource type> <resource name>\n"
-#ifdef DEBUG
+#if DEBUG
 		L"    /pschema: Prints restyle schema debug information.\n"
 		L"        Usage: restyle /pschema <number>\n"
 		L"               restyle /pschema /validate (Validates schema capitalizations.)\n"
@@ -135,7 +135,7 @@ int wmain(int argc, wchar_t *argv[])
 		if (argc < 5 || !LoadThemeModule(argv[2]) || !ParseRecordResource(argv[3], argv[4]))
 			return 1;
 	}
-#ifdef DEBUG
+#if DEBUG
 	else if (IsArg(argv[1], "pschema"))
 	{
 		ESchemaTestMode eTestMode = ESchemaTestMode::PrintHelpMessage;
