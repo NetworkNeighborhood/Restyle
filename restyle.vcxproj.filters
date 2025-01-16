@@ -40,7 +40,7 @@
     <ClCompile Include="parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="symbol.cpp">
+    <ClCompile Include="schematest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

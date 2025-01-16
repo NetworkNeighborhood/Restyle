@@ -1,3 +1,5 @@
+//#pragma once
+
 #include "restyle.h"
 
 #include "schemapriv.h" // TODO: restructure?
@@ -7,6 +9,7 @@
 //---------------------------------------------------------------------------
 
 #ifndef SCHEMADEF_H
+#define SCHEMADEF_H
 
 namespace Restyle
 {
@@ -44,12 +47,13 @@ namespace Restyle
 #define BEGIN_TM_PROPS()                    enum PropValues { DummyProp = 49,
 #define BEGIN_TM_ENUM(name, prefCap)                 enum name {
 #define BEGIN_TM_CLASS_PARTS(name)          enum name##PARTS { name##PartFiller0,
+#define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS) // TODO: how to do this?
 #define BEGIN_TM_PART_STATES(name)          enum name##STATES { name##StateFiller0,
 
-#define TM_PROP(val, prefix, name, primval) prefix##_##name = val, 
+#define TM_PROP(val, prefix, name, prefCap, primval) prefix##_##name = val, 
 #define TM_ENUM(val, prefix, name, prefCap)          prefix##_##name = val,
-#define TM_PART(val, prefix, name)          prefix##_##name = val, 
-#define TM_STATE(val, prefix, name)         prefix##_##name = val, 
+#define TM_PART(val, prefix, name, prefCap)          prefix##_##name = val, 
+#define TM_STATE(val, prefix, name, prefCap)         prefix##_##name = val, 
 
 #define END_TM_CLASS_PARTS()                };
 #define END_TM_PART_STATES()                };
@@ -57,8 +61,7 @@ namespace Restyle
 #define END_TM_ENUM()                       };
 #define END_TM_SCHEMA(name)
 
-#define SYMBOL_H
-#endif // SYMBOL_H
+#endif // SCHEMADEF_H
 
 //---------------------------------------------------------------------------
 #else                   // SECOND PASS of this header file
@@ -68,6 +71,7 @@ namespace Restyle
 #undef BEGIN_TM_PROPS
 #undef BEGIN_TM_ENUM
 #undef BEGIN_TM_CLASS_PARTS
+#undef BEGIN_TM_CLASS_PARTS_FOR_OS
 #undef BEGIN_TM_PART_STATES
 #undef TM_PROP
 #undef TM_PART
@@ -81,9 +85,9 @@ namespace Restyle
 
 //---------------------------------------------------------------------------
 
-#define BEGIN_TM_SCHEMA(name)  static const Restyle::TMPROPINFO name[] = {
+#define BEGIN_TM_SCHEMA(name)  static const TMPROPINFO name[] = {
 #define BEGIN_TM_PROPS()
-#define BEGIN_TM_ENUM(name, prefCap) { L#name, TMT_ENUMDEF, TMT_ENUMDEF, L#prefCap },
+#define BEGIN_TM_ENUM(name, prefCap) { L#name, TMT_ENUMDEF, TMT_ENUMDEF, L##prefCap },
 #define BEGIN_TM_CLASS_PARTS(name)    \
     { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, ESupportedOS::All },
 #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
@@ -93,13 +97,13 @@ namespace Restyle
     
     
 #define TM_PROP(val, prefix, name, prefCap, primval) \
-    { L#name, prefix##_##name, TMT_##primval, prefCap },
+    { L#name, prefix##_##name, TMT_##primval, L##prefCap },
 #define TM_PART(val, prefix, name, prefCap) \
-    { L#name, prefix##_##name, TMT_ENUMVAL, prefCap },
+    { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap },
 #define TM_STATE(val, prefix, name, prefCap) \
-    { L#name, prefix##_##name, TMT_ENUMVAL, prefCap },
+    { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap },
 #define TM_ENUM(val, prefix, name, prefCap) \
-    { L#name, prefix##_##name, TMT_ENUMDEF, prefCap  },
+    { L#name, prefix##_##name, TMT_ENUMDEF, L##prefCap  },
 
 
 
@@ -118,5 +122,5 @@ namespace Restyle
     }
     
 //---------------------------------------------------------------------------
-#endif // SCHEMADEF_H
+#endif // SCHEMA_STRINGS
 //---------------------------------------------------------------------------

@@ -21,6 +21,7 @@ void PrintUsage(void)
 		L"    /pvmap: Print the VMAP (variant map) of a compiled .MSSTYLES theme.\n"
 		L"    /precord: Print a record resource (VARIANT, AMAP, RMAP) from a compiled .MSSTYLES theme.\n"
 		L"        Usage: restyle /precord <file> <resource type> <resource name>\n"
+		L"    /pschema: Prints restyle schema debug information."
 		L"\n"
 		L"Options:\n"
 		L"    /out: Output file or folder of the /c and /d actions.\n"
@@ -129,6 +130,32 @@ int wmain(int argc, wchar_t *argv[])
 		if (argc < 5 || !LoadThemeModule(argv[2]) || !ParseRecordResource(argv[3], argv[4]))
 			return 1;
 	}
+#ifdef DEBUG
+	else if (IsArg(argv[1], "pschema"))
+	{
+		bool fPrintEntry = false;
+		unsigned uEntryId = 0;
+
+		if (argc == 3)
+		{
+			fPrintEntry = true;
+			if (!swscanf(argv[2], L"%i", &uEntryId))
+			{
+				fwprintf(stderr, L"Fatal: Failed to parse integer argument for item ID.");
+				return 0;
+			}
+		}
+		else if (argc > 3)
+		{
+			fwprintf(stderr, L"Fatal: Too many arguments");
+			return 0;
+		}
+
+		extern void TestSchema(bool fPrintEntry, unsigned uEntryId);
+		TestSchema(fPrintEntry, uEntryId);
+		return 1;
+	}
+#endif
 	else
 	{
 		fwprintf(stderr, L"Fatal: Unrecognized action '%s'\n", argv[1]);

@@ -138,7 +138,7 @@
   <ItemGroup>
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="restyle.cpp" />
-    <ClCompile Include="symbol.cpp" />
+    <ClCompile Include="schematest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 
 //-----------------------------------------------------------------
 //   TmSchema.h - Theme Manager schema (properties, parts, etc)
@@ -10,15 +10,16 @@
 //         each other.
 //-----------------------------------------------------------------
 
-namespace Restyle
-{
-
 //-----------------------------------------------------------------
 #if (defined(SCHEMA_STRINGS)) || (! defined(TMSCHEMA_H))
 //-----------------------------------------------------------------
 #define TMSCHEMA_H
 //-----------------------------------------------------------------
 #include "restyle_SchemaDef.h"
+
+namespace Restyle
+{
+
 // #define SCHEMA_STRINGS // testing
 // #include "restyle_SchemaDef.h"
 //-----------------------------------------------------------------
@@ -385,7 +386,7 @@ BEGIN_TM_PROPS()
 //
 //  TMT_STOCKIMAGEFILE is obsolete
 //
-#ifdef 0
+#if 0
 
     TM_PROP(3007, TMT, STOCKIMAGEFILE, "StockImageFile",    FILENAME)   // These are the only images that you can call GetThemeBitmap on
 
@@ -398,7 +399,7 @@ BEGIN_TM_PROPS()
     TM_PROP(3010, TMT, IMAGEFILE7, "ImageFile7", FILENAME)
 
     //---- rendering STRING properties ----
-    TM_PROP(3201, TMT, TEXT, "Text"              STRING)
+    TM_PROP(3201, TMT, TEXT, "Text",              STRING)
     // V4 props:
     TM_PROP(3202, TMT, CLASSICVALUE, "ClassicValue", STRING)
 
