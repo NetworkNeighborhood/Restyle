@@ -100,7 +100,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
         }
 		else
 		{
-			if ((int)pPropInfo->supportedOS & (int)ESupportedOS::Win11)
+			if (pPropInfo->supportedOS & ESupportedOS::Win11_21H2)
 			{
 				if (fPrintedSupportedOs)
 				{
@@ -109,7 +109,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 				wprintf(L"Windows 11");
 				fPrintedSupportedOs = true;
 			}
-			if ((int)pPropInfo->supportedOS & (int)ESupportedOS::Win10)
+			if (pPropInfo->supportedOS & ESupportedOS::Win10Th1)
 			{
 				if (fPrintedSupportedOs)
 				{
@@ -118,7 +118,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 				wprintf(L"Windows 10");
 				fPrintedSupportedOs = true;
 			}
-			if ((int)pPropInfo->supportedOS & (int)ESupportedOS::Win81)
+			if (pPropInfo->supportedOS & ESupportedOS::Win81)
 			{
 				if (fPrintedSupportedOs)
 				{
@@ -127,7 +127,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 				wprintf(L"Windows 8.1");
 				fPrintedSupportedOs = true;
 			}
-			if ((int)pPropInfo->supportedOS & (int)ESupportedOS::Win8)
+			if (pPropInfo->supportedOS & ESupportedOS::Win8)
 			{
 				if (fPrintedSupportedOs)
 				{
@@ -136,7 +136,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 				wprintf(L"Windows 8");
 				fPrintedSupportedOs = true;
 			}
-			if ((int)pPropInfo->supportedOS & (int)ESupportedOS::Win7)
+			if (pPropInfo->supportedOS & ESupportedOS::Win7)
 			{
 				if (fPrintedSupportedOs)
 				{
@@ -145,7 +145,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 				wprintf(L"Windows 7");
 				fPrintedSupportedOs = true;
 			}
-			if ((int)pPropInfo->supportedOS & (int)ESupportedOS::WinVista)
+			if (pPropInfo->supportedOS & ESupportedOS::WinVista)
 			{
 				if (fPrintedSupportedOs)
 				{

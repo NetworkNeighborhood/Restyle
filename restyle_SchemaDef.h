@@ -20,11 +20,33 @@ namespace Restyle
         Win7 = 2,
         Win8 = 4,
         Win81 = 8,
-        Win10 = 16,
-        Win11 = 32,
+        Win10Th1 = 16,
+        Win10Th2 = 32,
+        Win10_1607 = 64,
+        Win10_1703 = 128,
+        Win10_1709 = 256,
+        Win10_1803 = 512,
+        Win10_1809 = 1024,
+        Win10_1903 = 2048,
+        Win10_1909 = 4096,
+        Win10_2004 = 8192,
+        Win11_21H2 = 16384,
+        Win11_22H2 = 32768,
         
-        All = WinVista | Win7 | Win8 | Win81 | Win10 | Win11
+        All = WinVista | Win7 | Win8 | Win81 | Win10Th1 | Win10Th2 | Win10_1607 | Win10_1703
+            | Win10_1709 | Win10_1803 | Win10_1809 | Win10_1903 | Win10_1909 | Win10_2004
+            | Win11_21H2 | Win11_22H2
     };
+    
+    inline ESupportedOS operator|(ESupportedOS a, ESupportedOS b)
+    {
+        return (ESupportedOS)((int)a | (int)b);
+    }
+
+    inline bool operator&(ESupportedOS a, ESupportedOS b)
+    {
+        return (bool)((int)a & (int)b);
+    }
     
     struct TMPROPINFO
     {
@@ -49,7 +71,7 @@ namespace Restyle
 #define BEGIN_TM_PROPS()                    enum PropValues { DummyProp = 49,
 #define BEGIN_TM_ENUM(name, prefCap)                 enum name {
 #define BEGIN_TM_CLASS_PARTS(name)          enum name##PARTS { name##PartFiller0,
-#define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS) // TODO: how to do this?
+#define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS) enum { // TODO: how to do this?
 #define BEGIN_TM_PART_STATES(name)          enum name##STATES { name##StateFiller0,
 
 #define TM_PROP(val, prefix, name, prefCap, primval) prefix##_##name = val, 
