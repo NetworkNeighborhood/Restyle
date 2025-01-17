@@ -139,7 +139,7 @@
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="restyle.cpp" />
     <ClCompile Include="schematest.cpp" />
-    <ClCompile Include="schematest.h" />
+    <ClInclude Include="schematest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

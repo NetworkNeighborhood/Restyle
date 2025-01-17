@@ -20,22 +20,10 @@ namespace Restyle
         Win7 = 2,
         Win8 = 4,
         Win81 = 8,
-        Win10Th1 = 16,
-        Win10Th2 = 32,
-        Win10_1607 = 64,
-        Win10_1703 = 128,
-        Win10_1709 = 256,
-        Win10_1803 = 512,
-        Win10_1809 = 1024,
-        Win10_1903 = 2048,
-        Win10_1909 = 4096,
-        Win10_2004 = 8192,
-        Win11_21H2 = 16384,
-        Win11_22H2 = 32768,
+        Win10_1607 = 16,
+        Win11_22H2 = 32,
         
-        All = WinVista | Win7 | Win8 | Win81 | Win10Th1 | Win10Th2 | Win10_1607 | Win10_1703
-            | Win10_1709 | Win10_1803 | Win10_1809 | Win10_1903 | Win10_1909 | Win10_2004
-            | Win11_21H2 | Win11_22H2
+        All = WinVista | Win7 | Win8 | Win81 | Win10_1607 | Win11_22H2
     };
     
     inline ESupportedOS operator|(ESupportedOS a, ESupportedOS b)
@@ -55,6 +43,7 @@ namespace Restyle
         BYTE bPrimVal;
 #ifdef DEBUG
         LPCWSTR szPreferredCapitalization;
+        int iValidationVal;
 #endif
         ESupportedOS supportedOS;
     };
@@ -133,23 +122,23 @@ namespace Restyle
     #define TM_STATE(val, prefix, name, prefCap) \
         { L##prefCap, prefix##_##name, TMT_ENUMVAL, },
     #define TM_ENUM(val, prefix, name, prefCap) \
-        { L##prefCap, prefix##_##name, TMT_ENUMDEF  },
+        { L##prefCap, prefix##_##name, TMT_ENUMVAL  },
 #else
     #define BEGIN_TM_CLASS_PARTS(name)    \
-            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, ESupportedOS::All },
+            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, 0, ESupportedOS::All },
     #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
-            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, supportedOS },
+            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, 0, supportedOS },
     #define BEGIN_TM_PART_STATES(name)    \
             { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF },
 
     #define TM_PROP(val, prefix, name, prefCap, primval) \
-            { L#name, prefix##_##name, TMT_##primval, L##prefCap },
+            { L#name, prefix##_##name, TMT_##primval, L##prefCap, val },
     #define TM_PART(val, prefix, name, prefCap) \
-            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap },
+            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap, val },
     #define TM_STATE(val, prefix, name, prefCap) \
-            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap },
+            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap, val },
     #define TM_ENUM(val, prefix, name, prefCap) \
-            { L#name, prefix##_##name, TMT_ENUMDEF, L##prefCap  },
+            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap, val  },
 #endif
 
 
