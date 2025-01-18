@@ -728,6 +728,9 @@ BEGIN_TM_CLASS_PARTS(BUTTON)
     TM_PART(3, BP, CHECKBOX, "CheckBox")
     TM_PART(4, BP, GROUPBOX, "GroupBox")
     TM_PART(5, BP, USERBUTTON, "UserButton")
+    // V4:
+    TM_PART(6, BP, COMMANDLINK, "CommandLink")
+    TM_PART(7, BP, COMMANDLINKGLYPH, "CommandLinkGlyph")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(PUSHBUTTON)
@@ -778,6 +781,10 @@ BEGIN_TM_CLASS_PARTS(REBAR)
     TM_PART(3, RP, BAND, "Band")
     TM_PART(4, RP, CHEVRON, "Chevron")
     TM_PART(5, RP, CHEVRONVERT, "ChevronVert")
+    // V4:
+    TM_PART(6, RP, BACKGROUND, "Background")
+    TM_PART(7, RP, SPLITTER, "Splitter")
+    TM_PART(8, RP, SPLITTERVERT, "SplitterVert")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(CHEVRON)
@@ -796,6 +803,8 @@ BEGIN_TM_CLASS_PARTS(TOOLBAR)
     TM_PART(4, TP, SPLITBUTTONDROPDOWN, "SplitButtonDropdown")
     TM_PART(5, TP, SEPARATOR, "Separator")
     TM_PART(6, TP, SEPARATORVERT, "SeparatorVert")
+    // V4;
+    TM_PART(7, TP, DROPDOWNBUTTONGLYPH, "DropdownButtonGlyph")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(TOOLBAR)
@@ -831,6 +840,12 @@ BEGIN_TM_CLASS_PARTS(LISTVIEW)
     TM_PART(3, LVP, LISTDETAIL, "ListDetail")
     TM_PART(4, LVP, LISTSORTEDDETAIL, "ListSortedDetail")
     TM_PART(5, LVP, EMPTYTEXT, "EmptyText")
+    // V4:
+    TM_PART(6, LVP, GROUPHEADER, "GroupHeader")
+    TM_PART(7, LVP, GROUPHEADERLINE, "GroupHeaderLine")
+    TM_PART(8, LVP, EXPANDBUTTON, "ExpandButton")
+    TM_PART(9, LVP, COLLAPSEBUTTON, "CollapseButton")
+    TM_PART(10, LVP, COLUMNDETAIL, "ColumnDetail")
 END_TM_CLASS_PARTS()
 
 //
@@ -856,6 +871,10 @@ BEGIN_TM_CLASS_PARTS(HEADER)
     TM_PART(2, HP, HEADERITEMLEFT, "HeaderItemLeft")
     TM_PART(3, HP, HEADERITEMRIGHT, "HeaderItemRight")
     TM_PART(4, HP, HEADERSORTARROW, "HeaderSortArrow")
+    // V4:
+    TM_PART(5, HP, HEADERDROPDOWN, "HeaderDropdown")
+    TM_PART(6, HP, HEADERDROPDOWNFILTER, "HeaderDropdownFilter")
+    TM_PART(7, HP, HEADEROVERFLOW, "HeaderOverflow")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(HEADERITEM)
@@ -889,6 +908,15 @@ BEGIN_TM_CLASS_PARTS(PROGRESS)
     TM_PART(2, PP, BARVERT, "BarVert")
     TM_PART(3, PP, CHUNK, "Chunk")
     TM_PART(4, PP, CHUNKVERT, "ChunkVert")
+    // V4:
+    TM_PART(5, PP, FILL, "Fill")
+    TM_PART(6, PP, FILLVERT, "FillVert")
+    TM_PART(7, PP, PULSEOVERLAY, "PulseOverlay")
+    TM_PART(8, PP, MOVEOVERLAY, "MoveOverlay")
+    TM_PART(9, PP, PULSEOVERLAYVERT, "PulseOverlayVert")
+    TM_PART(10, PP, MOVEOVERLAYVERT, "MoveOverlayVert")
+    TM_PART(11, PP, TRANSPARENTBAR, "TransparentBar")
+    TM_PART(12, PP, TRANSPARENTBARVERT, "TransparentBarVert")
 END_TM_CLASS_PARTS()
 
 //---------------------------------------------------------------------------------------
@@ -905,6 +933,8 @@ BEGIN_TM_CLASS_PARTS(TAB)
     TM_PART(8, TABP, TOPTABITEMBOTHEDGE, "TopTabItemBothEdge")
     TM_PART(9, TABP, PANE, "Pane")
     TM_PART(10, TABP, BODY, "Body")
+    // V4:
+    TM_PART(11, TABP, AEROWIZARDBODY, "AeroWizardBody")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(TABITEM)
@@ -1064,6 +1094,9 @@ BEGIN_TM_CLASS_PARTS(TOOLTIP)
     TM_PART(3, TTP, BALLOON, "Balloon")
     TM_PART(4, TTP, BALLOONTITLE, "BalloonTitle")
     TM_PART(5, TTP, CLOSE, "Close")
+    // V4:
+    TM_PART(6, TTP, BALLOONSTEM, "BalloonStem")
+    TM_PART(7, TTP, WRENCH, "Wrench")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(CLOSE)
@@ -1180,8 +1213,6 @@ BEGIN_TM_CLASS_PARTS(SCROLLBAR)
     TM_PART(10, SBP, SIZEBOX, "SizeBox")
 END_TM_CLASS_PARTS()
 
-
-
 BEGIN_TM_PART_STATES(ARROWBTN)
     TM_STATE(1, ABS, UPNORMAL, "UpNormal")
     TM_STATE(2, ABS, UPHOT, "UpHot")
@@ -1219,6 +1250,14 @@ END_TM_PART_STATES()
 BEGIN_TM_CLASS_PARTS(EDIT)
     TM_PART(1, EP, EDITTEXT, "EditText")
     TM_PART(2, EP, CARET, "Caret")
+    // V4:
+    TM_PART(3, EP, BACKGROUND, "Background")
+    TM_PART(4, EP, PASSWORD, "Password")
+    TM_PART(5, EP, BACKGROUNDWITHBORDER, "BackgroundWithBorder")
+    TM_PART(6, EP, EDITBORDER_NOSCROLL, "EditBorder_NoScroll")
+    TM_PART(7, EP, EDITBORDER_HSCROLL, "EditBorder_HScroll")
+    TM_PART(8, EP, EDITBORDER_VSCROLL, "EditBorder_VScroll")
+    TM_PART(9, EP, EDITBORDER_HVSCROLL, "EditBorder_HVScroll")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(EDITTEXT)
@@ -1236,6 +1275,14 @@ END_TM_PART_STATES()
 //---------------------------------------------------------------------------------------
 BEGIN_TM_CLASS_PARTS(COMBOBOX)
     TM_PART(1, CP, DROPDOWNBUTTON, "DropDownButton")
+    // V4:
+    TM_PART(2, CP, BACKGROUND, "Background")
+    TM_PART(3, CP, TRANSPARENTBACKGROUND, "TransparentBackground")
+    TM_PART(4, CP, BORDER, "Border")
+    TM_PART(5, CP, READONLY, "ReadOnly")
+    TM_PART(6, CP, DROPDOWNBUTTONRIGHT, "DropdownButtonRight")
+    TM_PART(7, CP, DROPDOWNBUTTONLEFT, "DropdownButtonLeft")
+    TM_PART(8, CP, CUEBANNER, "CueBanner")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(COMBOBOX)
@@ -1264,6 +1311,12 @@ BEGIN_TM_CLASS_PARTS(TRAYNOTIFY)
     TM_PART(2, TNP, ANIMBACKGROUND, "AnimBackground")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_CLASS_PARTS(TRAYNOTIFYFLYOUT)
+    TM_PART(1, TNF, TOP, "Top")
+    TM_PART(2, TNF, BOTTOM, "Bottom")
+    TM_PART(3, TNF, BUTTON, "Button")
+END_TM_CLASS_PARTS()
+
 //---------------------------------------------------------------------------------------
 //   "TaskBar" Parts & States
 //---------------------------------------------------------------------------------------
@@ -1279,12 +1332,66 @@ BEGIN_TM_CLASS_PARTS(TASKBAR)
 END_TM_CLASS_PARTS()
 
 //---------------------------------------------------------------------------------------
+//   "TaskBar Pearl" Parts & States (Windows Vista+)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TASKBARPEARL)
+    TM_PART(1, TPRL, PEARLICON, "PearlIcon")
+    TM_PART(2, TPRL, TABLETMODEPEARLICON, "TabletModePearlIcon")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
 //   "TaskBand" Parts & States
 //---------------------------------------------------------------------------------------
 BEGIN_TM_CLASS_PARTS(TASKBAND)
     TM_PART(1, TDP, GROUPCOUNT, "GroupCount")
     TM_PART(2, TDP, FLASHBUTTON, "FlashButton")
     TM_PART(3, TDP, FLASHBUTTONGROUPMENU, "FlashButtonGroupMenu")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "TaskBand Extended UI" Parts & States (Windows Vista+)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TaskbandExtendedUI) // Microsoft didn't use an all-caps name here.
+    TM_PART(1, TBEUIP, BACKGROUND, "Background")
+    TM_PART(2, TBEUIP, THUMBRECT, "ThumbRect")
+    TM_PART(3, TBEUIP, WINDOWTEXT, "WindowText")
+    TM_PART(4, TBEUIP, ACTIVERECT, "ActiveRect")
+    TM_PART(5, TBEUIP, PREVACTIVERECT, "PrevActiveRect")
+    TM_PART(6, TBEUIP, THUMBBARBUTTONSINGLE, "ThumbBarButtonSingle")
+    TM_PART(7, TBEUIP, THUMBBARBUTTONLEFT, "ThumbBarButtonLeft")
+    TM_PART(8, TBEUIP, THUMBBARBUTTONMIDDLE, "ThumbBarButtonMiddle")
+    TM_PART(9, TBEUIP, THUMBBARBUTTONRIGHT, "ThumbBarButtonRight")
+    TM_PART(10, TBEUIP, THUMBCLOSEBUTTON, "ThumbCloseButton")
+    TM_PART(11, TBEUIP, ARROWBTN, "ArrowBtn")
+    TM_PART(12, TBEUIP, THUMBSHADOWTOP, "ThumbShadowTop")
+    TM_PART(13, TBEUIP, THUMBSHADOWLEFT, "ThumbShadowLeft")
+    TM_PART(14, TBEUIP, THUMBSHADOWRIGHT, "ThumbShadowRight")
+    TM_PART(15, TBEUIP, THUMBSHADOWBOTTOM, "ThumbShadowBottom")
+    TM_PART(16, TBEUIP, WINDOWBORDER, "WindowBorder")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "TaskBand 2" Parts & States (Windows 7+ Superbar)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TASKBAND2)
+    TM_PART(1, TDP2, NEGATIVESPACEBOTTOM, "NegativeSpaceBottom")
+    TM_PART(2, TDP2, NEGATIVESPACETOP, "NegativeSpaceTop")
+    TM_PART(3, TDP2, NEGATIVESPACELEFT, "NegativeSpaceLeft")
+    TM_PART(4, TDP2, NEGATIVESPACERIGHT, "NegativeSpaceRight")
+    TM_PART(5, TDP2, SINGLEBUTTON, "SingleButton")
+    TM_PART(6, TDP2, GLOMHORIZONTALACTIVE, "GlomHorizontalActive")
+    TM_PART(7, TDP2, GLOMHORIZONTALINACTIVE, "GlomHorizontalInactive")
+    TM_PART(8, TDP2, GLOMVERTICALACTIVE, "GlomVerticalActive")
+    TM_PART(9, TDP2, GLOMVERTICALINACTIVE, "GlomVerticalInactive")
+    TM_PART(10, TDP2, GLOMDIVIDER, "GlomDivider")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "TaskBar Show Desktop" Parts & States (Windows 7+ Superbar)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TASKBARSHOWDESKTOP)
+    TM_PART(1, TSDT, SHOWDESKTOPTHEME, "ShowDesktopTheme")
+    TM_PART(2, TSDT, DIVIDERLINE, "DividerLine")
 END_TM_CLASS_PARTS()
 
 //---------------------------------------------------------------------------------------
@@ -1355,6 +1462,11 @@ BEGIN_TM_PART_STATES(OPENBOX)
     TM_STATE(4, SPOB, DISABLED, "Disabled")
     TM_STATE(5, SPOB, FOCUSED, "Focused")
 END_TM_PART_STATES()
+
+// V4:
+BEGIN_TM_CLASS_PARTS(STARTPANELPRIV)
+    TM_PART(1, SPPP, MOREPROGRAMSTAB, "MoreProgramsTab")
+END_TM_CLASS_PARTS()
 
 //---------------------------------------------------------------------------------------
 //   "ExplorerBar" Parts & States
@@ -1437,17 +1549,54 @@ BEGIN_TM_PART_STATES(MENUBAND)
 END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
+//   "Address Band" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(ADDRESSBAND)
+    TM_STATE(1, ABP, ABBACKGROUND, "ABBackground")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Aero Wizard" Parts & States (Windows Vista+)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(AEROWIZARD)
+    TM_PART(1, AW, TITLEBAR, "TitleBar")
+    TM_PART(2, AW, HEADERAREA, "HeaderArea")
+    TM_PART(3, AW, CONTENTAREA, "ContentArea")
+    TM_PART(4, AW, COMMANDAREA, "CommandArea")
+    TM_PART(5, AW, BUTTON, "Button")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Alt Tab" Parts & States (Windows Vista+)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(ALTTAB)
+    TM_PART(1, ATP, WINDOWTEXT, "WindowText")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Barrier Page" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(BARRIERPAGE)
+    TM_PART(1, BPG, PANEBACKGROUND, "PaneBackground")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Breadcrumb Bar" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(BREADCRUMBBAR)
+    TM_PART(1, BCBP, BCBOVERFLOWCHEVRON, "BCBOverflowChevron")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
 //   "Communications" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(COMMUNICATIONS)
     TM_PART(1, CSST, TAB, "Tab")
 END_TM_CLASS_PARTS()
 
 //---------------------------------------------------------------------------------------
 //   "Control Panel" Parts & States (v4)
-//---------------------------------------------------------------------------------------
-
+//--------------------------------------------------------------------------------------
 BEGIN_TM_CLASS_PARTS(CONTROLPANEL)
     TM_PART(1, CPANEL, NAVIGATIONPANE, "NavigationPane")
     TM_PART(2, CPANEL, CONTENTPANE, "ContentPane")
@@ -1473,7 +1622,6 @@ END_TM_CLASS_PARTS()
 //---------------------------------------------------------------------------------------
 //   "Copy Close" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(COPYCLOSE)
     TM_PART(1, CPYCLS, COPYCLOSEBTN, "CopyCloseBtn")
 END_TM_CLASS_PARTS()
@@ -1487,9 +1635,31 @@ BEGIN_TM_PART_STATES(COPYCLOSEBTN)
 END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
+//   "Date Picker" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(DATEPICKER)
+    TM_STATE(1, DP, DATETEXT, "DateText")
+    TM_STATE(2, DP, DATEBORDER, "DateBorder")
+    TM_STATE(3, DP, SHOWCALENDARBUTTONRIGHT, "ShowCalendarButtonRight")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Drag Drop" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(DRAGDROP)
+    TM_PART(1, DD, COPY, "Copy")
+    TM_PART(2, DD, MOVE, "Move")
+    TM_PART(3, DD, UPDATEMETADATA, "UpdateMetadata")
+    TM_PART(4, DD, CREATELINK, "CreateLink")
+    TM_PART(5, DD, WARNING, "Warning")
+    TM_PART(6, DD, NONE, "None")
+    TM_PART(7, DD, IMAGEBG, "ImageBg")
+    TM_PART(8, DD, TEXTBG, "TextBg")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
 //   "Drop List" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(DROPLISTCONTROL)
     TM_PART(1, DLC, MENUBUTTON, "MenuButton")
 END_TM_CLASS_PARTS()
@@ -1497,15 +1667,34 @@ END_TM_CLASS_PARTS()
 //---------------------------------------------------------------------------------------
 //   "Empty Markup" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(EMPTYMARKUP)
     TM_PART(1, EMP, MARKUPTEXT, "MarkupText")
 END_TM_CLASS_PARTS()
 
 //---------------------------------------------------------------------------------------
+//   "Flyout" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(FLYOUT)
+    TM_PART(1, FLYOUT, HEADER, "Header")
+    TM_PART(2, FLYOUT, BODY, "Body")
+    TM_PART(3, FLYOUT, LABEL, "Label")
+    TM_PART(4, FLYOUT, LINK, "Link")
+    TM_PART(5, FLYOUT, DIVIDER, "Divider")
+    TM_PART(6, FLYOUT, WINDOW, "Window")
+    TM_PART(7, FLYOUT, LINKAREA, "LinkArea")
+    TM_PART(8, FLYOUT, LINKHEADER, "LinkHeader")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Help Searchbox" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(HELPSEARCHBOX)
+    TM_PART(1, HSBP, HSBBACKGROUND, "HSBBackground")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
 //   "Info Bar" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(INFOBAR)
     TM_PART(1, IBAR, BARBACKGROUND, "BarBackground")
     TM_PART(2, IBAR, BARFOREGROUND, "BarForeground")
@@ -1521,7 +1710,6 @@ END_TM_PART_STATES()
 //---------------------------------------------------------------------------------------
 //   "Items View" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(ITEMSVIEW)
     TM_PART(1, IV, SEARCHHIT, "SearchHit")
     TM_PART(2, IV, SUBSETBUTTON, "SubsetButton")
@@ -1534,7 +1722,6 @@ END_TM_CLASS_PARTS()
 //---------------------------------------------------------------------------------------
 //   "List Box" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(LISTBOX)
     TM_PART(1, LBCP, BORDER_HSCROLL, "Border_HScroll")
     TM_PART(2, LBCP, BORDER_HVSCROLL, "Border_HVScroll")
@@ -1546,7 +1733,6 @@ END_TM_CLASS_PARTS()
 //---------------------------------------------------------------------------------------
 //   "Link" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(LINK)
     TM_PART(1, LP, HYPERLINK, "HyperLink")
 END_TM_CLASS_PARTS()
@@ -1554,7 +1740,6 @@ END_TM_CLASS_PARTS()
 //---------------------------------------------------------------------------------------
 //   "Menu" Parts & States (Windows Vista+)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(MENU)
     // The following section takes liberties on the names. The private names that Microsoft
     // use for these following symbols are suffixed with _TMSCHEMA. This is likely done as
@@ -1597,7 +1782,6 @@ END_TM_CLASS_PARTS()
 //---------------------------------------------------------------------------------------
 //   "Navigation" Parts & States (v4)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(NAVIGATION)
     TM_PART(1, NAV, BACKBUTTON, "BackButton")
     TM_PART(2, NAV, FORWARDBUTTON, "ForwardButton")
@@ -1605,9 +1789,173 @@ BEGIN_TM_CLASS_PARTS(NAVIGATION)
 END_TM_CLASS_PARTS()
 
 //---------------------------------------------------------------------------------------
+//   "Month Calendar" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(MONTHCAL)
+    TM_PART(1, MC, BACKGROUND, "Background")
+    TM_PART(2, MC, BORDERS, "Borders")
+    TM_PART(3, MC, GRIDBACKGROUND, "GridBackground")
+    TM_PART(4, MC, COLHEADERSPLITTER, "ColHeaderSplitter")
+    TM_PART(5, MC, GRIDCELLBACKGROUND, "GridCellBackground")
+    TM_PART(6, MC, GRIDCELL, "GridCell")
+    TM_PART(7, MC, GRIDCELLUPPER, "GridCellUpper")
+    TM_PART(8, MC, TRAILINGGRIDCELL, "TrailingGridCell")
+    TM_PART(9, MC, TRAILINGGRIDCELLUPPER, "TrailingGridCellUpper")
+    TM_PART(10, MC, NAVNEXT, "NavNext")
+    TM_PART(11, MC, NAVPREV, "NavPrev")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Pause" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(PAUSE)
+    TM_PART(1, PSE, PAUSEBTN, "PauseBtn")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Preview Pane" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(PREVIEWPANE)
+    TM_PART(1, PP, PREVIEWBACKGROUND, "PreviewBackground")
+    TM_PART(2, PP, EDITPROPERTIES, "EditProperties")
+    TM_PART(3, PP, NAVPANESIZER, "NavPaneSizer")
+    TM_PART(4, PP, READINGPANESIZER, "ReadingPaneSizer")
+    TM_PART(5, PP, TITLE, "Title")
+    TM_PART(6, PP, LABEL, "Label")
+    TM_PART(7, PP, VALUE, "Value")
+    TM_PART(8, PP, LABELCID, "LabelCID")
+    TM_PART(9, PP, VALUECID, "ValueCID")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Proper Tree" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(PROPERTREE)
+    TM_PART(1, PTP, FOLDERSHEADER, "FoldersHeader")
+    TM_PART(2, PTP, BACKGROUND, "Background")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Reading Pane" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(READINGPANE)
+    TM_PART(1, RP, BACKGROUNDCOLORS, "BackgroundColors")
+    TM_PART(2, RP, LABEL, "Label")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "SearchBox" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(SEARCHBOX)
+    TM_PART(1, SBP, SBBACKGROUND, "SBBackground")
+    TM_PART(2, SBP, SBCLEARBUTTON, "SBClearButton")
+    TM_PART(3, SBP, SBSEARCHBUTTON, "SBSearchButton")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Search Editbox" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(SEARCHEDITBOX)
+    TM_PART(1, SEBP, SEARCHEDITBOXTEXT, "SearchEditboxText")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Search Home" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(SEARCHHOME)
+    TM_PART(1, SH, BACKGROUND, "Background")
+    TM_PART(2, SH, LINE, "Line")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Shell Status Bar Separator" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(SHELLSTATUSBARSEPARATOR)
+    TM_PART(1, SSBS, BACKGROUND, "Background")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Static" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(STATIC)
+    TM_PART(1, STAT, TEXT, "Text")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Task Dialog" Parts & States (Windows Vista+)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TASKDIALOG)
+    TM_PART(1, TDLG, PRIMARYPANEL, "PrimaryPanel")
+    TM_PART(2, TDLG, MAININSTRUCTIONPANEL, "MainInstructionPanel")
+    TM_PART(3, TDLG, MAINICON, "MainIcon")
+    TM_PART(4, TDLG, CONTENTPANE, "ContentPane")
+    TM_PART(5, TDLG, CONTENTICON, "ContentIcon")
+    TM_PART(6, TDLG, EXPANDEDCONTENT, "ExpandedContent")
+    TM_PART(7, TDLG, COMMANDLINKPANE, "CommandLinkPane")
+    TM_PART(8, TDLG, SECONDARYPANEL, "SecondaryPanel")
+    TM_PART(9, TDLG, CONTROLPANE, "ControlPane")
+    TM_PART(10, TDLG, BUTTONSECTION, "ButtonSection")
+    TM_PART(11, TDLG, BUTTONWRAPPER, "ButtonWrapper")
+    TM_PART(12, TDLG, EXPANDOTEXT, "ExpandoText")
+    TM_PART(13, TDLG, EXPANDOBUTTON, "ExpandoButton")
+    TM_PART(14, TDLG, VERIFICATIONTEXT, "VerificationText")
+    TM_PART(15, TDLG, FOOTNOTEPANE, "FootnotePane")
+    TM_PART(16, TDLG, FOOTNOTEAREA, "FootnoteArea")
+    TM_PART(17, TDLG, FOOTNOTESEPARATOR, "FootnoteSeparator")
+    TM_PART(18, TDLG, EXPANDEDFOOTERAREA, "ExpandedFooterArea")
+    TM_PART(19, TDLG, PROGRESSBAR, "ProgressBar")
+    TM_PART(20, TDLG, IMAGEALIGNMENT, "ImageAlignment")
+    TM_PART(21, TDLG, RADIOBUTTONPANE, "RadioButtonPane")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Text Glow" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TEXTGLOW)
+    TM_PART(1, TG, BACKGROUND, "Background")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Text Selection Gripper" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TEXTSELECTIONGRIPPER)
+    TM_PART(1, TSGP, GRIPPER, "Gripper")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Text Style" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TEXTSTYLE)
+    TM_PART(1, TEXT, MAININSTRUCTION, "MainInstruction")
+    TM_PART(2, TEXT, INSTRUCTION, "Instruction")
+    TM_PART(3, TEXT, BODYTITLE, "BodyTitle")
+    TM_PART(4, TEXT, BODYTEXT, "BodyText")
+    TM_PART(5, TEXT, SECONDARYTEXT, "SecondaryText")
+    TM_PART(6, TEXT, HYPERLINKTEXT, "HyperlinkText")
+    TM_PART(7, TEXT, EXPANDED, "Expanded")
+    TM_PART(8, TEXT, LABEL, "Label")
+    TM_PART(9, TEXT, CONTROLLABEL, "ControlLabel")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Try Harder" Parts & States (v4)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TRYHARDER)
+    TM_PART(1, TH, BUTTON, "Button")
+    TM_PART(2, TH, VERTICAL, "Vertical")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "User Tile" Parts & States (scrapped Windows 8 beta taskbar feature)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(USERTILE)
+    TM_PART(1, UTP, STROKEBACKGROUND, "StrokeBackground")
+    TM_PART(2, UTP, HOVERBACKGROUND, "HoverBackground")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
 //   "DWM Pen" Parts & States (Windows Vista+)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(DWMPEN)
     TM_PART(1, DWMPP, PENBARREL, "PenBarrel")
     TM_PART(2, DWMPP, PENHOLD, "PenHold")
@@ -1638,7 +1986,6 @@ END_TM_CLASS_PARTS()
 //---------------------------------------------------------------------------------------
 //   "DWM Touch" Parts & States (Windows Vista+)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS(DWMTOUCH)
     TM_PART(1, DWMWP, TOUCHDRAG, "TouchDrag")
     TM_PART(2, DWMWP, TOUCHCONTACT, "TouchContact")
@@ -1653,7 +2000,6 @@ END_TM_CLASS_PARTS()
 //---------------------------------------------------------------------------------------
 //   "DWM Window" Parts & States (Windows Vista+)
 //---------------------------------------------------------------------------------------
-
 BEGIN_TM_CLASS_PARTS_FOR_OS(DWMWINDOW, ESupportedOS::WinVista)
     TM_PART(1, VISTA_DWMWP, BOTTOMFRAME, "BottomFrame")
     TM_PART(2, VISTA_DWMWP, BOTTOMSHADOW, "BottomShadow")
@@ -1980,8 +2326,98 @@ BEGIN_TM_CLASS_PARTS(DWMWINDOW)
 END_TM_CLASS_PARTS()
 
 //---------------------------------------------------------------------------------------
+//   "Animations" Parts & States (Windows 8+)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(ANIMATIONS)
+    TM_PART(1, TAS, EXPAND, "Expand")
+    TM_PART(2, TAS, COLLAPSE, "Collapse")
+    TM_PART(3, TAS, REPOSITION, "Reposition")
+    TM_PART(4, TAS, FADEIN, "FadeIn")
+    TM_PART(5, TAS, FADEOUT, "FadeOut")
+    TM_PART(6, TAS, ADDTOLIST, "AddToList")
+    TM_PART(7, TAS, DELETEFROMLIST, "DeleteFromList")
+    TM_PART(8, TAS, ADDTOGRID, "AddToGrid")
+    TM_PART(9, TAS, DELETEFROMGRID, "DeleteFromGrid")
+    TM_PART(10, TAS, ADDTOSEARCHGRID, "AddToSearchGrid")
+    TM_PART(11, TAS, DELETEFROMSEARCHGRID, "DeleteFromSearchGrid")
+    TM_PART(12, TAS, ADDTOSEARCHLIST, "AddToSearchList")
+    TM_PART(13, TAS, DELETEFROMSEARCHLIST, "DeleteFromSearchList")
+    TM_PART(14, TAS, SHOWEDGEUI, "ShowEdgeUI")
+    TM_PART(15, TAS, SHOWPANEL, "ShowPanel")
+    TM_PART(16, TAS, HIDEEDGEUI, "HideEdgeUI")
+    TM_PART(17, TAS, HIDEPANEL, "HidePanel")
+    TM_PART(18, TAS, SHOWPOPUP, "ShowPopup")
+    TM_PART(19, TAS, HIDEPOPUP, "HidePopup")
+    TM_PART(20, TAS, POINTERDOWN, "PointerDown")
+    TM_PART(21, TAS, POINTERUP, "PointerUp")
+    TM_PART(22, TAS, DRAGSOURCESTART, "DragSourceStart")
+    TM_PART(23, TAS, DRAGSOURCEEND, "DragSourceEnd")
+    TM_PART(24, TAS, TRANSITIONCONTENT, "TransitionContent")
+    TM_PART(25, TAS, REVEAL, "Reveal")
+    TM_PART(26, TAS, HIDE, "Hide")
+    TM_PART(27, TAS, DRAGBETWEENENTER, "DragBetweenEnter")
+    TM_PART(28, TAS, DRAGBETWEENLEAVE, "DragBetweenLeave")
+    TM_PART(29, TAS, SWIPESELECT, "SwipeSelect")
+    TM_PART(30, TAS, SWIPEDESELECT, "SwipeDeselect")
+    TM_PART(31, TAS, SWIPEREVEAL, "SwipeReveal")
+    TM_PART(32, TAS, ENTERPAGE, "EnterPage")
+    TM_PART(33, TAS, TRANSITIONPAGE, "TransitionPage")
+    TM_PART(34, TAS, CROSSFADE, "CrossFade")
+    TM_PART(35, TAS, PEEK, "Peek")
+    TM_PART(36, TAS, UPDATEBADGE, "UpdateBadge")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
 //   "Advanced Task Manager" Parts & States (Windows 8+)
 //---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(TASKMANAGER)
+    TM_PART(1, TM, ROW, "Row")
+    TM_PART(2, TM, COLUMNDIVIDER, "ColumnDivider")
+    TM_PART(3, TM, HEATMAP_COLOR0, "Heatmap_Color0")
+    TM_PART(4, TM, HEATMAP_COLOR1, "Heatmap_Color1")
+    TM_PART(5, TM, HEATMAP_COLOR2, "Heatmap_Color2")
+    TM_PART(6, TM, HEATMAP_COLOR3, "Heatmap_Color3")
+    TM_PART(7, TM, HEATMAP_COLOR4, "Heatmap_Color4")
+    TM_PART(8, TM, HEATMAP_COLOR5, "Heatmap_Color5")
+    TM_PART(9, TM, HEATMAP_COLOR6, "Heatmap_Color6")
+    TM_PART(10, TM, HEATMAP_COLOR7, "Heatmap_Color7")
+    TM_PART(11, TM, HEATMAP_COLOR8, "Heatmap_Color8")
+    TM_PART(12, TM, HEATMAP_CONTENTIONMARKER, "Heatmap_ContentionMarker")
+    TM_PART(13, TM, HEATMAP_TEXT, "Heatmap_Text")
+    TM_PART(14, TM, RESOURCE_TITLE, "Resource_Title")
+    TM_PART(15, TM, RESOURCE_SUBTITLE, "Resource_Subtitle")
+    TM_PART(16, TM, GROUPLABEL, "GroupLabel")
+    TM_PART(17, TM, STATICLABEL, "StaticLabel")
+    TM_PART(18, TM, STATICDATA, "StaticData")
+    TM_PART(19, TM, DYNAMICDATA, "DynamicData")
+    TM_PART(20, TM, MEMORYBAR_AVAILABLE, "MemoryBar_Available")
+    TM_PART(21, TM, MEMORYBAR_INUSE, "MemoryBar_InUse")
+    TM_PART(22, TM, MEMORYBAR_MODIFIED, "MemoryBar_Modified")
+    TM_PART(23, TM, MEMORYBAR_INUSE_SEPARATOR, "MemoryBar_InUse_Separator")
+    TM_PART(24, TM, COLUMNHEADERTEXT, "ColumnHeaderText")
+    TM_PART(25, TM, CPU_HEATMAP_TEXT, "CPU_Heatmap_Text")
+    TM_PART(26, TM, CPU_HEATMAP_COLOR0, "CPU_Heatmap_Color0")
+    TM_PART(27, TM, CPU_HEATMAP_COLOR1, "CPU_Heatmap_Color1")
+    TM_PART(28, TM, CPU_HEATMAP_COLOR2, "CPU_Heatmap_Color2")
+    TM_PART(29, TM, CPU_HEATMAP_COLOR3, "CPU_Heatmap_Color3")
+    TM_PART(30, TM, CPU_HEATMAP_COLOR4, "CPU_Heatmap_Color4")
+    TM_PART(31, TM, CPU_HEATMAP_COLOR5, "CPU_Heatmap_Color5")
+    TM_PART(32, TM, CPU_HEATMAP_PARKED0, "CPU_Heatmap_Parked0")
+    TM_PART(33, TM, CPU_HEATMAP_PARKED1, "CPU_Heatmap_Parked1")
+    TM_PART(34, TM, CPU_HEATMAP_PARKED2, "CPU_Heatmap_Parked2")
+    TM_PART(35, TM, CPU_HEATMAP_PARKED3, "CPU_Heatmap_Parked3")
+    TM_PART(36, TM, CPU_HEATMAP_PARKED4, "CPU_Heatmap_Parked4")
+    TM_PART(37, TM, CPU_HEATMAP_PARKED5, "CPU_Heatmap_Parked5")
+    TM_PART(38, TM, CPU_HEATMAP_GRID_BORDER, "CPU_Heatmap_Grid_Border")
+    TM_PART(39, TM, CPU_HEATMAP_BLOCK_BORDER_R, "CPU_Heatmap_Block_Border_R")
+    TM_PART(40, TM, CPU_HEATMAP_BLOCK_BORDER_B, "CPU_Heatmap_Block_Border_B")
+    TM_PART(41, TM, COLHEADER_DIVIDER_COLOR1, "ColHeader_Divider_Color1")
+    TM_PART(42, TM, COLHEADER_DIVIDER_COLOR2, "ColHeader_Divider_Color2")
+    TM_PART(43, TM, CONTENTION_COLUMN_HEADER, "Contention_Column_Header")
+    TM_PART(44, TM, CHARTLEGEND, "ChartLegend")
+    TM_PART(45, TM, COLUMNDIVIDERSELECTED, "ColumnDividerSelected")
+    TM_PART(46, TM, COLUMNDIVIDERHOT, "ColumnDividerHot")
+END_TM_CLASS_PARTS()
 
 BEGIN_TM_CLASS_PARTS(CHARTVIEW)
     TM_PART(1, CV, CPU_BG, "CPU_BG")
