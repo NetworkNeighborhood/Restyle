@@ -731,6 +731,11 @@ BEGIN_TM_CLASS_PARTS(BUTTON)
     // V4:
     TM_PART(6, BP, COMMANDLINK, "CommandLink")
     TM_PART(7, BP, COMMANDLINKGLYPH, "CommandLinkGlyph")
+    // Added sometime after 14361 but before 19041.546
+    TM_PART(8, BP, RADIOBUTTON_HCDISABLED, "RadioButton_HCDisabled")
+    TM_PART(9, BP, CHECKBOX_HCDISABLED, "CheckBox_HCDisabled")
+    TM_PART(10, BP, GROUPBOX_HCDISABLED, "GroupBox_HCDisabled")
+    TM_PART(11, BP, PUSHBUTTONDROPDOWN, "PushButtonDropdown")
 END_TM_CLASS_PARTS()
     
 BEGIN_TM_PART_STATES(PUSHBUTTON)
@@ -1131,22 +1136,22 @@ BEGIN_TM_CLASS_PARTS(TOOLTIP)
     TM_PART(7, TTP, WRENCH, "Wrench")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(STANDARD)
+    TM_STATE(1, TTSS, NORMAL, "Normal")
+    TM_STATE(2, TTSS, LINK, "Link")
+END_TM_PART_STATES()
+    
+BEGIN_TM_PART_STATES(BALLOON)
+    TM_STATE(1, TTBS, NORMAL, "Normal")
+    TM_STATE(2, TTBS, LINK, "Link")
+END_TM_PART_STATES()
+    
 BEGIN_TM_PART_STATES(CLOSE)
     TM_STATE(1, TTCS, NORMAL, "Normal")
     TM_STATE(2, TTCS, HOT, "Hot")
     TM_STATE(3, TTCS, PRESSED, "Pressed")
 END_TM_PART_STATES()
-
-BEGIN_TM_PART_STATES(STANDARD)
-    TM_STATE(1, TTSS, NORMAL, "Normal")
-    TM_STATE(2, TTSS, LINK, "Link")
-END_TM_PART_STATES()
-
-BEGIN_TM_PART_STATES(BALLOON)
-    TM_STATE(1, TTBS, NORMAL, "Normal")
-    TM_STATE(2, TTBS, LINK, "Link")
-END_TM_PART_STATES()
-
+    
 BEGIN_TM_PART_STATES(BALLOONSTEM)
     TM_STATE(1, TTBSS, POINTINGUPLEFTWALL, "PointingUpLeftWall")
     TM_STATE(2, TTBSS, POINTINGUPCENTERED, "PointingUpCentered")
@@ -1258,6 +1263,9 @@ BEGIN_TM_CLASS_PARTS(SCROLLBAR)
     TM_PART(8, SBP, GRIPPERHORZ, "GripperHorz")
     TM_PART(9, SBP, GRIPPERVERT, "GripperVert")
     TM_PART(10, SBP, SIZEBOX, "SizeBox")
+    
+    // V4:
+    TM_PART(11, SBP, SIZEBOXBKGND, "SizeBoxBKGND") // Added after 14361 but technically a new V4 part?
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(ARROWBTN)
@@ -1340,6 +1348,9 @@ BEGIN_TM_CLASS_PARTS(COMBOBOX)
     TM_PART(6, CP, DROPDOWNBUTTONRIGHT, "DropdownButtonRight")
     TM_PART(7, CP, DROPDOWNBUTTONLEFT, "DropdownButtonLeft")
     TM_PART(8, CP, CUEBANNER, "CueBanner")
+
+    // Added sometime after 14361 but before 19041.546
+    TM_PART(9, CP, DROPDOWNITEM, "DropdownItem")
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(COMBOBOX)
@@ -2762,6 +2773,28 @@ BEGIN_TM_CLASS_PARTS(COMMANDMODULE)
     TM_PART(10, CMOD, LIBRARYPANEBACKGROUND, "LibraryPaneBackground")
 END_TM_CLASS_PARTS()
 
+//---------------------------------------------------------------------------------------
+//   "Common Items Dialog" Parts & States (Windows 10 ???)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(CommonItemsDialog)
+    TM_PART(1, CID, POPUPGUTTER, "PopupGutter")
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "Common StatusBar" Parts & States (Windows 10 ???)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(ExplorerStatusBar)
+    // Added sometime after 10.0.14361 but before 10.0.19041.546
+    // Seems to be empty....?
+    // Will look into it more eventually
+END_TM_CLASS_PARTS()
+
+//---------------------------------------------------------------------------------------
+//   "File Explorer Banner Container" Parts & States (Windows 10 ???)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(FileExplorerBannerContainer)
+    TM_PART(1, FEBC, CLOSEGLYPH, "CloseGlyph")
+END_TM_CLASS_PARTS()
 
 
 //---------------------------------------------------------------------------
