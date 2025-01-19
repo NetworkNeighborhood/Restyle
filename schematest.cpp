@@ -110,7 +110,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 
 		wprintf(L"Information for entry #%d\n", uEntryId);
 		wprintf(L" - Name of entry: %s\n", pPropInfo->pszName);
-		wprintf(L" - Preferred capitalization: ", pPropInfo->szPreferredCapitalization ? pPropInfo->szPreferredCapitalization : L"(N/A)");
+		wprintf(L" - Preferred capitalization: %s\n", pPropInfo->szPreferredCapitalization ? pPropInfo->szPreferredCapitalization : L"(N/A)");
 		wprintf(L" - Value: %d\n", pPropInfo->sEnumVal);
         wprintf(L" - Primitive type: %s\n", GetPrimValueName(pPropInfo->bPrimVal));
 		wprintf(L" - Supported OS: "); // intentional no \n
