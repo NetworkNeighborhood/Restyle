@@ -23,6 +23,8 @@ void PrintUsage(void)
 		L"    /precord: Print a record resource (VARIANT, AMAP, RMAP) from a compiled .MSSTYLES theme.\n"
 		L"        Usage: restyle /precord <file> <resource type> <resource name>\n"
 #if DEBUG
+		L"\n"
+		L"Debug actions:\n"
 		L"    /pschema: Prints restyle schema debug information.\n"
 		L"        Usage: restyle /pschema <number>\n"
 		L"               restyle /pschema /validate (Validates schema capitalizations.)\n"
@@ -59,7 +61,14 @@ bool LoadThemeModule(LPWSTR pszPath)
 int wmain(int argc, wchar_t *argv[])
 {
 	// Header
-	wprintf(L"restyle %u.%u.%u\n", VER_MAJOR, VER_MINOR, VER_REVISION);
+	wprintf(
+		L"restyle %u.%u.%u"
+#if DEBUG
+		L" (DEBUG BUILD)"
+#endif
+		L"\n",
+		VER_MAJOR, VER_MINOR, VER_REVISION
+	);
 	wprintf(L"Built %s %s\n\n", __WDATE__, __WTIME__);
 
 #define IsArg(str, name)   0 == _wcsicmp(str, L"/" name)

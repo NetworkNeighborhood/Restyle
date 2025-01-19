@@ -1165,7 +1165,7 @@ BEGIN_TM_PART_STATES(WRENCH)
     TM_STATE(1, TTWS, NORMAL, "Normal")
     TM_STATE(2, TTWS, HOT, "Hot")
     TM_STATE(3, TTWS, PRESSED, "Pressed")
-END_TM_PART_STATES(WRENCH)
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "TreeView" Parts & States
