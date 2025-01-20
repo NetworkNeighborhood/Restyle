@@ -235,6 +235,8 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 					}
 				}
 			}
+			
+			delete[] szCompareName;
 		}
 		
 		wprintf(
