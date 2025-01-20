@@ -1,6 +1,8 @@
+#include "SchemaPriv.h"
 #include "restyle.h"
 #if DEBUG
 
+#include "util.h"
 #include "schematest.h"
 #include "restyle_TmSchema.h"
 #define SCHEMA_STRINGS
@@ -51,33 +53,6 @@ static LPCWSTR GetPrimValueName(BYTE bPrimVal)
 	return L"Unknown primitive type";
 }
 
-// TODO: Move. The parser needs this too.
-#define __ascii_towlower(c)  ( (((c) >= L'A') && ((c) <= L'Z')) ? ((c) - L'A' + L'a') : (c) )
-int AsciiStrCmpI(const WCHAR *dst, const WCHAR *src)
-{
-	WCHAR a, b;
-
-	if (!dst)
-	{
-		return src ? -1 : 0;
-	}
-	else if (!src)
-	{
-		return 1;
-	}
-
-	do
-	{
-		a = __ascii_towlower(*dst);
-		b = __ascii_towlower(*src);
-		dst++;
-		src++;
-	}
-	while (a && (a == b));
-
-	return (int)(a - b);
-}
-
 static bool StrEndsWithW(LPCWSTR a, LPCWSTR b)
 {
 	if (wcslen(a) >= wcslen(b))
@@ -110,7 +85,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 
 		wprintf(L"Information for entry #%d\n", uEntryId);
 		wprintf(L" - Name of entry: %s\n", pPropInfo->pszName);
-		wprintf(L" - Preferred capitalization: %s\n", pPropInfo->szPreferredCapitalization ? pPropInfo->szPreferredCapitalization : L"(N/A)");
+		wprintf(L" - All caps name: %s\n", pPropInfo->szPreferredCapitalization ? pPropInfo->szPreferredCapitalization : L"(N/A)");
 		wprintf(L" - Value: %d\n", pPropInfo->sEnumVal);
         wprintf(L" - Primitive type: %s\n", GetPrimValueName(pPropInfo->bPrimVal));
 		wprintf(L" - Supported OS: "); // intentional no \n
@@ -188,6 +163,14 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 			if (pPropInfo->bPrimVal == TMT_ENUMVAL && fSetLastVistedEnumVal && pPropInfo->iValidationVal != iLastVisitedEnumValue + 1)
 			{
 				wprintf(L"Item #%d does not follow sequence in enum definition \"%s\"\n", pPropInfo->iValidationVal, szLastEnumName);
+				uValidationFlags |= VF_BAD_ORDER;
+				nErrors++;
+			}
+			
+			// Make sure enum values align with the programmatic enum:
+			if (pPropInfo->bPrimVal == TMT_ENUMVAL && pPropInfo->sEnumVal != pPropInfo->iValidationVal)
+			{
+				wprintf(L"Item #%d deviates from programmatic sequence (expected index %d) in enum definition \"%s\"\n", pPropInfo->iValidationVal, pPropInfo->sEnumVal, szLastEnumName);
 				uValidationFlags |= VF_BAD_ORDER;
 				nErrors++;
 			}

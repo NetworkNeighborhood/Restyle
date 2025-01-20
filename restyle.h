@@ -44,6 +44,12 @@ typedef struct _VSRECORD
 	int cbData;
 } VSRECORD;
 
+typedef struct _INTLIST
+{
+	int iValueCount;
+	int iValues[1];
+} INTLIST;
+
 extern std::vector<std::wstring> g_classMap;
 extern std::vector<BASECLASS> g_baseClassMap;
 extern std::vector<VSVARIANT> g_variantMap;

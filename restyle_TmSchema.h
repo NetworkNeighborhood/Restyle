@@ -163,6 +163,7 @@ END_TM_ENUM()
 BEGIN_TM_PROPS()
 
     //---- primitive types ----
+    TM_PROP(200, TMT, ENUM, "Enum",         ENUM)
     TM_PROP(201, TMT, STRING, "String",     STRING)
     TM_PROP(202, TMT, INT, "Int",           INT)
     TM_PROP(203, TMT, BOOL, "Bool",         BOOL)

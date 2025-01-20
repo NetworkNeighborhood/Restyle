@@ -1,4 +1,11 @@
 #include "restyle.h"
+#include "util.h"
+
+#include "restyle_TmSchema.h"
+#define SCHEMA_STRINGS
+#include "restyle_TmSchema.h"
+
+#include "SchemaPriv.h"
 
 bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pcbOut)
 {
@@ -115,6 +122,31 @@ bool ParseVariantMap(void)
 		lpNewEntry += sizeof(WCHAR) * (lpEntry->dwLength + 1);
 		lpEntry = (LPVMAPENTRY)lpNewEntry;
 	}
+	
+	return true;
+}
+
+static LPCWSTR GetPrimValueName(BYTE bPrimVal)
+{
+	switch (bPrimVal)
+	{
+		case Restyle::TMT_ENUM: return L"Enum";
+		// case Restyle::TMT_ENUMDEF: return L"EnumDef";
+		// case Restyle::TMT_ENUMVAL: return L"EnumVal";
+        case Restyle::TMT_STRING: return L"String";
+        case Restyle::TMT_INT: return L"Int";
+        case Restyle::TMT_BOOL: return L"Bool";
+        case Restyle::TMT_COLOR: return L"Color";
+        case Restyle::TMT_MARGINS: return L"Margins";
+        case Restyle::TMT_FILENAME: return L"FileName";
+        case Restyle::TMT_SIZE: return L"Size";
+        case Restyle::TMT_POSITION: return L"Position";
+        case Restyle::TMT_RECT: return L"Rect";
+        case Restyle::TMT_FONT: return L"Font";
+        case Restyle::TMT_INTLIST: return L"IntList";
+	}
+
+	return L"Unknown primitive type";
 }
 
 bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
@@ -124,23 +156,101 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 	if (!GetBinaryResource(lpType, lpName, &lpResource, &dwSize))
 		return false;
 	
+	// We wanna parse the class map so we can see symbol values too:
+	ParseClassMap();
+	
+	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
+	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
+	
 	VSRECORD *lpRecord = (VSRECORD *)lpResource;
 	while ((long long)lpRecord < ((long long)lpResource + dwSize))
 	{
+		LPCWSTR szSymbolVal = L"Invalid symbol";
+		
+		for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+		{
+			if (pPropInfo[i].bPrimVal == Restyle::TMT_ENUMDEF)
+				continue;
+			
+			if (pPropInfo[i].bPrimVal == Restyle::TMT_ENUMVAL)
+				continue;
+			
+			if (pPropInfo[i].sEnumVal == lpRecord->lSymbolVal)
+			{
+				szSymbolVal = pPropInfo[i].pszName;
+			}
+		}
+		
+		LPCWSTR szClassName = L"Invalid class name pointer";
+		
+		if (lpRecord->iClass > 0 && lpRecord->iClass < g_classMap.size())
+		{
+			szClassName = g_classMap[lpRecord->iClass].c_str();
+		}
+		
+		LPCWSTR szType = GetPrimValueName(lpRecord->lType);
+		
+		LPCWSTR szPartName = L"(N/A)";
+		if (lpRecord->iPart == 0)
+		{
+			szPartName = L"Common properties";
+		}
+		else if (szClassName)
+		{
+			szPartName = L"Invalid part name";
+			LPWSTR szCompareName = new WCHAR[wcslen(szClassName) + wcslen(L"PARTS") + 1];
+			swprintf(szCompareName, wcslen(szClassName) + wcslen(L"PARTS") + 1, L"%sPARTS", szClassName);
+			bool fFoundPart = false;
+			int iPartIndex = 0;
+			
+			for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+			{
+				// First pass: find the class parts section
+				if (!fFoundPart)
+				{
+					if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMDEF)
+					{
+						continue;
+					}
+					
+					if (pPropInfo[i].pszName && AsciiStrCmpI(pPropInfo[i].pszName, szCompareName) == 0)
+					{
+						fFoundPart = true;
+						iPartIndex = i;
+					}
+				}
+				// Second pass: find the part name
+				else
+				{
+					if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMVAL)
+					{
+						// We've almost certainly moved on to a different enum/other definition
+						// if this is the case.
+						break;
+					}
+					
+					if (pPropInfo[i].sEnumVal == lpRecord->iPart)
+					{
+						szPartName = pPropInfo[i].pszName;
+					}
+				}
+			}
+		}
+		
 		wprintf(
 			L"====================\n"
-			L"lSymbolVal: %d\n"
-			L"lType: %d\n"
-			L"iClass: %d\n"
-			L"iPart: %d\n"
+			L"lSymbolVal: %d (%s)\n"
+			L"lType: %d (%s)\n"
+			L"iClass: %d (%s)\n"
+			L"iPart: %d (%s)\n"
 			L"iState: %d\n"
 			L"uResID: %u\n"
 			L"lReserved: %d\n"
 			L"cbData: %d\n",
-			lpRecord->lSymbolVal,
-			lpRecord->lType,
-			lpRecord->iClass,
-			lpRecord->iPart,
+			lpRecord->lSymbolVal, szSymbolVal, 
+			lpRecord->lType, szType,
+			lpRecord->iClass, szClassName,
+			lpRecord->iPart, szPartName,
 			lpRecord->iState,
 			lpRecord->uResID,
 			lpRecord->lReserved,
@@ -156,4 +266,6 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 
 		lpRecord = (VSRECORD *)((char *)lpRecord + dwNextOffset);
 	}
+	
+	return true;
 }

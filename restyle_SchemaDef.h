@@ -41,7 +41,7 @@ namespace Restyle
         LPCWSTR pszName;
         SHORT sEnumVal;
         BYTE bPrimVal;
-#ifdef DEBUG
+#if DEBUG
         LPCWSTR szPreferredCapitalization;
         int iValidationVal;
 #endif
