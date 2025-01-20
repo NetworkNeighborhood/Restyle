@@ -61,7 +61,8 @@ bool LoadThemeModule(LPWSTR pszPath)
 int wmain(int argc, wchar_t *argv[])
 {
 	// Header
-	wprintf(
+	fwprintf(
+		stderr,
 		L"restyle %u.%u.%u"
 #if DEBUG
 		L" (DEBUG BUILD)"
@@ -69,7 +70,7 @@ int wmain(int argc, wchar_t *argv[])
 		L"\n",
 		VER_MAJOR, VER_MINOR, VER_REVISION
 	);
-	wprintf(L"Built %s %s\n\n", __WDATE__, __WTIME__);
+	fwprintf(stderr, L"Built %s %s\n\n", __WDATE__, __WTIME__);
 
 #define IsArg(str, name)   0 == _wcsicmp(str, L"/" name)
 
