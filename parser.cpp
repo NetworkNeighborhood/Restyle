@@ -1,4 +1,6 @@
 #include "restyle.h"
+#include <uxtheme.h>
+#include "schemapriv.h"
 #include "util.h"
 
 #include "restyle_TmSchema.h"
@@ -258,6 +260,186 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 			lpRecord->lReserved,
 			lpRecord->cbData
 		);
+		
+		// Parse value:
+		if (lpRecord->cbData != 0)
+		{
+			switch (lpRecord->lType)
+			{
+				case Restyle::TMT_BOOL:
+				{
+					if (lpRecord->cbData < sizeof(BOOL))
+					{
+						break;
+					}
+					
+					BOOL fValue = *(BOOL *)((BYTE *)lpRecord + sizeof(VSRECORD));
+					wprintf(L"Value = %s\n", fValue ? L"true" : L"false");
+					break;
+				}
+				
+				case Restyle::TMT_INT:
+				case Restyle::TMT_SIZE:
+				{
+					if (lpRecord->cbData < sizeof(int))
+					{
+						break;
+					}
+					
+					int iValue = *(int *)((BYTE *)lpRecord + sizeof(VSRECORD));
+					wprintf(L"Value = %d\n", iValue);
+					break;
+				}
+				
+				case Restyle::TMT_ENUM:
+				{
+					if (lpRecord->cbData < sizeof(int))
+					{
+						break;
+					}
+					
+					int eValue = *(int *)((BYTE *)lpRecord + sizeof(VSRECORD));
+					LPCWSTR szEnumName = nullptr;
+					int iEnumDefOffset = 0;
+					LPCWSTR szValueName = nullptr;
+					
+					// First pass: find the enum name in the property table:
+					for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+					{
+						if (pPropInfo[i].bPrimVal == Restyle::TMT_ENUM && pPropInfo[i].sEnumVal == lpRecord->lSymbolVal)
+						{
+							szEnumName = pPropInfo[i].pszName;
+							break;
+						}
+					}
+					// Second pass: find the enum definition in the schema:
+					for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+					{
+						if (pPropInfo[i].bPrimVal == Restyle::TMT_ENUMDEF && AsciiStrCmpI(szEnumName, pPropInfo[i].pszName) == 0)
+						{
+							iEnumDefOffset = i + 1;
+							break;
+						}
+					}
+					// Third pass: find the enum value name:
+					for (int i = iEnumDefOffset; i < pSchemaInfo->iPropCount; i++)
+					{
+						if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMVAL)
+						{
+							break;
+						}
+						
+						if (pPropInfo[i].sEnumVal == eValue)
+						{
+							szValueName = pPropInfo[i].pszName;
+							break;
+						}
+					}
+					
+					if (szValueName)
+					{
+						wprintf(L"Value = %s (%d)\n", szValueName, eValue);
+					}
+					else
+					{
+						wprintf(L"Value = %d\n", eValue);
+					}
+					
+					break;
+				}
+				
+				case Restyle::TMT_STRING:
+				{
+					LPCWSTR szValue = (LPCWSTR)((BYTE *)lpRecord + sizeof(VSRECORD));
+					wprintf(L"Value = \"%s\"\n", szValue);
+					break;
+				}
+				
+				case Restyle::TMT_RECT:
+				{
+					if (lpRecord->cbData > sizeof(RECT))
+					{
+						break;
+					}
+					
+					RECT *lpRect = (RECT *)((BYTE *)lpRecord + sizeof(VSRECORD));
+					wprintf(L"Value = (LTRB){ %d, %d, %d, %d }\n", lpRect->left, lpRect->top, lpRect->right, lpRect->bottom);
+					break;
+				}
+				
+				case Restyle::TMT_MARGINS:
+				{
+					if (lpRecord->cbData > sizeof(MARGINS))
+					{
+						break;
+					}
+					
+					MARGINS *lpMargins = (MARGINS *)((BYTE *)lpRecord + sizeof(VSRECORD));
+					wprintf(L"Value = (LRTB){ %d, %d, %d, %d }\n", lpMargins->cxLeftWidth, lpMargins->cxRightWidth, lpMargins->cyTopHeight, lpMargins->cyBottomHeight);
+					break;
+				}
+				
+				case Restyle::TMT_INTLIST:
+				{
+					if (lpRecord->cbData > sizeof(int))
+					{
+						break;
+					}
+					
+					INTLIST *lpIntList = (INTLIST *)((BYTE *)lpRecord + sizeof(VSRECORD));
+					
+					// Revalidate:
+					if (lpRecord->cbData > sizeof(int) * lpIntList->iValueCount)
+					{
+						break;
+					}
+					
+					wprintf(L"Value = { ");
+					
+					for (int i = 0; i < lpIntList->iValueCount; i++)
+					{
+						wprintf(L"%d", lpIntList->iValues[i]);
+						
+						if (i != lpIntList->iValueCount - 1)
+						{
+							wprintf(L", ");
+						}
+					}
+					
+					wprintf(L" }\n");
+					break;
+				}
+				
+				case Restyle::TMT_POSITION:
+				{
+					if (lpRecord->cbData > sizeof(POINT))
+					{
+						break;
+					}
+					
+					POINT *lpPoint = (POINT *)((BYTE *)lpRecord + sizeof(VSRECORD));
+					wprintf(L"Value = (XY){ %d, %d }\n", lpPoint->x, lpPoint->y);
+					break;
+				}
+				
+				case Restyle::TMT_COLOR:
+				{
+					if (lpRecord->cbData > sizeof(COLORREF))
+					{
+						break;
+					}
+					
+					COLORREF crColor = *(COLORREF *)((BYTE *)lpRecord + sizeof(VSRECORD));
+					BYTE bRed = GetRValue(crColor);
+					BYTE bGreen = GetGValue(crColor);
+					BYTE bBlue = GetBValue(crColor);
+					BYTE bExtra = crColor >> 24;
+					
+					wprintf(L"Value = (RGBA){ %d, %d, %d, %d }\n", bRed, bGreen, bBlue, bExtra);
+					break;
+				}
+			}
+		}
 
 		DWORD dwNextOffset = 0;
 		if (!lpRecord->uResID)

@@ -382,7 +382,7 @@ BEGIN_TM_PROPS()
     TM_PROP(2428, TMT, ANIMATIONDELAY, "AnimationDelay", INT)
     TM_PROP(2429, TMT, GLOWINTENSITY, "GlowIntensity", INT)
     TM_PROP(2430, TMT, OPACITY, "Opacity", INT)
-    TM_PROP(2431, TMT, COLORIZATIONCOLOR, "ColorizationColor", COLOR) // is this really int?
+    TM_PROP(2431, TMT, COLORIZATIONCOLOR, "ColorizationColor", INT) // is this really int?
     TM_PROP(2432, TMT, COLORIZATIONOPACITY, "ColorizationOpacity", INT)
     TM_PROP(2433, TMT, MINDPI6, "MinDpi6", INT)
     TM_PROP(2434, TMT, MINDPI7, "MinDpi7", INT)
