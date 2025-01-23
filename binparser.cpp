@@ -352,6 +352,7 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 
 		// Give raw data on unknown type for debugging
 		default:
+		{
 			BYTE *lpData = (BYTE *)lpRecord + sizeof(VSRECORD);
 			std::wstring text;
 			WCHAR szTemp[3];
@@ -364,7 +365,10 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 			}
 			swprintf_s(pszBuffer, cchBufferMax, L"%s", text.c_str());
 			return ERecordValueStringResult::UnknownType;
+		}
 	}
+
+	return ERecordValueStringResult::Failed;
 }
 
 } // namespace BinParser

@@ -503,7 +503,53 @@ BEGIN_TM_PROPS()
     TM_PROP(5006, TMT, ANIMATIONDURATION, "AnimationDuration", INT)
     
     // ---- transition (v4 only) ----
-    TM_PROP(6000, TMT, TRANSITIONDURATIONS, "TransitionDurations", INT) // TODO: check type
+    TM_PROP(6000, TMT, TRANSITIONDURATIONS, "TransitionDurations", INTLIST) // TODO: check type
+
+    // --- extra values (v4 only) ----
+    // source: https://github.com/gix/PresentationTheme.Aero/blob/2c582016ffb9c6e74e65a18a42adf5c1a1f1e3d3/Source/UxThemeEx/UxThemeHelpers.h#L36
+    TM_PROP(5100, TMT, SIMPLIFIEDIMAGE, "SimplifiedImage", FILENAME)
+    TM_PROP(5101, TMT, HCSIMPLIFIEDIMAGE, "HcSimplifiedImage", FILENAME)
+    TM_PROP(5102, TMT, HCGLYPHBGCOLOR, "HcGlyphBgColor", COLOR)
+    TM_PROP(5107, TMT, TRANSPARENTMARGINS, "TransparentMargins", MARGINS)
+    TM_PROP(5110, TMT, HCBORDERCOLOR, "HcBorderColor", COLOR)
+    TM_PROP(5111, TMT, HCFILLCOLOR, "HcFillColor", COLOR)
+    TM_PROP(5112, TMT, HCTEXTCOLOR, "HcTextColor", COLOR)
+    TM_PROP(5113, TMT, HCEDGEHIGHLIGHTCOLOR, "HcEdgeHighlightColor", COLOR)
+    TM_PROP(5114, TMT, HCEDGESHADOWCOLOR, "HcEdgeShadowColor", COLOR)
+    TM_PROP(5115, TMT, HCTEXTBORDERCOLOR, "HcTextBorderColor", COLOR)
+    TM_PROP(5116, TMT, HCTEXTSHADOWCOLOR, "HcTextShadowColor", COLOR)
+    TM_PROP(5117, TMT, HCGLOWCOLOR, "HcGlowColor", COLOR)
+    TM_PROP(5118, TMT, HCHEADING1TEXTCOLOR, "HcHeading1TextColor", COLOR)
+    TM_PROP(5119, TMT, HCHEADING2TEXTCOLOR, "HcHeading2TextColor", COLOR)
+    TM_PROP(5120, TMT, HCBODYTEXTCOLOR, "HcBodyTextColor", COLOR)
+    TM_PROP(5121, TMT, HCGLYPHCOLOR, "HcGlyphColor", COLOR)
+    TM_PROP(5122, TMT, HCHOTTRACKING, "HcHotTracking", COLOR)
+    TM_PROP(5128, TMT, PPIPLATEAU1, "PpiPlateau1", INT) // ppi plateau known to be int
+    TM_PROP(5129, TMT, PPIPLATEAU2, "PpiPlateau2", INT)
+    TM_PROP(5130, TMT, PPIPLATEAU3, "PpiPlateau3", INT)
+    TM_PROP(5131, TMT, IMAGEPLATEAU1, "ImagePlateau1", FILENAME) // the rest of the plateaus however,
+    TM_PROP(5132, TMT, IMAGEPLATEAU2, "ImagePlateau2", FILENAME) // are not used afaik, so their types are unknown
+    TM_PROP(5133, TMT, IMAGEPLATEAU3, "ImagePlateau3", FILENAME)
+    TM_PROP(5134, TMT, GLYPHIMAGEPLATEAU1, "GlyphImagePlateau1", FILENAME)
+    TM_PROP(5135, TMT, GLYPHIMAGEPLATEAU2, "GlyphImagePlateau2", FILENAME)
+    TM_PROP(5136, TMT, GLYPHIMAGEPLATEAU3, "GlyphImagePlateau3", FILENAME)
+    TM_PROP(5137, TMT, CONTENTMARGINSPLATEAU1, "ContentMarginsPlateau1", MARGINS)
+    TM_PROP(5138, TMT, CONTENTMARGINSPLATEAU2, "ContentMarginsPlateau2", MARGINS)
+    TM_PROP(5139, TMT, CONTENTMARGINSPLATEAU3, "ContentMarginsPlateau3", MARGINS)
+    TM_PROP(5140, TMT, SIZINGMARGINSPLATEAU1, "SizingMarginsPlateau1", MARGINS)
+    TM_PROP(5141, TMT, SIZINGMARGINSPLATEAU2, "SizingMarginsPlateau2", MARGINS)
+    TM_PROP(5142, TMT, SIZINGMARGINSPLATEAU3, "SizingMarginsPlateau3", MARGINS)
+    TM_PROP(5143, TMT, COMPOSEDIMAGEFILE, "ComposedImageFile", FILENAME)
+    TM_PROP(5144, TMT, COMPOSEDIMAGEFILE1, "ComposedImageFile1", FILENAME)
+    TM_PROP(5145, TMT, COMPOSEDIMAGEFILE2, "ComposedImageFile2", FILENAME)
+    TM_PROP(5146, TMT, COMPOSEDIMAGEFILE3, "ComposedImageFile3", FILENAME)
+    TM_PROP(5147, TMT, COMPOSEDIMAGEFILE4, "ComposedImageFile4", FILENAME)
+    TM_PROP(5148, TMT, COMPOSEDIMAGEFILE5, "ComposedImageFile5", FILENAME)
+    TM_PROP(5149, TMT, COMPOSEDGLYPHIMAGEFILE, "ComposedGlyphImageFile", FILENAME)
+    TM_PROP(5152, TMT, COMPOSEDIMAGEFILE6, "ComposedImageFile6", FILENAME)
+    TM_PROP(5153, TMT, COMPOSEDIMAGEFILE7, "ComposedImageFile7", FILENAME)
+    TM_PROP(20000, TMT, ANIMATION, "Animation", INT)
+    TM_PROP(20100, TMT, TIMINGFUNCTION, "TimingFunction", INT)
     
     // ---- scaled background (v4 only) ---
     TM_PROP(7001, TMT, SCALEDBACKGROUND, "ScaledBackground", INT) // TODO: check type
@@ -511,7 +557,7 @@ BEGIN_TM_PROPS()
     // --- atlas (v4 only) ---
     TM_PROP(8000, TMT, ATLASIMAGE, "AtlasImage", FILENAME) // TODO: check type
     TM_PROP(8001, TMT, ATLASINPUTIMAGE, "AtlasInputImage", FILENAME) // TODO: check type
-    TM_PROP(8002, TMT, ATLASRECT, "AtlasRect", POSITION) // TODO: check type
+    TM_PROP(8002, TMT, ATLASRECT, "AtlasRect", RECT) // TODO: check type
 
 END_TM_PROPS()
 
