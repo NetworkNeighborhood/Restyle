@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClInclude Include="binparser.h" />
     <ClInclude Include="restyle.h" />
+    <ClInclude Include="restylebase.h" />
     <ClInclude Include="restyle_SchemaDef.h" />
     <ClInclude Include="restyle_TmSchema.h" />
     <ClInclude Include="SchemaPriv.h" />

@@ -1,6 +1,6 @@
 //#pragma once
 
-#include "restyle.h"
+#include "restylebase.h"
 
 #include "schemapriv.h" // TODO: restructure?
 

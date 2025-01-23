@@ -6,6 +6,10 @@
 namespace BinParser
 {
 
+std::vector<std::wstring> g_classMap;
+std::vector<BASECLASS> g_baseClassMap;
+std::vector<VSVARIANT> g_variantMap;
+
 bool ParseClassMap(void)
 {
 	LPVOID lpResource;
@@ -17,7 +21,7 @@ bool ParseClassMap(void)
 	while ((UINT_PTR)pszClass < ((UINT_PTR)lpResource + dwSize))
 	{
 		if (*pszClass)
-			classMap.push_back(pszClass);
+			g_classMap.push_back(pszClass);
 		pszClass += wcslen(pszClass) + 1;
 	}
 
@@ -37,7 +41,7 @@ bool ParseBaseClassMap(void)
 		if (lpBCMap->pdwItems[i] != UINT32_MAX)
 		{
 			BASECLASS bc = { lpBCMap->pdwItems[i], i };
-			baseClassMap.push_back(bc);
+			g_baseClassMap.push_back(bc);
 		}
 	}
 
@@ -75,7 +79,7 @@ bool ParseVariantMap(void)
 				break;
 			case 2:
 				var.colorName = pszBuffer;
-				variantMap.push_back(var);
+				g_variantMap.push_back(var);
 				ZeroMemory(&var, sizeof(var));
 				break;
 		}

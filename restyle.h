@@ -1,6 +1,5 @@
 #pragma once
-#include <windows.h>
-#include <uxtheme.h>
+#include "restylebase.h"
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -10,12 +9,6 @@
 
 extern WCHAR g_szThemeFilePath[MAX_PATH];
 extern HMODULE g_hThemeModule;
-
-#ifndef NDEBUG
-#define DEBUG 1
-#else
-#define DEBUG 0
-#endif
 
 #define VER_MAJOR       0
 #define VER_MINOR       1

@@ -92,7 +92,7 @@ int wmain(int argc, wchar_t *argv[])
 			return 1;
 
 		wprintf(L" ID -> Class name\n");
-		for (int i = 0; i < BinParser::classMap.size(); i++)
+		for (int i = 0; i < BinParser::g_classMap.size(); i++)
 		{
 			wprintf(L"% 3u -> '%s'\n", i, BinParser::NameOfClass(i));
 		}
@@ -102,9 +102,9 @@ int wmain(int argc, wchar_t *argv[])
 		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseClassMap() || !BinParser::ParseBaseClassMap())
 			return 1;
 
-		for (int i = 0; i < BinParser::baseClassMap.size(); i++)
+		for (int i = 0; i < BinParser::g_baseClassMap.size(); i++)
 		{
-			BASECLASS &bc = BinParser::baseClassMap.at(i);
+			BASECLASS &bc = BinParser::g_baseClassMap.at(i);
 			wprintf(
 				L"Base class:    '%s' (%u)\n"
 				L"Derived class: '%s' (%u)\n",
@@ -113,7 +113,7 @@ int wmain(int argc, wchar_t *argv[])
 				BinParser::NameOfClass(bc.dwDerivedId),
 				bc.dwDerivedId
 			);
-			if (i != (BinParser::baseClassMap.size() - 1))
+			if (i != (BinParser::g_baseClassMap.size() - 1))
 				wprintf(L"------------------------------\n");
 		}
 	}
@@ -122,9 +122,9 @@ int wmain(int argc, wchar_t *argv[])
 		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseVariantMap())
 			return 1;
 
-		for (int i = 0; i < BinParser::variantMap.size(); i++)
+		for (int i = 0; i < BinParser::g_variantMap.size(); i++)
 		{
-			VSVARIANT &var = BinParser::variantMap.at(i);
+			VSVARIANT &var = BinParser::g_variantMap.at(i);
 			wprintf(
 				L"Resource name: %s\n"
 				L"Size name:     %s\n"
@@ -133,7 +133,7 @@ int wmain(int argc, wchar_t *argv[])
 				var.sizeName.c_str(),
 				var.colorName.c_str()
 			);
-			if (i != (BinParser::variantMap.size() - 1))
+			if (i != (BinParser::g_variantMap.size() - 1))
 				wprintf(L"------------------------------\n");
 		}
 	}

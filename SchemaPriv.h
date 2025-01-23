@@ -1,6 +1,6 @@
 #pragma once
 
-#include "restyle.h"
+#include "restylebase.h"
 
 namespace Restyle
 {
