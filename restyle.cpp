@@ -1,12 +1,9 @@
 #include "restyle.h"
 #include "schematest.h"
+#include "binparser.h"
 
 WCHAR g_szThemeFilePath[MAX_PATH] = { 0 };
 HMODULE g_hThemeModule = NULL;
-
-std::vector<std::wstring> g_classMap;
-std::vector<BASECLASS> g_baseClassMap;
-std::vector<VSVARIANT> g_variantMap;
 
 void PrintUsage(void)
 {
@@ -91,43 +88,43 @@ int wmain(int argc, wchar_t *argv[])
 	}
 	else if (IsArg(argv[1], "pcmap"))
 	{
-		if (argc < 3 || !LoadThemeModule(argv[2]) || !ParseClassMap())
+		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseClassMap())
 			return 1;
 
 		wprintf(L" ID -> Class name\n");
-		for (int i = 0; i < g_classMap.size(); i++)
+		for (int i = 0; i < BinParser::classMap.size(); i++)
 		{
-			wprintf(L"% 3u -> '%s'\n", i, NameOfClass(i));
+			wprintf(L"% 3u -> '%s'\n", i, BinParser::NameOfClass(i));
 		}
 	}
 	else if (IsArg(argv[1], "pbcmap"))
 	{
-		if (argc < 3 || !LoadThemeModule(argv[2]) || !ParseClassMap() || !ParseBaseClassMap())
+		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseClassMap() || !BinParser::ParseBaseClassMap())
 			return 1;
 
-		for (int i = 0; i < g_baseClassMap.size(); i++)
+		for (int i = 0; i < BinParser::baseClassMap.size(); i++)
 		{
-			BASECLASS &bc = g_baseClassMap.at(i);
+			BASECLASS &bc = BinParser::baseClassMap.at(i);
 			wprintf(
 				L"Base class:    '%s' (%u)\n"
-				L"Derived class: '%s' (% u)\n",
-				NameOfClass(bc.dwBaseId),
+				L"Derived class: '%s' (%u)\n",
+				BinParser::NameOfClass(bc.dwBaseId),
 				bc.dwBaseId,
-				NameOfClass(bc.dwDerivedId),
+				BinParser::NameOfClass(bc.dwDerivedId),
 				bc.dwDerivedId
 			);
-			if (i != (g_baseClassMap.size() - 1))
+			if (i != (BinParser::baseClassMap.size() - 1))
 				wprintf(L"------------------------------\n");
 		}
 	}
 	else if (IsArg(argv[1], "pvmap"))
 	{
-		if (argc < 3 || !LoadThemeModule(argv[2]) || !ParseVariantMap())
+		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseVariantMap())
 			return 1;
 
-		for (int i = 0; i < g_variantMap.size(); i++)
+		for (int i = 0; i < BinParser::variantMap.size(); i++)
 		{
-			VSVARIANT &var = g_variantMap.at(i);
+			VSVARIANT &var = BinParser::variantMap.at(i);
 			wprintf(
 				L"Resource name: %s\n"
 				L"Size name:     %s\n"
@@ -136,13 +133,18 @@ int wmain(int argc, wchar_t *argv[])
 				var.sizeName.c_str(),
 				var.colorName.c_str()
 			);
-			if (i != (g_variantMap.size() - 1))
+			if (i != (BinParser::variantMap.size() - 1))
 				wprintf(L"------------------------------\n");
 		}
 	}
 	else if (IsArg(argv[1], "precord"))
 	{
-		if (argc < 5 || !LoadThemeModule(argv[2]) || !ParseRecordResource(argv[3], argv[4]))
+		auto callback = [](const VSRECORD *lpRecord) -> bool
+		{
+			return true;
+		};
+
+		if (argc < 5 || !LoadThemeModule(argv[2]) || !BinParser::ParseRecordResource(argv[3], argv[4], callback))
 			return 1;
 	}
 #if DEBUG

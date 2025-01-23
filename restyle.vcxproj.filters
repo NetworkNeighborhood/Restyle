@@ -33,6 +33,9 @@
     <ClInclude Include="util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="binparser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc">
@@ -43,7 +46,7 @@
     <ClCompile Include="restyle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parser.cpp">
+    <ClCompile Include="binparser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="schematest.cpp">

@@ -4,9 +4,6 @@
 
 #include "util.h"
 #include "schematest.h"
-#include "restyle_TmSchema.h"
-#define SCHEMA_STRINGS
-#include "restyle_TmSchema.h"
 
 using namespace Restyle;
 
