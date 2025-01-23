@@ -65,10 +65,14 @@ bool ParseVariantMap(void)
 
 		// if string exceeds bounds
 		if ((long long)lpEntry + sizeof(DWORD) + (sizeof(WCHAR) * lpEntry->dwLength) > ((long long)lpVMap + dwSize))
+		{
+			Log(L"WARNING: Variant name length exceeds bounds of variant map, stopping enumeration.\n", ELogLevel::Warning);
 			break;
+		}
 
-		LPWSTR pszBuffer = new WCHAR[lpEntry->dwLength];
+		LPWSTR pszBuffer = new WCHAR[lpEntry->dwLength + 1];
 		wcsncpy(pszBuffer, lpEntry->pszString, lpEntry->dwLength);
+		pszBuffer[lpEntry->dwLength] = L'\0';
 		switch (i % 3)
 		{
 			case 0:
@@ -96,8 +100,7 @@ bool ParseVariantMap(void)
 
 bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pfnCallback)
 {
-	if (!pfnCallback)
-		return false;
+	assert(pfnCallback);
 
 	LPVOID lpResource;
 	DWORD dwSize;
@@ -123,8 +126,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pf
 
 EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax)
 {
-	if (!lpRecord || !pszBuffer || !cchBufferMax)
-		return EParseResult::Fail;
+	assert(lpRecord && pszBuffer && cchBufferMax);
 
 	ZeroMemory(pszBuffer, cchBufferMax * sizeof(WCHAR));
 

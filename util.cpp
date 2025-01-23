@@ -70,14 +70,14 @@ bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pc
 	HRSRC hrSrc = FindResourceExW(g_hThemeModule, lpType, lpName, 0);
 	if (!hrSrc)
 	{
-		fwprintf(stderr, L"Fatal: Failed to find %s resource.\n", lpType);
+		Log(L"FATAL: Failed to find %s resource.\n", ELogLevel::Fatal, lpType);
 		return false;
 	}
 
 	HGLOBAL hGlobal = LoadResource(g_hThemeModule, hrSrc);
 	if (!hGlobal)
 	{
-		fwprintf(stderr, L"Fatal: Failed to load %s resource.\n", lpType);
+		Log(L"FATAL: Failed to load %s resource.\n", ELogLevel::Fatal, lpType);
 		return false;
 	}
 
@@ -85,7 +85,7 @@ bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pc
 	LPVOID lpBase = LockResource(hGlobal);
 	if (!dwSize || !lpBase)
 	{
-		fwprintf(stderr, L"Fatal: Failed to get address and/or size of %s resouce.\n", lpType);
+		Log(L"FATAL: Failed to get address and/or size of %s resouce.\n", ELogLevel::Fatal, lpType);
 		return false;
 	}
 

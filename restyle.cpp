@@ -37,7 +37,7 @@ bool LoadThemeModule(LPWSTR pszPath)
 {
 	if (!pszPath || !*pszPath)
 	{
-		fwprintf(stderr, L"Fatal: Empty file path\n");
+		Log(L"FATAL: Empty file path\n", ELogLevel::Fatal);
 		return false;
 	}
 
@@ -51,7 +51,7 @@ bool LoadThemeModule(LPWSTR pszPath)
 	g_hThemeModule = LoadLibraryExW(g_szThemeFilePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
 	if (!g_hThemeModule)
 	{
-		fwprintf(stderr, L"Fatal: Failed to load theme file");
+		Log(L"FATAL: Failed to load theme file\n", ELogLevel::Fatal);
 		return false;
 	}
 
@@ -69,7 +69,7 @@ int wmain(int argc, wchar_t *argv[])
 		L"\n",
 		VER_MAJOR, VER_MINOR, VER_REVISION
 	);
-	fwprintf(stderr, L"Built %s %s\n\n", __WDATE__, __WTIME__);
+	Log(L"Built %s %s\n\n", __WDATE__, __WTIME__);
 
 #define IsArg(str, name)   0 == _wcsicmp(str, L"/" name)
 
@@ -80,17 +80,23 @@ int wmain(int argc, wchar_t *argv[])
 	}
 	else if (IsArg(argv[1], "c"))
 	{
-		fwprintf(stderr, L"Fatal: Unimplemented action '/c'\n");
+		Log(L"FATAL: Unimplemented action '/c'\n", ELogLevel::Fatal);
 		return 1;
 	}
 	else if (IsArg(argv[1], "d"))
 	{
-		fwprintf(stderr, L"Fatal: Unimplemented action '/d'\n");
+		Log(L"FATAL: Unimplemented action '/d'\n", ELogLevel::Fatal);
 		return 1;
 	}
 	else if (IsArg(argv[1], "pcmap"))
 	{
-		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseClassMap())
+		if (argc < 3)
+		{
+			Log(L"Too few arguments\n", ELogLevel::Fatal);
+			return 1;
+		}
+
+		if (!LoadThemeModule(argv[2]) || !BinParser::ParseClassMap())
 			return 1;
 
 		wprintf(L" ID -> Class name\n");
@@ -101,7 +107,13 @@ int wmain(int argc, wchar_t *argv[])
 	}
 	else if (IsArg(argv[1], "pbcmap"))
 	{
-		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseClassMap() || !BinParser::ParseBaseClassMap())
+		if (argc < 3)
+		{
+			Log(L"Too few arguments\n", ELogLevel::Fatal);
+			return 1;
+		}
+
+		if (!LoadThemeModule(argv[2]) || !BinParser::ParseClassMap() || !BinParser::ParseBaseClassMap())
 			return 1;
 
 		for (int i = 0; i < BinParser::baseClassMap.size(); i++)
@@ -121,7 +133,13 @@ int wmain(int argc, wchar_t *argv[])
 	}
 	else if (IsArg(argv[1], "pvmap"))
 	{
-		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseVariantMap())
+		if (argc < 3)
+		{
+			Log(L"Too few arguments\n", ELogLevel::Fatal);
+			return 1;
+		}
+
+		if (!LoadThemeModule(argv[2]) || !BinParser::ParseVariantMap())
 			return 1;
 
 		for (int i = 0; i < BinParser::variantMap.size(); i++)
@@ -204,13 +222,13 @@ int wmain(int argc, wchar_t *argv[])
 			}
 			else if (!swscanf(argv[2], L"%i", &uEntryId))
 			{
-				Log(L"Fatal: Failed to parse integer argument for item ID.", ELogLevel::Fatal);
+				Log(L"FATAL: Failed to parse integer argument for item ID.", ELogLevel::Fatal);
 				return 0;
 			}
 		}
 		else if (argc > 3)
 		{
-			Log(L"Fatal: Too many arguments", ELogLevel::Fatal);
+			Log(L"FATAL: Too many arguments", ELogLevel::Fatal);
 			return 0;
 		}
 
@@ -220,7 +238,7 @@ int wmain(int argc, wchar_t *argv[])
 #endif
 	else
 	{
-		Log(L"Fatal: Unrecognized action '%s'\n", ELogLevel::Fatal, argv[1]);
+		Log(L"FATAL: Unrecognized action '%s'\n", ELogLevel::Fatal, argv[1]);
 		Log(L"Try `restyle /?` to see a list of actions\n");
 		return 1;
 	}

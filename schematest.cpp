@@ -100,7 +100,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 	}
 	else if (eMode == ESchemaTestMode::PrintEntryInfo)
 	{
-		fwprintf(stderr, L"Invalid entry name.\n");
+		Log(L"Invalid entry name.\n", ELogLevel::Fatal);
 	}
 	else if (eMode == ESchemaTestMode::ValidateSymbols)
 	{

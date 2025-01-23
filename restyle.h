@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
+#include <assert.h>
 #include "restyle_TmSchema.h"
 #define SCHEMA_STRINGS
 #include "restyle_TmSchema.h"
