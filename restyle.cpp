@@ -169,10 +169,18 @@ int wmain(int argc, wchar_t *argv[])
 			);
 
 			WCHAR szValueString[1024];
-			if (BinParser::GetRecordValueString(lpRecord, szValueString, 1024))
-				wprintf(L"Value: %s\n", szValueString);
-			else
-				wprintf(L"Value: !ERROR! FAILED TO GET VALUE AS STRING\n");
+			switch (BinParser::GetRecordValueString(lpRecord, szValueString, 1024))
+			{
+				case ERecordValueStringResult::Succeeded:
+					wprintf(L"Value: %s\n", szValueString);
+					break;
+				case ERecordValueStringResult::Failed:
+					wprintf(L"Value: !ERROR! FAILED TO GET VALUE AS STRING\n");
+					break;
+				case ERecordValueStringResult::UnknownType:
+					wprintf(L"Value: !ERROR! UNKNOWN VALUE TYPE\nRaw data: %s\n", szValueString);
+					break;
+			}
 			return true;
 		};
 

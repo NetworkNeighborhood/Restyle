@@ -63,22 +63,15 @@ bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pc
 
 LPCWSTR GetPrimValueName(BYTE bPrimVal)
 {
-	switch (bPrimVal)
+	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
+	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
+	for (int i = 0; i < pSchemaInfo->iPropCount; i++)
 	{
-		case Restyle::TMT_ENUM: return L"Enum";
-			// case Restyle::TMT_ENUMDEF: return L"EnumDef";
-			// case Restyle::TMT_ENUMVAL: return L"EnumVal";
-		case Restyle::TMT_STRING: return L"String";
-		case Restyle::TMT_INT: return L"Int";
-		case Restyle::TMT_BOOL: return L"Bool";
-		case Restyle::TMT_COLOR: return L"Color";
-		case Restyle::TMT_MARGINS: return L"Margins";
-		case Restyle::TMT_FILENAME: return L"FileName";
-		case Restyle::TMT_SIZE: return L"Size";
-		case Restyle::TMT_POSITION: return L"Position";
-		case Restyle::TMT_RECT: return L"Rect";
-		case Restyle::TMT_FONT: return L"Font";
-		case Restyle::TMT_INTLIST: return L"IntList";
+		if (bPrimVal == pPropInfo[i].bPrimVal
+		&& bPrimVal == pPropInfo[i].sEnumVal)
+		{
+			return pPropInfo[i].pszName;
+		}
 	}
 
 	return L"Unknown primitive type";

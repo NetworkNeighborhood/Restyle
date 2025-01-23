@@ -38,7 +38,20 @@ typedef struct _VSRECORD
 	int cbData;
 } VSRECORD;
 
+typedef struct _FLOATLIST
+{
+	int iValueCount;      // number of values in iValues
+	float flValues[MAX_INTLIST_COUNT];
+} FLOATLIST, *PFLOATLIST;
+
 typedef bool (*RecordParserCallback)(const VSRECORD *lpRecord);
+
+enum class ERecordValueStringResult
+{
+	Succeeded = 0,
+	UnknownType = 1,
+	Failed = 2,
+};
 
 namespace BinParser
 {
@@ -58,5 +71,5 @@ namespace BinParser
 		return L"Invalid class name";
 	}
 
-	bool GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax);
+	ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax);
 };

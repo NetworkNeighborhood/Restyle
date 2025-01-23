@@ -27,29 +27,6 @@ enum ValidationFlags : UINT
 	VF_BAD_ORDER = 2,
 };
 
-static LPCWSTR GetPrimValueName(BYTE bPrimVal)
-{
-	switch (bPrimVal)
-	{
-		case TMT_ENUM: return L"Enum";
-		case TMT_ENUMDEF: return L"EnumDef";
-		case TMT_ENUMVAL: return L"EnumVal";
-        case TMT_STRING: return L"String";
-        case TMT_INT: return L"Int";
-        case TMT_BOOL: return L"Bool";
-        case TMT_COLOR: return L"Color";
-        case TMT_MARGINS: return L"Margins";
-        case TMT_FILENAME: return L"FileName";
-        case TMT_SIZE: return L"Size";
-        case TMT_POSITION: return L"Position";
-        case TMT_RECT: return L"Rect";
-        case TMT_FONT: return L"Font";
-        case TMT_INTLIST: return L"IntList";
-	}
-
-	return L"Unknown primitive type";
-}
-
 static bool StrEndsWithW(LPCWSTR a, LPCWSTR b)
 {
 	if (wcslen(a) >= wcslen(b))
