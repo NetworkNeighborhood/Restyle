@@ -85,7 +85,7 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 
 		wprintf(L"Information for entry #%d\n", uEntryId);
 		wprintf(L" - Name of entry: %s\n", pPropInfo->pszName);
-		wprintf(L" - All caps name: %s\n", pPropInfo->szPreferredCapitalization ? pPropInfo->szPreferredCapitalization : L"(N/A)");
+		wprintf(L" - Programmatic name base: %s\n", pPropInfo->szProgrammaticName ? pPropInfo->szProgrammaticName : L"(N/A)");
 		wprintf(L" - Value: %d\n", pPropInfo->sEnumVal);
         wprintf(L" - Primitive type: %s\n", GetPrimValueName(pPropInfo->bPrimVal));
 		wprintf(L" - Supported OS: "); // intentional no \n
@@ -148,13 +148,13 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 			{
 				iLastVisitedEnumValue = 0;
 				fSetLastVistedEnumVal = false;
-				szLastEnumName = pPropInfo->szPreferredCapitalization ? pPropInfo->szPreferredCapitalization : pPropInfo->pszName;
+				szLastEnumName = pPropInfo->pszName;
 			}
 			
 			// Make sure our preferred capitalization names don't differ from the programmatic identifiers:
-			if (pPropInfo->szPreferredCapitalization && AsciiStrCmpI(pPropInfo->pszName, pPropInfo->szPreferredCapitalization) != 0)
+			if (pPropInfo->szProgrammaticName && AsciiStrCmpI(pPropInfo->pszName, pPropInfo->szProgrammaticName) != 0)
 			{
-				wprintf(L"Mismatch for pair { \"%s\", \"%s\" }\n", pPropInfo->pszName, pPropInfo->szPreferredCapitalization);
+				wprintf(L"Mismatch for pair { \"%s\", \"%s\" }\n", pPropInfo->pszName, pPropInfo->szProgrammaticName);
 				uValidationFlags |= VF_CAPITALIZATION_MISMATCH;
 				nErrors++;
 			}

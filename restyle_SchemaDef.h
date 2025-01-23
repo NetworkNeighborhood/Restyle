@@ -42,7 +42,7 @@ namespace Restyle
         SHORT sEnumVal;
         BYTE bPrimVal;
 #if DEBUG
-        LPCWSTR szPreferredCapitalization;
+        LPCWSTR szProgrammaticName;
         int iValidationVal;
 #endif
         ESupportedOS supportedOS;
@@ -125,20 +125,20 @@ namespace Restyle
         { L##prefCap, prefix##_##name, TMT_ENUMVAL  },
 #else
     #define BEGIN_TM_CLASS_PARTS(name)    \
-            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, 0, ESupportedOS::All },
+            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, L#name L"PARTS", 0, ESupportedOS::All },
     #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
-            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, nullptr, 0, supportedOS },
+            { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, L#name L"PARTS", 0, supportedOS },
     #define BEGIN_TM_PART_STATES(name)    \
-            { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF },
+            { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF, L#name L"STATES" },
 
     #define TM_PROP(val, prefix, name, prefCap, primval) \
-            { L#name, prefix##_##name, TMT_##primval, L##prefCap, val },
+            { L##prefCap, prefix##_##name, TMT_##primval, L#name, val },
     #define TM_PART(val, prefix, name, prefCap) \
-            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap, val },
+            { L##prefCap, prefix##_##name, TMT_ENUMVAL, L#name, val },
     #define TM_STATE(val, prefix, name, prefCap) \
-            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap, val },
+            { L##prefCap, prefix##_##name, TMT_ENUMVAL, L#name, val },
     #define TM_ENUM(val, prefix, name, prefCap) \
-            { L#name, prefix##_##name, TMT_ENUMVAL, L##prefCap, val  },
+            { L##prefCap, prefix##_##name, TMT_ENUMVAL, L#name, val  },
 #endif
 
 

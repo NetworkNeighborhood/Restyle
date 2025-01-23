@@ -357,7 +357,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 				
 				case Restyle::TMT_RECT:
 				{
-					if (lpRecord->cbData > sizeof(RECT))
+					if (lpRecord->cbData != sizeof(RECT))
 					{
 						break;
 					}
@@ -369,7 +369,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 				
 				case Restyle::TMT_MARGINS:
 				{
-					if (lpRecord->cbData > sizeof(MARGINS))
+					if (lpRecord->cbData != sizeof(MARGINS))
 					{
 						break;
 					}
@@ -381,7 +381,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 				
 				case Restyle::TMT_INTLIST:
 				{
-					if (lpRecord->cbData > sizeof(int))
+					if (lpRecord->cbData < sizeof(int))
 					{
 						break;
 					}
@@ -389,7 +389,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 					INTLIST *lpIntList = (INTLIST *)((BYTE *)lpRecord + sizeof(VSRECORD));
 					
 					// Revalidate:
-					if (lpRecord->cbData > sizeof(int) * lpIntList->iValueCount)
+					if (lpRecord->cbData < sizeof(int) + sizeof(int) * lpIntList->iValueCount)
 					{
 						break;
 					}
@@ -412,7 +412,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 				
 				case Restyle::TMT_POSITION:
 				{
-					if (lpRecord->cbData > sizeof(POINT))
+					if (lpRecord->cbData != sizeof(POINT))
 					{
 						break;
 					}
@@ -424,7 +424,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName)
 				
 				case Restyle::TMT_COLOR:
 				{
-					if (lpRecord->cbData > sizeof(COLORREF))
+					if (lpRecord->cbData != sizeof(COLORREF))
 					{
 						break;
 					}
