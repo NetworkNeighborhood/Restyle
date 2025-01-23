@@ -10,6 +10,13 @@
 extern WCHAR g_szThemeFilePath[MAX_PATH];
 extern HMODULE g_hThemeModule;
 
+enum class EParseResult
+{
+	Success = 0,
+	UnknownType = 1,
+	Fail = 2,
+};
+
 #define VER_MAJOR       0
 #define VER_MINOR       1
 #define VER_REVISION    0
@@ -20,3 +27,6 @@ extern HMODULE g_hThemeModule;
 
 #define __WDATE__  WIDE1(__DATE__)
 #define __WTIME__  WIDE1(__TIME__)
+
+// Buffer size for a base-10 representation of an int32
+#define INT_STRING_CCH_MAX  sizeof("-2147483648")

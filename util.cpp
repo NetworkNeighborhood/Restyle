@@ -1,5 +1,38 @@
 #include "util.h"
 
+void LogV(LPCWSTR pszFormat, ELogLevel eLevel, va_list args)
+{
+	// colorize
+	switch (eLevel)
+	{
+		case ELogLevel::Warning:
+			fwprintf(stderr, L"\x1b[1;33m");
+			break;
+		case ELogLevel::Fatal:
+			fwprintf(stderr, L"\x1b[1;31m");
+			break;
+	}
+
+	vfwprintf(stderr, pszFormat, args);
+
+	// reset color
+	fwprintf(stderr, L"\x1b[0m");
+}
+
+void Log(LPCWSTR pszFormat, ELogLevel eLevel, ...)
+{
+	va_list args;
+	va_start(args, eLevel);
+	LogV(pszFormat, eLevel, args);
+}
+
+void Log(LPCWSTR pszFormat, ...)
+{
+	va_list args;
+	va_start(args, pszFormat);
+	LogV(pszFormat, ELogLevel::Info, args);
+}
+
 #define __ascii_towlower(c)  ( (((c) >= L'A') && ((c) <= L'Z')) ? ((c) - L'A' + L'a') : (c) )
 int AsciiStrCmpI(const WCHAR *dst, const WCHAR *src)
 {
@@ -73,8 +106,7 @@ LPCWSTR GetPrimValueName(BYTE bPrimVal)
 			return pPropInfo[i].pszName;
 		}
 	}
-
-	return L"Unknown primitive type";
+	return nullptr;
 }
 
 LPCWSTR GetSymbolValueName(long lSymbolVal)

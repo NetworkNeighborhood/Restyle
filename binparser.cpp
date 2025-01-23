@@ -121,10 +121,10 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pf
 	return true;
 }
 
-ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax)
+EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax)
 {
 	if (!lpRecord || !pszBuffer || !cchBufferMax)
-		return ERecordValueStringResult::Failed;
+		return EParseResult::Fail;
 
 	ZeroMemory(pszBuffer, cchBufferMax * sizeof(WCHAR));
 
@@ -133,38 +133,38 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 		case Restyle::TMT_BOOL:
 		{
 			if (lpRecord->cbData < sizeof(BOOL))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			BOOL fValue = *(BOOL *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			swprintf_s(pszBuffer, cchBufferMax, L"%s", fValue ? L"true" : L"false");
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		case Restyle::TMT_INT:
 		case Restyle::TMT_SIZE:
 		{
 			if (lpRecord->cbData < sizeof(int))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			int iValue = *(int *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			swprintf_s(pszBuffer, cchBufferMax, L"%d", iValue);
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		case Restyle::TMT_FLOAT:
 		{
 			if (lpRecord->cbData < sizeof(float))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			float flValue = *(float *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			swprintf_s(pszBuffer, cchBufferMax, L"%f", flValue);
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		case Restyle::TMT_ENUM:
 		{
 			if (lpRecord->cbData < sizeof(int))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
 			const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
@@ -210,22 +210,30 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 			if (szValueName)
 			{
 				swprintf_s(pszBuffer, cchBufferMax, L"%s", szValueName);
-				return ERecordValueStringResult::Succeeded;
+				return EParseResult::Success;
 			}
-			return ERecordValueStringResult::Failed;
+			return EParseResult::Fail;
 		}
 
 		case Restyle::TMT_STRING:
 		{
-			LPCWSTR szValue = (LPCWSTR)((BYTE *)lpRecord + sizeof(VSRECORD));
-			swprintf_s(pszBuffer, cchBufferMax, L"%s", szValue);
-			return ERecordValueStringResult::Succeeded;
+			// Documentation properties use resources for strings
+			if (lpRecord->uResID)
+			{
+				LoadStringW(g_hThemeModule, lpRecord->uResID, pszBuffer, cchBufferMax);
+			}
+			else
+			{
+				LPCWSTR szValue = (LPCWSTR)((BYTE *)lpRecord + sizeof(VSRECORD));
+				swprintf_s(pszBuffer, cchBufferMax, L"%s", szValue);
+			}
+			return EParseResult::Success;
 		}
 
 		case Restyle::TMT_RECT:
 		{
 			if (lpRecord->cbData != sizeof(RECT))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			RECT *lpRect = (RECT *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			swprintf_s(
@@ -235,13 +243,13 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 				lpRect->right,
 				lpRect->bottom
 			);
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		case Restyle::TMT_MARGINS:
 		{
 			if (lpRecord->cbData != sizeof(MARGINS))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			MARGINS *lpMargins = (MARGINS *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			swprintf_s(
@@ -251,7 +259,7 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 				lpMargins->cyTopHeight,
 				lpMargins->cyBottomHeight
 			);
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		// Not used prior to V4 as far as I can tell.
@@ -260,12 +268,12 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 		case Restyle::TMT_INTLIST:
 		{
 			if (lpRecord->cbData < sizeof(int))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			INTLIST *lpIntList = (INTLIST *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			// Revalidate:
 			if (lpRecord->cbData < sizeof(int) + sizeof(int) * lpIntList->iValueCount)
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 			
 			std::wstring text;
 			for (int i = 0; i < lpIntList->iValueCount; i++)
@@ -275,18 +283,18 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 					text += L", ";
 			}
 			swprintf_s(pszBuffer, cchBufferMax, L"%s", text.c_str());
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		case Restyle::TMT_FLOATLIST:
 		{
 			if (lpRecord->cbData < sizeof(float))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			FLOATLIST *lpIntList = (FLOATLIST *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			// Revalidate:
 			if (lpRecord->cbData < sizeof(int) + sizeof(float) * lpIntList->iValueCount)
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			std::wstring text;
 			for (int i = 0; i < lpIntList->iValueCount; i++)
@@ -296,7 +304,7 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 					text += L", ";
 			}
 			swprintf_s(pszBuffer, cchBufferMax, L"%s", text.c_str());
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		case Restyle::TMT_POSITION:
@@ -312,14 +320,14 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 		case Restyle::TMT_COLOR:
 		{
 			if (lpRecord->cbData != sizeof(COLORREF))
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			COLORREF crColor = *(COLORREF *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			BYTE bRed = GetRValue(crColor);
 			BYTE bGreen = GetGValue(crColor);
 			BYTE bBlue = GetBValue(crColor);
 			swprintf_s(pszBuffer, cchBufferMax, L"%d %d %d", bRed, bGreen, bBlue);
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		// The data on fonts and filenames is worthless afaik. The header member
@@ -329,10 +337,10 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 			// Contradictory to my statement above, UXTheme
 			// fails if data size is less than 0x5C.
 			if (!lpRecord->uResID || lpRecord->cbData < 0x5C)
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			LoadStringW(g_hThemeModule, lpRecord->uResID, pszBuffer, cchBufferMax);
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		// FileName = IMAGE resource
@@ -341,13 +349,13 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 		case Restyle::TMT_DISKSTREAM:
 		{
 			if (!lpRecord->uResID)
-				return ERecordValueStringResult::Failed;
+				return EParseResult::Fail;
 
 			// You can't really print an image into a Win32 console window.
 			// There will need to be a special handler for this when decompiling
 			// themes!
 			wcscpy_s(pszBuffer, cchBufferMax, L"<binary data>");
-			return ERecordValueStringResult::Succeeded;
+			return EParseResult::Success;
 		}
 
 		// Give raw data on unknown type for debugging
@@ -364,11 +372,11 @@ ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR p
 					text += L" ";
 			}
 			swprintf_s(pszBuffer, cchBufferMax, L"%s", text.c_str());
-			return ERecordValueStringResult::UnknownType;
+			return EParseResult::UnknownType;
 		}
 	}
 
-	return ERecordValueStringResult::Failed;
+	return EParseResult::Fail;
 }
 
 } // namespace BinParser

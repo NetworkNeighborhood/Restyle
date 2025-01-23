@@ -61,8 +61,7 @@ bool LoadThemeModule(LPWSTR pszPath)
 int wmain(int argc, wchar_t *argv[])
 {
 	// Header
-	fwprintf(
-		stderr,
+	Log(
 		L"restyle %u.%u.%u"
 #if DEBUG
 		L" (DEBUG BUILD)"
@@ -158,9 +157,9 @@ int wmain(int argc, wchar_t *argv[])
 				L"uResID: %u\n"
 				L"lReserved: %d\n"
 				L"cbData: %d\n",
-				lpRecord->lSymbolVal, szSymbolVal,
+				lpRecord->lSymbolVal, szSymbolVal ? szSymbolVal : L"Unknown symbol",
 				lpRecord->lType, szType,
-				lpRecord->iClass, szClassName,
+				lpRecord->iClass, szClassName ? szClassName : L"Invalid class name",
 				lpRecord->iPart, szPartName,
 				lpRecord->iState,
 				lpRecord->uResID,
@@ -171,13 +170,13 @@ int wmain(int argc, wchar_t *argv[])
 			WCHAR szValueString[1024];
 			switch (BinParser::GetRecordValueString(lpRecord, szValueString, 1024))
 			{
-				case ERecordValueStringResult::Succeeded:
+				case EParseResult::Success:
 					wprintf(L"Value: %s\n", szValueString);
 					break;
-				case ERecordValueStringResult::Failed:
+				case EParseResult::Fail:
 					wprintf(L"Value: !ERROR! FAILED TO GET VALUE AS STRING\n");
 					break;
-				case ERecordValueStringResult::UnknownType:
+				case EParseResult::UnknownType:
 					wprintf(L"Value: !ERROR! UNKNOWN VALUE TYPE\nRaw data: %s\n", szValueString);
 					break;
 			}
@@ -205,13 +204,13 @@ int wmain(int argc, wchar_t *argv[])
 			}
 			else if (!swscanf(argv[2], L"%i", &uEntryId))
 			{
-				fwprintf(stderr, L"Fatal: Failed to parse integer argument for item ID.");
+				Log(L"Fatal: Failed to parse integer argument for item ID.", ELogLevel::Fatal);
 				return 0;
 			}
 		}
 		else if (argc > 3)
 		{
-			fwprintf(stderr, L"Fatal: Too many arguments");
+			Log(L"Fatal: Too many arguments", ELogLevel::Fatal);
 			return 0;
 		}
 
@@ -221,8 +220,8 @@ int wmain(int argc, wchar_t *argv[])
 #endif
 	else
 	{
-		fwprintf(stderr, L"Fatal: Unrecognized action '%s'\n", argv[1]);
-		fwprintf(stderr, L"Try `restyle /?` to see a list of actions\n");
+		Log(L"Fatal: Unrecognized action '%s'\n", ELogLevel::Fatal, argv[1]);
+		Log(L"Try `restyle /?` to see a list of actions\n", ELogLevel::Fatal);
 		return 1;
 	}
 

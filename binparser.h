@@ -46,13 +46,6 @@ typedef struct _FLOATLIST
 
 typedef bool (*RecordParserCallback)(const VSRECORD *lpRecord);
 
-enum class ERecordValueStringResult
-{
-	Succeeded = 0,
-	UnknownType = 1,
-	Failed = 2,
-};
-
 namespace BinParser
 {
 	extern std::vector<std::wstring> classMap;
@@ -68,8 +61,8 @@ namespace BinParser
 	{
 		if (id < classMap.size())
 			return classMap.at(id).c_str();
-		return L"Invalid class name";
+		return nullptr;
 	}
 
-	ERecordValueStringResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax);
+	::EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax);
 };

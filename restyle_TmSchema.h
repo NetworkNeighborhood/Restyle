@@ -192,6 +192,7 @@ BEGIN_TM_PROPS()
 #define TMT_FIRST_RCSTRING_NAME   TMT_DISPLAYNAME
 #define TMT_LAST_RCSTRING_NAME    TMT_DESCRIPTION
 
+    TM_PROP(600, TMT, NAME, "Name",                  STRING)
     TM_PROP(601, TMT, DISPLAYNAME, "DisplayName",    STRING)
     TM_PROP(602, TMT, TOOLTIP, "ToolTip",            STRING)
     TM_PROP(603, TMT, COMPANY, "Company",            STRING)
