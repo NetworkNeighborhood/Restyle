@@ -504,7 +504,7 @@ BEGIN_TM_PROPS()
     TM_PROP(5006, TMT, ANIMATIONDURATION, "AnimationDuration", INT)
     
     // ---- transition (v4 only) ----
-    TM_PROP(6000, TMT, TRANSITIONDURATIONS, "TransitionDurations", INTLIST) // TODO: check type
+    TM_PROP(6000, TMT, TRANSITIONDURATIONS, "TransitionDurations", INTLIST)
 
     // --- extra values (v4 only) ----
     // source: https://github.com/gix/PresentationTheme.Aero/blob/2c582016ffb9c6e74e65a18a42adf5c1a1f1e3d3/Source/UxThemeEx/UxThemeHelpers.h#L36
@@ -558,7 +558,7 @@ BEGIN_TM_PROPS()
     // --- atlas (v4 only) ---
     TM_PROP(8000, TMT, ATLASIMAGE, "AtlasImage", FILENAME) // TODO: check type
     TM_PROP(8001, TMT, ATLASINPUTIMAGE, "AtlasInputImage", FILENAME) // TODO: check type
-    TM_PROP(8002, TMT, ATLASRECT, "AtlasRect", RECT) // TODO: check type
+    TM_PROP(8002, TMT, ATLASRECT, "AtlasRect", RECT)
 
 END_TM_PROPS()
 
