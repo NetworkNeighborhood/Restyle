@@ -221,7 +221,7 @@ int wmain(int argc, wchar_t *argv[])
 	else
 	{
 		Log(L"Fatal: Unrecognized action '%s'\n", ELogLevel::Fatal, argv[1]);
-		Log(L"Try `restyle /?` to see a list of actions\n", ELogLevel::Fatal);
+		Log(L"Try `restyle /?` to see a list of actions\n");
 		return 1;
 	}
 
