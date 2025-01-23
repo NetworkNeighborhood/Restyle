@@ -1,6 +1,7 @@
 #include "restyle.h"
 #include "schematest.h"
 #include "binparser.h"
+#include "util.h"
 
 WCHAR g_szThemeFilePath[MAX_PATH] = { 0 };
 HMODULE g_hThemeModule = NULL;
@@ -53,6 +54,8 @@ bool LoadThemeModule(LPWSTR pszPath)
 		fwprintf(stderr, L"Fatal: Failed to load theme file");
 		return false;
 	}
+
+	return true;
 }
 
 int wmain(int argc, wchar_t *argv[])
@@ -92,7 +95,7 @@ int wmain(int argc, wchar_t *argv[])
 			return 1;
 
 		wprintf(L" ID -> Class name\n");
-		for (int i = 0; i < BinParser::g_classMap.size(); i++)
+		for (int i = 0; i < BinParser::classMap.size(); i++)
 		{
 			wprintf(L"% 3u -> '%s'\n", i, BinParser::NameOfClass(i));
 		}
@@ -102,9 +105,9 @@ int wmain(int argc, wchar_t *argv[])
 		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseClassMap() || !BinParser::ParseBaseClassMap())
 			return 1;
 
-		for (int i = 0; i < BinParser::g_baseClassMap.size(); i++)
+		for (int i = 0; i < BinParser::baseClassMap.size(); i++)
 		{
-			BASECLASS &bc = BinParser::g_baseClassMap.at(i);
+			BASECLASS &bc = BinParser::baseClassMap.at(i);
 			wprintf(
 				L"Base class:    '%s' (%u)\n"
 				L"Derived class: '%s' (%u)\n",
@@ -113,7 +116,7 @@ int wmain(int argc, wchar_t *argv[])
 				BinParser::NameOfClass(bc.dwDerivedId),
 				bc.dwDerivedId
 			);
-			if (i != (BinParser::g_baseClassMap.size() - 1))
+			if (i != (BinParser::baseClassMap.size() - 1))
 				wprintf(L"------------------------------\n");
 		}
 	}
@@ -122,9 +125,9 @@ int wmain(int argc, wchar_t *argv[])
 		if (argc < 3 || !LoadThemeModule(argv[2]) || !BinParser::ParseVariantMap())
 			return 1;
 
-		for (int i = 0; i < BinParser::g_variantMap.size(); i++)
+		for (int i = 0; i < BinParser::variantMap.size(); i++)
 		{
-			VSVARIANT &var = BinParser::g_variantMap.at(i);
+			VSVARIANT &var = BinParser::variantMap.at(i);
 			wprintf(
 				L"Resource name: %s\n"
 				L"Size name:     %s\n"
@@ -133,7 +136,7 @@ int wmain(int argc, wchar_t *argv[])
 				var.sizeName.c_str(),
 				var.colorName.c_str()
 			);
-			if (i != (BinParser::g_variantMap.size() - 1))
+			if (i != (BinParser::variantMap.size() - 1))
 				wprintf(L"------------------------------\n");
 		}
 	}
@@ -141,10 +144,42 @@ int wmain(int argc, wchar_t *argv[])
 	{
 		auto callback = [](const VSRECORD *lpRecord) -> bool
 		{
+			LPCWSTR szSymbolVal = GetSymbolValueName(lpRecord->lSymbolVal);
+			LPCWSTR szType = GetPrimValueName(lpRecord->lType);
+			LPCWSTR szClassName = BinParser::NameOfClass(lpRecord->iClass);
+			LPCWSTR szPartName = GetPartName(szClassName, lpRecord->iPart);
+			wprintf(
+				L"========================================\n"
+				L"lSymbolVal: %d (%s)\n"
+				L"lType: %d (%s)\n"
+				L"iClass: %d (%s)\n"
+				L"iPart: %d (%s)\n"
+				L"iState: %d\n"
+				L"uResID: %u\n"
+				L"lReserved: %d\n"
+				L"cbData: %d\n",
+				lpRecord->lSymbolVal, szSymbolVal,
+				lpRecord->lType, szType,
+				lpRecord->iClass, szClassName,
+				lpRecord->iPart, szPartName,
+				lpRecord->iState,
+				lpRecord->uResID,
+				lpRecord->lReserved,
+				lpRecord->cbData
+			);
+
+			WCHAR szValueString[1024];
+			if (BinParser::GetRecordValueString(lpRecord, szValueString, 1024))
+				wprintf(L"Value: %s\n", szValueString);
+			else
+				wprintf(L"Value: !ERROR! FAILED TO GET VALUE AS STRING\n");
 			return true;
 		};
 
-		if (argc < 5 || !LoadThemeModule(argv[2]) || !BinParser::ParseRecordResource(argv[3], argv[4], callback))
+		if (argc < 5
+		|| !LoadThemeModule(argv[2])
+		|| !BinParser::ParseClassMap() // Need class names for debug output
+		|| !BinParser::ParseRecordResource(argv[3], argv[4], callback))
 			return 1;
 	}
 #if DEBUG

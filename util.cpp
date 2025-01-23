@@ -83,3 +83,70 @@ LPCWSTR GetPrimValueName(BYTE bPrimVal)
 
 	return L"Unknown primitive type";
 }
+
+LPCWSTR GetSymbolValueName(long lSymbolVal)
+{
+	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
+	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
+	for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+	{
+		if (pPropInfo[i].bPrimVal == Restyle::TMT_ENUMDEF
+		|| pPropInfo[i].bPrimVal == Restyle::TMT_ENUMVAL)
+			continue;
+
+		if (pPropInfo[i].sEnumVal == lSymbolVal)
+			return pPropInfo[i].pszName;
+	}
+
+	return L"Unknown symbol";
+}
+
+LPCWSTR GetPartName(LPCWSTR pszClassName, int iPart)
+{
+	if (iPart == 0)
+		return L"Common properties";
+
+	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
+	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
+
+	LPCWSTR pszPartName = L"Unknown part";
+	int iCompareLength = wcslen(pszClassName) + wcslen(L"PARTS") + 1;
+	LPWSTR pszCompareName = new WCHAR[iCompareLength];
+	swprintf(pszCompareName, iCompareLength, L"%sPARTS", pszClassName);
+	bool fFoundPart = false;
+	int iPartIndex = 0;
+
+	for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+	{
+		// First pass: find the class parts section
+		if (!fFoundPart)
+		{
+			if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMDEF)
+				continue;
+
+			if (pPropInfo[i].pszName && 0 == AsciiStrCmpI(pPropInfo[i].pszName, pszCompareName))
+			{
+				fFoundPart = true;
+				iPartIndex = i;
+			}
+		}
+		// Second pass: find the part name
+		else
+		{
+			if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMVAL)
+			{
+				// We've almost certainly moved on to a different enum/other definition
+				// if this is the case.
+				break;
+			}
+
+			if (pPropInfo[i].sEnumVal == iPart)
+			{
+				pszPartName = pPropInfo[i].pszName;
+			}
+		}
+	}
+
+	delete[] pszCompareName;
+	return pszPartName;
+}

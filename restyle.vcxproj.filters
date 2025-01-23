@@ -27,13 +27,16 @@
     <ClInclude Include="SchemaPriv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="schematest.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="binparser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="restylebase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="schematest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -42,9 +42,9 @@ typedef bool (*RecordParserCallback)(const VSRECORD *lpRecord);
 
 namespace BinParser
 {
-	extern std::vector<std::wstring> g_classMap;
-	extern std::vector<BASECLASS> g_baseClassMap;
-	extern std::vector<VSVARIANT> g_variantMap;
+	extern std::vector<std::wstring> classMap;
+	extern std::vector<BASECLASS> baseClassMap;
+	extern std::vector<VSVARIANT> variantMap;
 
 	bool ParseClassMap(void);
 	bool ParseBaseClassMap(void);
@@ -53,8 +53,10 @@ namespace BinParser
 
 	inline LPCWSTR NameOfClass(UINT id)
 	{
-		if (g_classMap.size() < id)
-			return g_classMap.at(id).c_str();
+		if (id < classMap.size())
+			return classMap.at(id).c_str();
 		return L"Invalid class name";
 	}
+
+	bool GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax);
 };

@@ -6,9 +6,9 @@
 namespace BinParser
 {
 
-std::vector<std::wstring> g_classMap;
-std::vector<BASECLASS> g_baseClassMap;
-std::vector<VSVARIANT> g_variantMap;
+std::vector<std::wstring> classMap;
+std::vector<BASECLASS> baseClassMap;
+std::vector<VSVARIANT> variantMap;
 
 bool ParseClassMap(void)
 {
@@ -21,7 +21,7 @@ bool ParseClassMap(void)
 	while ((UINT_PTR)pszClass < ((UINT_PTR)lpResource + dwSize))
 	{
 		if (*pszClass)
-			g_classMap.push_back(pszClass);
+			classMap.push_back(pszClass);
 		pszClass += wcslen(pszClass) + 1;
 	}
 
@@ -41,7 +41,7 @@ bool ParseBaseClassMap(void)
 		if (lpBCMap->pdwItems[i] != UINT32_MAX)
 		{
 			BASECLASS bc = { lpBCMap->pdwItems[i], i };
-			g_baseClassMap.push_back(bc);
+			baseClassMap.push_back(bc);
 		}
 	}
 
@@ -79,7 +79,7 @@ bool ParseVariantMap(void)
 				break;
 			case 2:
 				var.colorName = pszBuffer;
-				g_variantMap.push_back(var);
+				variantMap.push_back(var);
 				ZeroMemory(&var, sizeof(var));
 				break;
 		}
@@ -119,6 +119,180 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pf
 	}
 	
 	return true;
+}
+
+bool GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax)
+{
+	if (!lpRecord || !pszBuffer || !cchBufferMax)
+		return false;
+
+	ZeroMemory(pszBuffer, cchBufferMax * sizeof(WCHAR));
+
+	switch (lpRecord->lType)
+	{
+		case Restyle::TMT_BOOL:
+		{
+			if (lpRecord->cbData < sizeof(BOOL))
+				return false;
+
+			BOOL fValue = *(BOOL *)((BYTE *)lpRecord + sizeof(VSRECORD));
+			swprintf_s(pszBuffer, cchBufferMax, L"%s", fValue ? L"true" : L"false");
+			return true;
+		}
+
+		case Restyle::TMT_INT:
+		case Restyle::TMT_SIZE:
+		{
+			if (lpRecord->cbData < sizeof(int))
+				return false;
+
+			int iValue = *(int *)((BYTE *)lpRecord + sizeof(VSRECORD));
+			swprintf_s(pszBuffer, cchBufferMax, L"%d", iValue);
+			return true;
+		}
+
+		case Restyle::TMT_ENUM:
+		{
+			if (lpRecord->cbData < sizeof(int))
+				return false;
+
+			const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
+			const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
+
+			int eValue = *(int *)((BYTE *)lpRecord + sizeof(VSRECORD));
+			LPCWSTR szEnumName = nullptr;
+			int iEnumDefOffset = 0;
+			LPCWSTR szValueName = nullptr;
+
+			// First pass: find the enum name in the property table:
+			for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+			{
+				if (pPropInfo[i].bPrimVal == Restyle::TMT_ENUM && pPropInfo[i].sEnumVal == lpRecord->lSymbolVal)
+				{
+					szEnumName = pPropInfo[i].pszName;
+					break;
+				}
+			}
+			// Second pass: find the enum definition in the schema:
+			for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+			{
+				if (pPropInfo[i].bPrimVal == Restyle::TMT_ENUMDEF && 0 == AsciiStrCmpI(szEnumName, pPropInfo[i].pszName))
+				{
+					iEnumDefOffset = i + 1;
+					break;
+				}
+			}
+			// Third pass: find the enum value name:
+			for (int i = iEnumDefOffset; i < pSchemaInfo->iPropCount; i++)
+			{
+				if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMVAL)
+				{
+					break;
+				}
+
+				if (pPropInfo[i].sEnumVal == eValue)
+				{
+					szValueName = pPropInfo[i].pszName;
+					break;
+				}
+			}
+
+			if (szValueName)
+			{
+				swprintf_s(pszBuffer, cchBufferMax, L"%s", szValueName);
+				return true;
+			}
+			return false;
+		}
+
+		case Restyle::TMT_STRING:
+		{
+			LPCWSTR szValue = (LPCWSTR)((BYTE *)lpRecord + sizeof(VSRECORD));
+			swprintf_s(pszBuffer, cchBufferMax, L"%s", szValue);
+			return true;
+		}
+
+		case Restyle::TMT_RECT:
+		{
+			if (lpRecord->cbData != sizeof(RECT))
+				return false;
+
+			RECT *lpRect = (RECT *)((BYTE *)lpRecord + sizeof(VSRECORD));
+			swprintf_s(
+				pszBuffer, cchBufferMax, L"%d, %d, %d, %d",
+				lpRect->left,
+				lpRect->top,
+				lpRect->right,
+				lpRect->bottom
+			);
+			return true;
+		}
+
+		case Restyle::TMT_MARGINS:
+		{
+			if (lpRecord->cbData != sizeof(MARGINS))
+				return false;
+
+			MARGINS *lpMargins = (MARGINS *)((BYTE *)lpRecord + sizeof(VSRECORD));
+			swprintf_s(
+				pszBuffer, cchBufferMax, L"%d, %d, %d, %d",
+				lpMargins->cxLeftWidth,
+				lpMargins->cxRightWidth,
+				lpMargins->cyTopHeight,
+				lpMargins->cyBottomHeight
+			);
+			return true;
+		}
+
+		// Not used prior to V4 as far as I can tell.
+		// But it existed and had syntax in V3, so this copies that,
+		// as do the other types.
+		case Restyle::TMT_INTLIST:
+		{
+			if (lpRecord->cbData < sizeof(int))
+				return false;
+
+			INTLIST *lpIntList = (INTLIST *)((BYTE *)lpRecord + sizeof(VSRECORD));
+			// Revalidate:
+			if (lpRecord->cbData < sizeof(int) + sizeof(int) * lpIntList->iValueCount)
+				return false;
+			
+			std::wstring text;
+			for (int i = 0; i < lpIntList->iValueCount; i++)
+			{
+				text += lpIntList->iValues[i];
+				if (i != lpIntList->iValueCount - 1)
+					text += L", ";
+			}
+			swprintf_s(pszBuffer, cchBufferMax, L"%s", text.c_str());
+			return true;
+		}
+
+		case Restyle::TMT_POSITION:
+		{
+			if (lpRecord->cbData != sizeof(POINT))
+				break;
+
+			POINT *lpPoint = (POINT *)((BYTE *)lpRecord + sizeof(VSRECORD));
+			swprintf_s(pszBuffer, cchBufferMax, L"Value = (XY){ %d, %d }\n", lpPoint->x, lpPoint->y);
+			break;
+		}
+
+		case Restyle::TMT_COLOR:
+		{
+			if (lpRecord->cbData != sizeof(COLORREF))
+				return false;
+
+			COLORREF crColor = *(COLORREF *)((BYTE *)lpRecord + sizeof(VSRECORD));
+			BYTE bRed = GetRValue(crColor);
+			BYTE bGreen = GetGValue(crColor);
+			BYTE bBlue = GetBValue(crColor);
+			swprintf_s(pszBuffer, cchBufferMax, L"%d %d %d", bRed, bGreen, bBlue);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 } // namespace BinParser
