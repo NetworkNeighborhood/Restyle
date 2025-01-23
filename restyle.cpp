@@ -92,7 +92,7 @@ int wmain(int argc, wchar_t *argv[])
 	{
 		if (argc < 3)
 		{
-			Log(L"Too few arguments\n", ELogLevel::Fatal);
+			Log(L"FATAL: Too few arguments\n", ELogLevel::Fatal);
 			return 1;
 		}
 
@@ -109,7 +109,7 @@ int wmain(int argc, wchar_t *argv[])
 	{
 		if (argc < 3)
 		{
-			Log(L"Too few arguments\n", ELogLevel::Fatal);
+			Log(L"FATAL: Too few arguments\n", ELogLevel::Fatal);
 			return 1;
 		}
 
@@ -135,7 +135,7 @@ int wmain(int argc, wchar_t *argv[])
 	{
 		if (argc < 3)
 		{
-			Log(L"Too few arguments\n", ELogLevel::Fatal);
+			Log(L"FATAL: Too few arguments\n", ELogLevel::Fatal);
 			return 1;
 		}
 
