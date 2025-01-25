@@ -312,11 +312,11 @@ EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DW
 		case Restyle::TMT_POSITION:
 		{
 			if (lpRecord->cbData != sizeof(POINT))
-				break;
+				return EParseResult::Fail;
 
 			POINT *lpPoint = (POINT *)((BYTE *)lpRecord + sizeof(VSRECORD));
-			swprintf_s(pszBuffer, cchBufferMax, L"Value = (XY){ %d, %d }\n", lpPoint->x, lpPoint->y);
-			break;
+			swprintf_s(pszBuffer, cchBufferMax, L"%d %d", lpPoint->x, lpPoint->y);
+			return EParseResult::Success;
 		}
 
 		case Restyle::TMT_COLOR:
