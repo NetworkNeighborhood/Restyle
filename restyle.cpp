@@ -2,6 +2,7 @@
 #include "schematest.h"
 #include "binparser.h"
 #include "util.h"
+#include "file.h"
 
 WCHAR g_szThemeFilePath[MAX_PATH] = { 0 };
 HMODULE g_hThemeModule = NULL;
@@ -26,6 +27,8 @@ void PrintUsage(void)
 		L"    /pschema: Prints restyle schema debug information.\n"
 		L"        Usage: restyle /pschema <number>\n"
 		L"               restyle /pschema /validate (Validates schema capitalizations.)\n"
+		L"    /pfile: Prints a file.\n"
+		L"        Usage: restyle /pfile C:\\path\\to\\file.ini\n"
 #endif
 		L"\n"
 		L"Options:\n"
@@ -234,6 +237,53 @@ int wmain(int argc, wchar_t *argv[])
 
 		TestSchema(eTestMode, uEntryId);
 		return 1;
+	}
+	else if (IsArg(argv[1], "pfile"))
+	{
+		if (argc != 3)
+		{
+			Log(L"FATAL: Invalid number of arguments.", ELogLevel::Fatal);
+			return 0;
+		}
+
+		LPCWSTR szPath = argv[2];
+
+		CSimpleFile file;
+		HRESULT hr = file.Open(szPath);
+
+		if (FAILED(hr))
+		{
+			Log(L"FATAL: Failed to open file.", ELogLevel::Fatal);
+			return 0;
+		}
+
+		DWORD dwFileSizeHigh = 0;
+		DWORD dwFileSize = file.GetFileSize(&dwFileSizeHigh);
+
+		if (dwFileSize == 0)
+		{
+			Log(L"FATAL: Failed to get file size.", ELogLevel::Fatal);
+			return 0;
+		}
+
+		LPWSTR szString = new WCHAR[dwFileSize + sizeof('\n')];
+
+		DWORD cbRead = 0;
+		hr = file.Read((void *)szString, dwFileSize * sizeof(WCHAR) + sizeof(L'\n'), &cbRead);
+
+		if (FAILED(hr))
+		{
+			delete[] szString;
+			Log(L"FATAL: Failed to read file.", ELogLevel::Fatal);
+			return 0;
+		}
+
+		Log(L"%s", szString, ELogLevel::Info);
+
+		if (szString)
+		{
+			delete[] szString;
+		}
 	}
 #endif
 	else
