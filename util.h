@@ -17,4 +17,5 @@ int AsciiStrCmpI(const WCHAR *dst, const WCHAR *src);
 bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pcbOut);
 
 LPCWSTR GetSymbolValueName(long lSymbolVal);
+EParseResult GetPropName(long lPartId, BYTE bPrimType, std::unique_ptr<WCHAR[]> &pszResult);
 LPCWSTR GetPartName(LPCWSTR pszClassName, int iPart);

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
+#include <memory>
 #include <assert.h>
 #include "restyle_TmSchema.h"
 #define SCHEMA_STRINGS
@@ -17,6 +18,9 @@ enum class EParseResult
 	UnknownType = 1,
 	Fail = 2,
 };
+
+#define PARSE_FAILED(r)                 (r == EParseResult::Fail)
+#define RETURN_IF_PARSE_FAILED(r, v)    if (PARSE_FAILED(r)) return v
 
 #define VER_MAJOR       0
 #define VER_MINOR       1

@@ -164,7 +164,9 @@ int wmain(int argc, wchar_t *argv[])
 	{
 		auto callback = [](const VSRECORD *lpRecord) -> bool
 		{
-			LPCWSTR szSymbolVal = GetSymbolValueName(lpRecord->lSymbolVal);
+			std::unique_ptr<WCHAR[]> pszPropName;
+			EParseResult result = GetPropName(lpRecord->lSymbolVal, lpRecord->lType, pszPropName);
+			RETURN_IF_PARSE_FAILED(result, false);
 			LPCWSTR szType = GetSymbolValueName(lpRecord->lType);
 			LPCWSTR szClassName = BinParser::NameOfClass(lpRecord->iClass);
 			LPCWSTR szPartName = GetPartName(szClassName, lpRecord->iPart);
@@ -178,8 +180,8 @@ int wmain(int argc, wchar_t *argv[])
 				L"uResID: %u\n"
 				L"lReserved: %d\n"
 				L"cbData: %d\n",
-				lpRecord->lSymbolVal, szSymbolVal ? szSymbolVal : L"Unknown symbol",
-				lpRecord->lType, szType,
+				lpRecord->lSymbolVal, pszPropName.get(),
+				lpRecord->lType, szType ? szType : L"Unknown type",
 				lpRecord->iClass, szClassName ? szClassName : L"Invalid class name",
 				lpRecord->iPart, szPartName,
 				lpRecord->iState,

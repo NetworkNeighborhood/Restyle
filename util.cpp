@@ -107,8 +107,70 @@ LPCWSTR GetSymbolValueName(long lSymbolVal)
 		if (pPropInfo[i].sEnumVal == lSymbolVal)
 			return pPropInfo[i].pszName;
 	}
+	return nullptr;
+}
 
-	return L"Unknown symbol";
+LPCWSTR GetSymbolValueNameFromEnum(LPCWSTR pszEnumName, long lSymbolVal)
+{
+	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
+	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
+	bool fFoundEnum = false;
+	int iEnumIndex = 0;
+	for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+	{
+		// First pass: find the class parts section
+		if (!fFoundEnum)
+		{
+			if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMDEF)
+				continue;
+
+			if (pPropInfo[i].pszName && 0 == AsciiStrCmpI(pPropInfo[i].pszName, pszEnumName))
+			{
+				fFoundEnum = true;
+				iEnumIndex = i;
+			}
+		}
+		// Second pass: find the part name
+		else
+		{
+			if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMVAL)
+				// We've almost certainly moved on to a different enum/other definition
+				// if this is the case.
+				break;
+
+			if (pPropInfo[i].sEnumVal == lSymbolVal)
+				return pPropInfo[i].pszName;
+		}
+	}
+	return nullptr;
+}
+
+EParseResult GetPropName(long lPartId, BYTE bPrimType, std::unique_ptr<WCHAR[]> &pszResult)
+{
+	LPCWSTR pszPropName = GetSymbolValueName(lPartId);
+	if (pszPropName)
+	{
+		int length = wcslen(pszPropName) + 1;
+		pszResult = std::make_unique<WCHAR[]>(length);
+		wcscpy_s(pszResult.get(), length, pszPropName);
+		return EParseResult::Success;
+	}
+
+	LPCWSTR pszTypeName = GetSymbolValueName(bPrimType);
+	if (!pszTypeName)
+	{
+		Log(L"FATAL: Unrecognized primitive type %d\n", ELogLevel::Fatal, bPrimType);
+		return EParseResult::Fail;
+	}
+
+	WCHAR szPartId[INT_STRING_CCH_MAX];
+	swprintf_s(szPartId, L"%d", lPartId);
+
+	int length = sizeof("*Prop<>") + wcslen(szPartId) + wcslen(pszTypeName);
+	pszResult = std::make_unique<WCHAR[]>(length);
+	swprintf_s(pszResult.get(), length, L"*Prop%d<%s>", lPartId, pszTypeName);
+	Log(L"WARNING: Unrecognized property %d, using fallback name '%s'\n", ELogLevel::Warning, lPartId, pszResult.get());
+	return EParseResult::UnknownType;
 }
 
 LPCWSTR GetPartName(LPCWSTR pszClassName, int iPart)
