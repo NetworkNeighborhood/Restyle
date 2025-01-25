@@ -165,7 +165,7 @@ int wmain(int argc, wchar_t *argv[])
 		auto callback = [](const VSRECORD *lpRecord) -> bool
 		{
 			LPCWSTR szSymbolVal = GetSymbolValueName(lpRecord->lSymbolVal);
-			LPCWSTR szType = GetPrimValueName(lpRecord->lType);
+			LPCWSTR szType = GetSymbolValueName(lpRecord->lType);
 			LPCWSTR szClassName = BinParser::NameOfClass(lpRecord->iClass);
 			LPCWSTR szPartName = GetPartName(szClassName, lpRecord->iPart);
 			wprintf(

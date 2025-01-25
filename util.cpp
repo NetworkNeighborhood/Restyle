@@ -94,21 +94,6 @@ bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pc
 	return true;
 }
 
-LPCWSTR GetPrimValueName(BYTE bPrimVal)
-{
-	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
-	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
-	for (int i = 0; i < pSchemaInfo->iPropCount; i++)
-	{
-		if (bPrimVal == pPropInfo[i].bPrimVal
-		&& bPrimVal == pPropInfo[i].sEnumVal)
-		{
-			return pPropInfo[i].pszName;
-		}
-	}
-	return nullptr;
-}
-
 LPCWSTR GetSymbolValueName(long lSymbolVal)
 {
 	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
