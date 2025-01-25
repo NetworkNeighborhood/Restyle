@@ -173,52 +173,64 @@ EParseResult GetPropName(long lPartId, BYTE bPrimType, std::unique_ptr<WCHAR[]> 
 	return EParseResult::UnknownType;
 }
 
-LPCWSTR GetPartName(LPCWSTR pszClassName, int iPart)
+// Gets the part and state name for a class name and part and state IDs.
+// Getting state name is reliant on having the part name, so this is one
+// function.
+EParseResult GetPartAndStateName(
+	LPCWSTR pszClassName,
+	std::unique_ptr<WCHAR[]> &pszPartName,
+	std::unique_ptr<WCHAR[]> &pszStateName,
+	int iPart,
+	int iState
+)
 {
-	if (iPart == 0)
-		return L"Common properties";
+	assert(pszClassName);
 
-	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
-	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
-
-	LPCWSTR pszPartName = L"Unknown part";
-	int iCompareLength = wcslen(pszClassName) + wcslen(L"PARTS") + 1;
-	LPWSTR pszCompareName = new WCHAR[iCompareLength];
-	swprintf(pszCompareName, iCompareLength, L"%sPARTS", pszClassName);
-	bool fFoundPart = false;
-	int iPartIndex = 0;
-
-	for (int i = 0; i < pSchemaInfo->iPropCount; i++)
+	int iEnumLength = wcslen(pszClassName) + sizeof("PARTS");
+	std::unique_ptr<WCHAR[]> pszEnumName = std::make_unique<WCHAR[]>(iEnumLength);
+	swprintf_s(pszEnumName.get(), iEnumLength, L"%sPARTS", pszClassName);
+	LPCWSTR pszTempPartName = GetSymbolValueNameFromEnum(pszEnumName.get(), iPart);
+	if (pszTempPartName)
 	{
-		// First pass: find the class parts section
-		if (!fFoundPart)
-		{
-			if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMDEF)
-				continue;
+		int iPartLength = wcslen(pszTempPartName) + 1;
+		pszPartName = std::make_unique<WCHAR[]>(iPartLength);
+		wcscpy_s(pszPartName.get(), iPartLength, pszTempPartName);
 
-			if (pPropInfo[i].pszName && 0 == AsciiStrCmpI(pPropInfo[i].pszName, pszCompareName))
-			{
-				fFoundPart = true;
-				iPartIndex = i;
-			}
-		}
-		// Second pass: find the part name
-		else
+		iEnumLength = wcslen(pszTempPartName) + sizeof("STATES");
+		pszEnumName = std::make_unique<WCHAR[]>(iEnumLength);
+		swprintf_s(pszEnumName.get(), iEnumLength, L"%sSTATES", pszTempPartName);
+		LPCWSTR pszTempStateName = GetSymbolValueNameFromEnum(pszEnumName.get(), iState);
+		if (pszTempStateName)
 		{
-			if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMVAL)
-			{
-				// We've almost certainly moved on to a different enum/other definition
-				// if this is the case.
-				break;
-			}
-
-			if (pPropInfo[i].sEnumVal == iPart)
-			{
-				pszPartName = pPropInfo[i].pszName;
-			}
+			int iStateLength = wcslen(pszTempStateName) + 1;
+			pszStateName = std::make_unique<WCHAR[]>(iStateLength);
+			wcscpy_s(pszStateName.get(), iStateLength, pszTempStateName);
+			return EParseResult::Success;
 		}
 	}
 
-	delete[] pszCompareName;
-	return pszPartName;
+	WCHAR szStateId[INT_STRING_CCH_MAX];
+	swprintf_s(szStateId, L"%d", iState);
+	int iStateLength = sizeof("*State") + wcslen(szStateId);
+	pszStateName = std::make_unique<WCHAR[]>(iStateLength);
+	swprintf_s(pszStateName.get(), iStateLength, L"*State%d", iState);
+	Log(
+		L"WARNING: Unrecognized state %d for class '%s' part %d, using fallback name '%s'\n",
+		ELogLevel::Warning, iState, pszClassName, iPart, pszStateName.get()
+	);
+
+	if (!pszTempPartName)
+	{
+		WCHAR szPartId[INT_STRING_CCH_MAX];
+		swprintf_s(szPartId, L"%d", iPart);
+		int iPartLength = sizeof("*Part") + wcslen(szPartId);
+		pszPartName = std::make_unique<WCHAR[]>(iPartLength);
+		swprintf_s(pszPartName.get(), iPartLength, L"*Part%d", iPart);
+		Log(
+			L"WARNING: Unrecognized part %d for class '%s', using fallback name '%s'\n",
+			ELogLevel::Warning, iPart, pszClassName, pszPartName.get()
+		);
+	}
+
+	return EParseResult::UnknownType;
 }

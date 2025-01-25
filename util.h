@@ -18,4 +18,10 @@ bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pc
 
 LPCWSTR GetSymbolValueName(long lSymbolVal);
 EParseResult GetPropName(long lPartId, BYTE bPrimType, std::unique_ptr<WCHAR[]> &pszResult);
-LPCWSTR GetPartName(LPCWSTR pszClassName, int iPart);
+EParseResult GetPartAndStateName(
+	LPCWSTR pszClassName,
+	std::unique_ptr<WCHAR[]> &pszPartName,
+	std::unique_ptr<WCHAR[]> &pszStateName,
+	int iPart,
+	int iState
+);

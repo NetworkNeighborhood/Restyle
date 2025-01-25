@@ -164,27 +164,28 @@ int wmain(int argc, wchar_t *argv[])
 	{
 		auto callback = [](const VSRECORD *lpRecord) -> bool
 		{
-			std::unique_ptr<WCHAR[]> pszPropName;
+			std::unique_ptr<WCHAR[]> pszPropName, pszPartName, pszStateName;
 			EParseResult result = GetPropName(lpRecord->lSymbolVal, lpRecord->lType, pszPropName);
 			RETURN_IF_PARSE_FAILED(result, false);
-			LPCWSTR szType = GetSymbolValueName(lpRecord->lType);
-			LPCWSTR szClassName = BinParser::NameOfClass(lpRecord->iClass);
-			LPCWSTR szPartName = GetPartName(szClassName, lpRecord->iPart);
+			LPCWSTR pszType = GetSymbolValueName(lpRecord->lType);
+			LPCWSTR pszClassName = BinParser::NameOfClass(lpRecord->iClass);
+			result = GetPartAndStateName(pszClassName, pszPartName, pszStateName, lpRecord->iPart, lpRecord->iState);
+			RETURN_IF_PARSE_FAILED(result, false);
 			wprintf(
 				L"========================================\n"
 				L"lSymbolVal: %d (%s)\n"
 				L"lType: %d (%s)\n"
 				L"iClass: %d (%s)\n"
 				L"iPart: %d (%s)\n"
-				L"iState: %d\n"
+				L"iState: %d (%s)\n"
 				L"uResID: %u\n"
 				L"lReserved: %d\n"
 				L"cbData: %d\n",
 				lpRecord->lSymbolVal, pszPropName.get(),
-				lpRecord->lType, szType ? szType : L"Unknown type",
-				lpRecord->iClass, szClassName ? szClassName : L"Invalid class name",
-				lpRecord->iPart, szPartName,
-				lpRecord->iState,
+				lpRecord->lType, pszType ? pszType : L"Unknown type",
+				lpRecord->iClass, pszClassName ? pszClassName : L"Invalid class name",
+				lpRecord->iPart, (lpRecord->iPart == 0) ? L"Common" : pszPartName.get(),
+				lpRecord->iState, (lpRecord->iState == 0) ? L"Common" : pszStateName.get(),
 				lpRecord->uResID,
 				lpRecord->lReserved,
 				lpRecord->cbData
