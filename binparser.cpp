@@ -35,12 +35,22 @@ bool ParseBaseClassMap(void)
 	if (!GetBinaryResource(L"BCMAP", L"BCMAP", (LPVOID *)&lpBCMap, &dwSize))
 		return false;
 
+	DWORD dwGlobalsId = IDOfClass(L"globals");
+	if (dwGlobalsId == (DWORD)-1)
+	{
+		Log(L"FATAL: Missing 'globals' class. Cannot parse base class map.\n", ELogLevel::Fatal);
+		return false;
+	}
+
 	for (DWORD i = 0; i < lpBCMap->dwLength; i++)
 	{
 		// 0xFFFFFFFF means no inherited class
-		if (lpBCMap->pdwItems[i] != UINT32_MAX)
+		if (lpBCMap->pdwItems[i] != (DWORD)-1)
 		{
-			BASECLASS bc = { lpBCMap->pdwItems[i], i };
+			BASECLASS bc = { 
+				dwGlobalsId + lpBCMap->pdwItems[i],
+				dwGlobalsId + i
+			};
 			baseClassMap.push_back(bc);
 		}
 	}
@@ -122,6 +132,25 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pf
 	}
 	
 	return true;
+}
+
+LPCWSTR NameOfClass(UINT id)
+{
+	if (id < classMap.size())
+		return classMap.at(id).c_str();
+	return nullptr;
+}
+
+DWORD IDOfClass(LPCWSTR pszClassName)
+{
+	assert(pszClassName);
+	size_t length = classMap.size();
+	for (size_t i = 0; i < length; i++)
+	{
+		if (0 == _wcsicmp(classMap.at(i).c_str(), pszClassName))
+			return i;
+	}
+	return (DWORD)-1;
 }
 
 EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax)

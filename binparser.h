@@ -56,13 +56,8 @@ namespace BinParser
 	bool ParseBaseClassMap(void);
 	bool ParseVariantMap(void);
 	bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pfnCallback);
-
-	inline LPCWSTR NameOfClass(UINT id)
-	{
-		if (id < classMap.size())
-			return classMap.at(id).c_str();
-		return nullptr;
-	}
+	LPCWSTR NameOfClass(UINT id);
+	DWORD IDOfClass(LPCWSTR pszClassName);
 
 	::EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax);
 };
