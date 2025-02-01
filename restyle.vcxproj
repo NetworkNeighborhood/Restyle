@@ -129,10 +129,12 @@
   <ItemGroup>
     <ClInclude Include="binparser.h" />
     <ClInclude Include="file.h" />
+    <ClInclude Include="iniparser.h" />
     <ClInclude Include="restyle.h" />
     <ClInclude Include="restylebase.h" />
     <ClInclude Include="restyle_SchemaDef.h" />
     <ClInclude Include="restyle_TmSchema.h" />
+    <ClInclude Include="scanner.h" />
     <ClInclude Include="SchemaPriv.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
@@ -142,7 +144,9 @@
   <ItemGroup>
     <ClCompile Include="binparser.cpp" />
     <ClCompile Include="file.cpp" />
+    <ClCompile Include="iniparser.cpp" />
     <ClCompile Include="restyle.cpp" />
+    <ClCompile Include="scanner.cpp" />
     <ClCompile Include="schematest.cpp" />
     <ClCompile Include="util.cpp" />
     <ClInclude Include="schematest.h" />

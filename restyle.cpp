@@ -3,6 +3,7 @@
 #include "binparser.h"
 #include "util.h"
 #include "file.h"
+#include "iniparser.h"
 
 WCHAR g_szThemeFilePath[MAX_PATH] = { 0 };
 HMODULE g_hThemeModule = NULL;
@@ -29,6 +30,8 @@ void PrintUsage(void)
 		L"               restyle /pschema /validate (Validates schema capitalizations.)\n"
 		L"    /pfile: Prints a file.\n"
 		L"        Usage: restyle /pfile C:\\path\\to\\file.ini\n"
+		L"    /testparser: Tests the parser.\n"
+		L"        Usage: restyle /ptestparser C:\\path\\to\\file.ini\n"
 #endif
 		L"\n"
 		L"Options:\n"
@@ -269,10 +272,10 @@ int wmain(int argc, wchar_t *argv[])
 			return 0;
 		}
 
-		LPWSTR szString = new WCHAR[dwFileSize + sizeof('\n')];
+		LPWSTR szString = new WCHAR[dwFileSize + sizeof('\0')];
 
 		DWORD cbRead = 0;
-		hr = file.Read((void *)szString, dwFileSize * sizeof(WCHAR) + sizeof(L'\n'), &cbRead);
+		hr = file.Read((void *)szString, dwFileSize * sizeof(WCHAR) + sizeof(L'\0'), &cbRead);
 
 		if (FAILED(hr))
 		{
@@ -287,6 +290,18 @@ int wmain(int argc, wchar_t *argv[])
 		{
 			delete[] szString;
 		}
+	}
+	else if (IsArg(argv[1], "testparser"))
+	{
+		if (argc != 3)
+		{
+			Log(L"FATAL: Invalid number of arguments.", ELogLevel::Fatal);
+			return 0;
+		}
+
+		LPCWSTR szPath = argv[2];
+
+		IniParser::ParseIniFile(szPath);
 	}
 #endif
 	else
