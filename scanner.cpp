@@ -3,6 +3,7 @@
 #include <stringapiset.h>
 #include <strsafe.h>
 #include <winnls.h>
+#include <string>
 
 namespace IniParser
 {
@@ -149,6 +150,12 @@ static int ParseNumberLiteral(LPCWSTR sz, int *iRead = nullptr)
 CScanner::CScanner(LPCWSTR szText, DWORD cchText)
     : _p(szText)
     , _pEndOfFile(szText + cchText)
+{
+}
+
+CScanner::CScanner(std::wstring text)
+    : _p(text.c_str())
+    , _pEndOfFile(text.c_str() + text.length())
 {
 }
 

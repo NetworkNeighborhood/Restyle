@@ -5,6 +5,7 @@
 #include <stringapiset.h>
 #include <strsafe.h>
 #include <winnls.h>
+#include <string>
 
 namespace IniParser
 {
@@ -17,6 +18,7 @@ class CIniParser
     
 public:
     CIniParser(LPCWSTR szText, DWORD cchText);
+    CIniParser(std::wstring text);
     bool ReadName(IN OUT LPWSTR szId, DWORD cchId);
     
     HRESULT Test();
@@ -24,6 +26,11 @@ public:
 
 CIniParser::CIniParser(LPCWSTR szText, DWORD cchText)
     : _scanner(szText, cchText)
+{
+}
+
+CIniParser::CIniParser(std::wstring text)
+    : _scanner(text)
 {
 }
 

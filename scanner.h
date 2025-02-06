@@ -1,5 +1,6 @@
 #pragma once
 #include "restyle.h"
+#include <string>
 
 namespace IniParser
 {
@@ -28,6 +29,7 @@ private:
     
 public:
     CScanner(LPCWSTR szText, DWORD cchText);
+    CScanner(std::wstring text);
     inline bool Next();
     inline WCHAR Read();
     WCHAR ReadNext();
