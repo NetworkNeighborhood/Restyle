@@ -939,7 +939,7 @@ BEGIN_TM_PART_STATES(COLLAPSEBUTTON)
     TM_STATE(3, LVCB, PUSHED, "Pushed")
 END_TM_PART_STATES()
 
-    //
+//
 //  LIS prefix has been changed to LISS
 //
 #ifndef SCHEMA_VERIFY_VSSYM32
@@ -1319,7 +1319,7 @@ BEGIN_TM_CLASS_PARTS(SCROLLBAR)
     TM_PART(10, SBP, SIZEBOX, "SizeBox")
     
     // V4:
-    TM_PART(11, SBP, SIZEBOXBKGND, "SizeBoxBKGND") // Added after 14361 but technically a new V4 part?
+    TM_PART(11, SBP, SIZEBOXBKGND, "SizeBoxBkgnd") // Added after 14361 but technically a new V4 part?
 END_TM_CLASS_PARTS()
 
 BEGIN_TM_PART_STATES(ARROWBTN)
@@ -1902,10 +1902,10 @@ BEGIN_TM_CLASS_PARTS(MENU)
     // The following entries are very recent. They exist in the 10.0.22621 SDK, but don't
     // exist in 10.0.14361, nor are they acknowledged by other editors like msstyleEditor.
     TM_PART(21, MENU, POPUPSUBMENU_HCHOT, "PopupSubmenu_HCHot")
-    TM_PART(22, MENU, SYSTEMCLOSE_HCHot, "SystemClose_HCHot")
-    TM_PART(23, MENU, SYSTEMMAXIMIZE_HCHot, "SystemMaximize_HCHot")
-    TM_PART(24, MENU, SYSTEMMINIMIZE_HCHot, "SystemMinimize_HCHot")
-    TM_PART(25, MENU, SYSTEMRESTORE_HCHot, "SystemRestore_HCHot")
+    TM_PART(22, MENU, SYSTEMCLOSE_HCHOT, "SystemClose_HCHot")
+    TM_PART(23, MENU, SYSTEMMAXIMIZE_HCHOT, "SystemMaximize_HCHot")
+    TM_PART(24, MENU, SYSTEMMINIMIZE_HCHOT, "SystemMinimize_HCHot")
+    TM_PART(25, MENU, SYSTEMRESTORE_HCHOT, "SystemRestore_HCHot")
     TM_PART(26, MENU, POPUPITEMKBFOCUS, "PopupItemKBFocus")
     TM_PART(27, MENU, POPUPITEM_FOCUSABLE, "PopupItem_Focusable")
 END_TM_CLASS_PARTS()
