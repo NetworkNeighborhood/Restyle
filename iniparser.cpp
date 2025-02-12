@@ -1,9 +1,8 @@
-#include "iniparser.h"
+#include "iniparserp.h"
 #include "restyle.h"
 #include "util.h"
 #include "file.h"
 #include "scanner.h"
-#include "schemapriv.h"
 #include <iterator>
 #include <stringapiset.h>
 #include <strsafe.h>
@@ -16,27 +15,6 @@
 namespace IniParser
 {
 
-enum class ESymbolType
-{
-    // -- Predefined types --
-    FirstPredefined,
-    Type = FirstPredefined,
-    Class,
-    Part,
-    State,
-    BaseClass,
-    PropertyKey,
-    EnumValue,
-    LastPredefined = EnumValue,
-    
-    // -- Manual types --
-    FirstManual,
-    ManualPart = FirstManual,  // *Part#1
-    ManualState,               // *State#1
-    ManualPropertyKey,         // *Prop#1<Type>
-    LastManual = ManualPropertyKey,
-};
-
 bool IsSymbolTypePredefined(ESymbolType eSymType)
 {
     return eSymType >= ESymbolType::FirstPredefined && eSymType <= ESymbolType::LastPredefined;
@@ -47,64 +25,99 @@ bool IsSymbolTypeManual(ESymbolType eSymType)
     return eSymType >= ESymbolType::FirstManual && eSymType <= ESymbolType::LastManual;
 }
 
-/**
- * A parse symbol.
- */
-struct Symbol
-{
-    /**
-     * The type of the symbol.
-     *
-     * There are two notable types of symbols: predefined (those which use a string name which
-     * restyle defines for identifying a type) and manual (those defining their own internal
-     * value).
-     *
-     * The use of predefined symbols is preferred by restyle. Manual symbols exist to give
-     * theme authors flexibility.
-     */
-    ESymbolType eSymType;
-    
-    // Sharing memory because these are mutually-exclusive members:
-    union
-    {
-        /**
-         * Pointer to the name of the symbol in the name arena or schema, in the case of
-         * predefined symbols.
-         */
-        LPCWSTR szName;
-        
-        /**
-         * Integer value for the name of the symbol, in the case of manual symbols.
-         */
-        INT_PTR iName;
-    };
-    
+#define BASEARENATEMPLATE \
+    template <typename BaseType, int kInitialArrayCount, int kGrowArrayCount>
 
-    /**
-    * Offset in the schema table information about the symbol can be found, 
-    * in the case of predefined symbols.
-    */
-    int iSchemaOffset;
-        
-    /**
-    * The primitive type of the property, in the case of PropertyKey and ManualPropertyKey types.
-    */
-    int iPrimType;
-};
+#define BASEARENATYPE \
+    CTBaseArena<BaseType, kInitialArrayCount, kGrowArrayCount>
 
-/**
- * Stores unique names used within a parsing context, especially class names.
- */
-class CNameArena
+BASEARENATEMPLATE
+class CTBaseArena
 {
-    static constexpr size_t kInitialSize = 1024 * sizeof(WCHAR);
-    static constexpr size_t kGrowSize = 64 * sizeof(WCHAR);
+protected:
+    static constexpr size_t kInitialSize = kInitialArrayCount * sizeof(BaseType);
+    static constexpr size_t kGrowSize = kGrowArrayCount * sizeof(BaseType);
     
     bool _fInitialized = false;
     BYTE *_pszData = nullptr;
     BYTE *_pszCur = nullptr;
     DWORD _dwSize = 0;
     
+public:
+    ~CTBaseArena();
+    HRESULT EnsureInitialized();
+    HRESULT Initialize();
+    HRESULT Resize(DWORD dwNumberOfBytes);
+    HRESULT ResizeIfNecessary(DWORD cbRequested);
+};
+
+#define BASEARENAIMPL(T)                                                      \
+    BASEARENATEMPLATE                                                         \
+    T BASEARENATYPE
+
+
+BASEARENATEMPLATE
+BASEARENATYPE::~CTBaseArena()
+{
+    if (_pszData)
+    {
+        free(_pszData);
+    }
+}
+
+BASEARENAIMPL(HRESULT)::EnsureInitialized()
+{
+    if (!_fInitialized)
+    {
+        return Initialize();
+    }
+    
+    return S_OK;
+}
+
+BASEARENAIMPL(HRESULT)::Initialize()
+{
+    if ((_pszData = (BYTE *)malloc(kInitialSize)))
+    {
+        _dwSize = kInitialSize;
+        _pszCur = _pszData;
+        _fInitialized = true;
+        return S_OK;
+    }
+    
+    return E_OUTOFMEMORY;
+}
+
+BASEARENAIMPL(HRESULT)::ResizeIfNecessary(DWORD cbRequested)
+{
+    if ((size_t)_pszCur + cbRequested - (size_t)_pszData > _dwSize)
+    {
+        if (FAILED(Resize((kGrowSize + cbRequested) & 0xFFFFFFF8)))
+        {
+            // Out of memory:
+            return E_OUTOFMEMORY;
+        }
+    }
+    
+    return S_OK;
+}
+
+BASEARENAIMPL(HRESULT)::Resize(DWORD dwNumberOfBytes)
+{
+    if ((_pszData = (BYTE *)realloc(_pszData, _dwSize + dwNumberOfBytes)))
+    {
+        _dwSize += dwNumberOfBytes;
+        return S_OK;
+    }
+    
+    return E_OUTOFMEMORY;
+}
+
+/**
+ * Stores unique names used within a parsing context, especially class names.
+ */
+class CNameArena : public CTBaseArena<WCHAR, 1024, 64>
+{
 public:
     struct Iterator
     {
@@ -210,44 +223,8 @@ public:
         return Iterator();
     }
 
-    ~CNameArena();
-
-    HRESULT EnsureInitialized();
-    HRESULT Initialize();
     LPCWSTR Add(LPCWSTR sz);
-    HRESULT Resize(DWORD dwNumberOfBytes);
 };
-
-CNameArena::~CNameArena()
-{
-    if (_pszData)
-    {
-        free(_pszData);
-    }
-}
-
-HRESULT CNameArena::EnsureInitialized()
-{
-    if (!_fInitialized)
-    {
-        return Initialize();
-    }
-    
-    return S_OK;
-}
-
-HRESULT CNameArena::Initialize()
-{
-    if ((_pszData = (BYTE *)malloc(kInitialSize)))
-    {
-        _dwSize = kInitialSize;
-        _pszCur = _pszData;
-        _fInitialized = true;
-        return S_OK;
-    }
-    
-    return E_OUTOFMEMORY;
-}
 
 LPCWSTR CNameArena::Add(LPCWSTR sz)
 {
@@ -273,17 +250,6 @@ LPCWSTR CNameArena::Add(LPCWSTR sz)
     
     memcpy(_pszCur, sz, cbsz);
     return (LPCWSTR)_pszCur++;
-}
-
-HRESULT CNameArena::Resize(DWORD dwNumberOfBytes)
-{
-    if ((_pszData = (BYTE *)realloc(_pszData, _dwSize + dwNumberOfBytes)))
-    {
-        _dwSize += dwNumberOfBytes;
-        return S_OK;
-    }
-    
-    return E_OUTOFMEMORY;
 }
 
 /**
@@ -368,153 +334,16 @@ bool CSymbolManager::HasSymbol(LPCWSTR szSymName)
     return false;
 }
 
-enum class EParseMode
-{
-    Assoc,
-    SectionHeader,
-    Preprocessor,
-    BreakParseLoop,
-};
-
-class CFileAttributedElement
-{
-    int _iFileOffset;
-    
-public:
-    inline int GetFileOffset()
-    {
-        return _iFileOffset;
-    }
-};
-
-enum class EParseNodeType
-{
-    Null = 0,
-    IniAssociation,
-    IniSection,
-    // Block node types:
-    AnimationTransformSet,
-};
-
-class CParseNode : public CFileAttributedElement
-{
-    std::vector<CParseNode> _rgChildren;
-    
-protected:
-    EParseNodeType _eType;
-    
-public:
-    EParseNodeType GetType()
-    {
-        return _eType;
-    }
-
-    int GetChildCount()
-    {
-        return _rgChildren.size();
-    }
-    
-    std::vector<CParseNode> &GetChildren()
-    {
-        return _rgChildren;
-    }
-    
-    CParseNode *GetChild(int iOffset)
-    {
-        return &_rgChildren[iOffset];
-    }
-};
-
-template <typename NativeType, int iPrimTypeVal>
-struct ValueBase
-{
-    int iPrimType = iPrimTypeVal;
-    int cbSize = sizeof(NativeType);
-};
-
-struct IntValue : public ValueBase<int, Restyle::TMT_INT>
-{
-    int iVal;
-};
-
-struct SizeValue : public ValueBase<int, Restyle::TMT_SIZE>
-{
-    int iVal;
-};
-
-struct BoolValue : public ValueBase<BOOL, Restyle::TMT_BOOL>
-{
-    BOOL fVal;
-};
-
-struct RectVal : public ValueBase<RECT, Restyle::TMT_RECT>
-{
-    RECT rcVal;
-};
-
-struct MarginsVal : public ValueBase<MARGINS, Restyle::TMT_MARGINS>
-{
-    MARGINS marVal;
-};
-
-struct StringVal : public ValueBase<WCHAR, Restyle::TMT_STRING>
-{
-    WCHAR szVal[];
-};
-
 /**
  * Stores unique names used within a parsing context, especially class names.
  */
-class CValueArena
+class CValueArena : public CTBaseArena<RectValue, 256, 64>
 {
-    static constexpr size_t kInitialSize = 1024 * sizeof(WCHAR);
-    static constexpr size_t kGrowSize = 64 * sizeof(WCHAR);
-
-    bool _fInitialized = false;
-    BYTE *_pszData = nullptr;
-    BYTE *_pszCur = nullptr;
-    DWORD _dwSize = 0;
-    
 public:
-    ~CValueArena();
-
-    HRESULT EnsureInitialized();
-    HRESULT Initialize();
-    HRESULT ResizeIfNecessary(DWORD cbRequested);
     IntValue *CreateIntValue(int iVal);
-    HRESULT Resize(DWORD dwNumberOfBytes);
+    BoolValue *CreateBoolValue(BOOL fVal);
+    StringValue *CreateStringValue(LPCWSTR szVal);
 };
-
-CValueArena::~CValueArena()
-{
-    if (_pszData)
-    {
-        free(_pszData);
-    }
-}
-
-HRESULT CValueArena::EnsureInitialized()
-{
-    if (!_fInitialized)
-    {
-        return Initialize();
-    }
-    
-    return S_OK;
-}
-
-HRESULT CValueArena::Initialize()
-{
-    if ((_pszData = (BYTE *)malloc(kInitialSize)))
-    {
-        _dwSize = kInitialSize;
-        _pszCur = _pszData;
-        _fInitialized = true;
-        return S_OK;
-    }
-    
-    return E_OUTOFMEMORY;
-}
 
 IntValue *CValueArena::CreateIntValue(int iVal)
 {
@@ -540,90 +369,33 @@ BoolValue *CValueArena::CreateBoolValue(BOOL fVal)
     return pResult;
 }
 
-LPCWSTR CValueArena::Add(CValue &)
+StringValue *CValueArena::CreateStringValue(LPCWSTR szVal)
 {
-    DWORD cbsz = (wcslen(sz) + sizeof('\0')) * sizeof(WCHAR);
+    DWORD cch = wcslen(szVal);
+    size_t targetSize = cch * sizeof(WCHAR) + sizeof(L'\0');
     
-    for (const LPCWSTR &szExisting : *this)
+    if (FAILED(ResizeIfNecessary(sizeof(StringValue) + targetSize)))
     {
-        if (AsciiStrCmpI(szExisting, sz))
-        {
-            // Avoid inserting duplicate items:
-            return szExisting;
-        }
+        return nullptr;
     }
     
+    StringValue *pResult = new (_pszCur) StringValue();
+    pResult->cbSize = targetSize;
+    if (!memcpy((void *)&pResult->szVal[0], szVal, targetSize))
+    {
+        return nullptr;
+    }
     
-    
-    memcpy(_pszCur, sz, cbsz);
-    return (LPCWSTR)_pszCur++;
+    return pResult;
 }
-
-HRESULT CValueArena::ResizeIfNecessary(DWORD cbRequested)
-{
-    if ((size_t)_pszCur + cbRequested - (size_t)_pszData > _dwSize)
-    {
-        if (FAILED(Resize((kGrowSize + cbRequested) & 0xFFFFFFF8)))
-        {
-            // Out of memory:
-            return E_OUTOFMEMORY;
-        }
-    }
-    
-    return S_OK;
-}
-
-HRESULT CValueArena::Resize(DWORD dwNumberOfBytes)
-{
-    if ((_pszData = (BYTE *)realloc(_pszData, _dwSize + dwNumberOfBytes)))
-    {
-        _dwSize += dwNumberOfBytes;
-        return S_OK;
-    }
-    
-    return E_OUTOFMEMORY;
-}
-
-struct IniAssociation : public CParseNode
-{
-    Symbol *pKeySymbol;
-    std::wstring strVal;
-    
-    IniAssociation()
-    {
-        _eType = EParseNodeType::IniAssociation;
-    }
-};
-
-struct IniSection : public CParseNode
-{
-    Symbol *pClassNameSymbol;
-    Symbol *pPartNameSymbol;
-    Symbol *pStateNameSymbol;
-    Symbol *pBaseClassNameSymbol;
-    std::vector<IniAssociation> rgAssociations;
-    
-    IniSection()
-    {
-        _eType = EParseNodeType::IniSection;
-    }
-};
-
-struct AnimationTransformSet : public CParseNode
-{
-    Symbol *pAnimationTypeSymbol;
-    
-    AnimationTransformSet()
-    {
-        _eType = EParseNodeType::AnimationTransformSet;
-    }
-};
 
 class CIniParser
 {
     CScanner _scanner;
     CSymbolManager *_pSymbolManager;
-    std::vector<CParseNode> _nodeTree;
+    std::vector<IniAssociation> _associations;
+    
+    IniSection _iniSectionCur;
     
     EParseMode _eMode;
     bool _fParsingIncludeChild = false;
@@ -644,15 +416,9 @@ class CIniParser
         LPCWSTR szClosingQuote;
     };
     
-    static constexpr QuotePairMap s_rgIniQuotePairMap[] = {
+    static constexpr QuotePairMap s_rgQuotePairMap[] = {
         { L"\"", L"\"" },
         { L"'", L"'" },
-    };
-    
-    static constexpr QuotePairMap s_rgPreprocessorQuotePairMap[] = {
-        { L"\"", L"\"" },
-        { L"'", L"'" },
-        { L"<", L">" }, // Used by the preprocessor
     };
     
     static constexpr struct
@@ -716,8 +482,6 @@ HRESULT CIniParser::Parse()
                 break;
             }
         }
-        
-        
     }
     
     return S_OK;
