@@ -26,10 +26,10 @@ bool IsSymbolTypeManual(ESymbolType eSymType)
 }
 
 #define BASEARENATEMPLATE \
-    template <typename BaseType, int kInitialArrayCount, int kGrowArrayCount>
+    template <class Self, typename BaseType, int kInitialArrayCount, int kGrowArrayCount>
 
 #define BASEARENATYPE \
-    CTBaseArena<BaseType, kInitialArrayCount, kGrowArrayCount>
+    CTBaseArena<Self, BaseType, kInitialArrayCount, kGrowArrayCount>
 
 BASEARENATEMPLATE
 class CTBaseArena
@@ -39,9 +39,10 @@ protected:
     static constexpr size_t kGrowSize = kGrowArrayCount * sizeof(BaseType);
     
     bool _fInitialized = false;
-    BYTE *_pszData = nullptr;
-    BYTE *_pszCur = nullptr;
+    BYTE *_pvData = nullptr;
+    BYTE *_pvCur = nullptr;
     DWORD _dwSize = 0;
+    Self *_pNext = nullptr;
     
 public:
     ~CTBaseArena();
@@ -59,9 +60,25 @@ public:
 BASEARENATEMPLATE
 BASEARENATYPE::~CTBaseArena()
 {
-    if (_pszData)
+    CTBaseArena *pCur = this;
+        
+    // First pass: reverse the pointers in the linked list to point backwards.
+    while (pCur->_pNext)
     {
-        free(_pszData);
+        CTBaseArena *pTemp = pCur->_pNext;
+        std::swap(pCur->_pNext, pCur->_pNext->_pNext);
+        pCur = pTemp;
+    }
+    
+    // Second pass: free all branches.
+    while (pCur)
+    {
+        if (pCur->_pvData)
+        {
+            delete pCur->_pvData;
+        }
+        
+        pCur = pCur->_pNext;
     }
 }
 
@@ -77,10 +94,11 @@ BASEARENAIMPL(HRESULT)::EnsureInitialized()
 
 BASEARENAIMPL(HRESULT)::Initialize()
 {
-    if ((_pszData = (BYTE *)malloc(kInitialSize)))
+    if ((_pvData = new BYTE[kInitialSize]))
     {
+        ZeroMemory(_pvData, kInitialSize);
         _dwSize = kInitialSize;
-        _pszCur = _pszData;
+        _pvCur = _pvData;
         _fInitialized = true;
         return S_OK;
     }
@@ -90,7 +108,7 @@ BASEARENAIMPL(HRESULT)::Initialize()
 
 BASEARENAIMPL(HRESULT)::ResizeIfNecessary(DWORD cbRequested)
 {
-    if ((size_t)_pszCur + cbRequested - (size_t)_pszData > _dwSize)
+    if ((size_t)_pvCur + cbRequested - (size_t)_pvData > _dwSize)
     {
         if (FAILED(Resize((kGrowSize + cbRequested) & 0xFFFFFFF8)))
         {
@@ -104,19 +122,34 @@ BASEARENAIMPL(HRESULT)::ResizeIfNecessary(DWORD cbRequested)
 
 BASEARENAIMPL(HRESULT)::Resize(DWORD dwNumberOfBytes)
 {
-    if ((_pszData = (BYTE *)realloc(_pszData, _dwSize + dwNumberOfBytes)))
+    // We are always ourself, so there's absolutely no case where the type contract is
+    // broken. This is simply required because the base class is different, and our
+    // this variable is of the base class rather than a child class.
+    Self *pCur = static_cast<Self *>(this);
+    
+    while (pCur->_pNext) pCur = pCur->_pNext;
+    
+    pCur->_pNext = new Self();
+    
+    if (!pCur->_pNext)
     {
-        _dwSize += dwNumberOfBytes;
-        return S_OK;
+        return E_OUTOFMEMORY;
     }
     
-    return E_OUTOFMEMORY;
+    HRESULT hr = pCur->_pNext->Initialize();
+    
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    
+    return S_OK;
 }
 
 /**
  * Stores unique names used within a parsing context, especially class names.
  */
-class CNameArena : public CTBaseArena<WCHAR, 1024, 64>
+class CNameArena : public CTBaseArena<CNameArena, WCHAR, 1024, 64>
 {
 public:
     struct Iterator
@@ -130,7 +163,7 @@ public:
         // Beginning (real) iterator constructor
         Iterator(CNameArena *nameArena)
             : _pNameArena(nameArena)
-            , _p((LPCWSTR)nameArena->_pszData)
+            , _p((pointer)nameArena->_pvData)
         {
         }
         
@@ -188,22 +221,37 @@ public:
         }
         
     private:
+        void UseNextArena()
+        {
+            _pNameArena = _pNameArena->_pNext;
+            _p = (pointer)_pNameArena->_pvData;
+        }
+    
         pointer GetEndOfData() const
         {
-            return (LPCWSTR)((size_t)_pNameArena->_pszData + _pNameArena->_dwSize);
+            return (LPCWSTR)((size_t)_pNameArena->_pvData + _pNameArena->_dwSize);
         }
     
         pointer GetNextString()
         {
-            while (++_p < GetEndOfData() && _p != L'\0');
-            LPCWSTR szResult = ++_p;
-            
-            if (*szResult == '\0')
+            do
             {
-                _fIsEnd = true;
+                while (++_p < GetEndOfData() && _p != L'\0');
+                LPCWSTR szResult = ++_p;
+                
+                if (_pNameArena->_pNext)
+                {
+                    UseNextArena();
+                    continue;
+                }
+                else if (*szResult == '\0')
+                {
+                    _fIsEnd = true;
+                }
+                
+                return szResult;
             }
-            
-            return szResult;
+            while (1);
         }
     
         CNameArena *_pNameArena;
@@ -239,17 +287,13 @@ LPCWSTR CNameArena::Add(LPCWSTR sz)
         }
     }
     
-    if ((size_t)_pszCur + cbsz - (size_t)_pszData > _dwSize)
+    if (FAILED(ResizeIfNecessary(cbsz)))
     {
-        if (FAILED(Resize((kGrowSize + cbsz) & 0xFFFFFFF8)))
-        {
-            // Out of memory:
-            return nullptr;
-        }
+        return nullptr;
     }
     
-    memcpy(_pszCur, sz, cbsz);
-    return (LPCWSTR)_pszCur++;
+    memcpy(_pvCur, sz, cbsz);
+    return (LPCWSTR)_pvCur++;
 }
 
 /**
@@ -337,7 +381,7 @@ bool CSymbolManager::HasSymbol(LPCWSTR szSymName)
 /**
  * Stores unique names used within a parsing context, especially class names.
  */
-class CValueArena : public CTBaseArena<RectValue, 256, 64>
+class CValueArena : public CTBaseArena<CValueArena, RectValue, 256, 64>
 {
 public:
     IntValue *CreateIntValue(int iVal);
