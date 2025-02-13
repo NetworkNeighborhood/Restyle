@@ -76,6 +76,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -90,6 +91,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -104,6 +106,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,6 +121,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,9 +131,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="animationmap.h" />
+    <ClInclude Include="arena.h" />
     <ClInclude Include="binparser.h" />
     <ClInclude Include="file.h" />
     <ClInclude Include="iniparser.h" />
+    <ClInclude Include="iniparserp.h" />
     <ClInclude Include="restyle.h" />
     <ClInclude Include="restylebase.h" />
     <ClInclude Include="restyle_SchemaDef.h" />
@@ -142,12 +149,14 @@
     <ResourceCompile Include="restyle.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="animationmap.cpp" />
     <ClCompile Include="binparser.cpp" />
     <ClCompile Include="file.cpp" />
     <ClCompile Include="iniparser.cpp" />
     <ClCompile Include="restyle.cpp" />
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="schematest.cpp" />
+    <ClCompile Include="schemautils.cpp" />
     <ClCompile Include="util.cpp" />
     <ClInclude Include="schematest.h" />
   </ItemGroup>

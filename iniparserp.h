@@ -49,6 +49,7 @@ struct Symbol
      */
     ESymbolType eSymType;
     
+    // Name of property.
     // Sharing memory because these are mutually-exclusive members:
     union
     {
@@ -64,17 +65,77 @@ struct Symbol
         INT_PTR iName;
     };
     
-
-    /**
-    * Offset in the schema table information about the symbol can be found, 
-    * in the case of predefined symbols.
-    */
-    int iSchemaOffset;
+    // Property information.
+    // Sharing memory because these are mutually-exclusive members:
+    union
+    {
+        /**
+         * Offset in the schema table information about the symbol can be found, 
+         * in the case of predefined symbols.
+         */
+        int iSchemaOffset;
         
-    /**
-    * The primitive type of the property, in the case of PropertyKey and ManualPropertyKey types.
-    */
-    int iPrimType;
+        /**
+         * The primitive type of the property, in the case of the ManualPropertyKey type.
+         */
+        int iPrimType;
+    };
+};
+
+template <typename T>
+struct ValueResult
+{
+    HRESULT hr = E_FAIL;
+    T value = nullptr;
+    
+    inline FORCEINLINE bool Succeeded()
+    {
+        return SUCCEEDED(hr);
+    }
+    
+    inline FORCEINLINE bool Failed()
+    {
+        return FAILED(hr);
+    }
+    
+    inline FORCEINLINE HRESULT GetResult()
+    {
+        return hr;
+    }
+    
+    inline FORCEINLINE T &Unwrap()
+    {
+        return value;
+    }
+    
+    inline FORCEINLINE operator HRESULT()
+    {
+        return hr;
+    }
+    
+    inline FORCEINLINE operator T()
+    {
+        return value;
+    }
+    
+    inline ValueResult(HRESULT hr)
+        : hr(hr)
+        , value(nullptr)
+    {
+        assert(FAILED(hr));
+    }
+    
+    inline ValueResult(T value)
+        : hr(S_OK)
+        , value(value)
+    {
+    }
+    
+    inline ValueResult(HRESULT hr, T value)
+        : hr(hr)
+        , value(value)
+    {
+    }
 };
 
 template <typename NativeType = void, int iPrimTypeVal = 0>

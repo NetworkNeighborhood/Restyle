@@ -3,6 +3,7 @@
 #include "util.h"
 #include "file.h"
 #include "scanner.h"
+#include "arena.h"
 #include <iterator>
 #include <stringapiset.h>
 #include <strsafe.h>
@@ -25,132 +26,15 @@ bool IsSymbolTypeManual(ESymbolType eSymType)
     return eSymType >= ESymbolType::FirstManual && eSymType <= ESymbolType::LastManual;
 }
 
-#define BASEARENATEMPLATE \
-    template <class Self, typename BaseType, int kInitialArrayCount, int kGrowArrayCount>
-
-#define BASEARENATYPE \
-    CTBaseArena<Self, BaseType, kInitialArrayCount, kGrowArrayCount>
-
-BASEARENATEMPLATE
-class CTBaseArena
-{
-protected:
-    static constexpr size_t kInitialSize = kInitialArrayCount * sizeof(BaseType);
-    static constexpr size_t kGrowSize = kGrowArrayCount * sizeof(BaseType);
-    
-    bool _fInitialized = false;
-    BYTE *_pvData = nullptr;
-    BYTE *_pvCur = nullptr;
-    DWORD _dwSize = 0;
-    Self *_pNext = nullptr;
-    
-public:
-    ~CTBaseArena();
-    HRESULT EnsureInitialized();
-    HRESULT Initialize();
-    HRESULT Resize(DWORD dwNumberOfBytes);
-    HRESULT ResizeIfNecessary(DWORD cbRequested);
-};
-
-#define BASEARENAIMPL(T)                                                      \
-    BASEARENATEMPLATE                                                         \
-    T BASEARENATYPE
-
-
-BASEARENATEMPLATE
-BASEARENATYPE::~CTBaseArena()
-{
-    CTBaseArena *pCur = this;
-        
-    // First pass: reverse the pointers in the linked list to point backwards.
-    while (pCur->_pNext)
-    {
-        CTBaseArena *pTemp = pCur->_pNext;
-        std::swap(pCur->_pNext, pCur->_pNext->_pNext);
-        pCur = pTemp;
-    }
-    
-    // Second pass: free all branches.
-    while (pCur)
-    {
-        if (pCur->_pvData)
-        {
-            delete pCur->_pvData;
-        }
-        
-        pCur = pCur->_pNext;
-    }
-}
-
-BASEARENAIMPL(HRESULT)::EnsureInitialized()
-{
-    if (!_fInitialized)
-    {
-        return Initialize();
-    }
-    
-    return S_OK;
-}
-
-BASEARENAIMPL(HRESULT)::Initialize()
-{
-    if ((_pvData = new BYTE[kInitialSize]))
-    {
-        ZeroMemory(_pvData, kInitialSize);
-        _dwSize = kInitialSize;
-        _pvCur = _pvData;
-        _fInitialized = true;
-        return S_OK;
-    }
-    
-    return E_OUTOFMEMORY;
-}
-
-BASEARENAIMPL(HRESULT)::ResizeIfNecessary(DWORD cbRequested)
-{
-    if ((size_t)_pvCur + cbRequested - (size_t)_pvData > _dwSize)
-    {
-        if (FAILED(Resize((kGrowSize + cbRequested) & 0xFFFFFFF8)))
-        {
-            // Out of memory:
-            return E_OUTOFMEMORY;
-        }
-    }
-    
-    return S_OK;
-}
-
-BASEARENAIMPL(HRESULT)::Resize(DWORD dwNumberOfBytes)
-{
-    // We are always ourself, so there's absolutely no case where the type contract is
-    // broken. This is simply required because the base class is different, and our
-    // this variable is of the base class rather than a child class.
-    Self *pCur = static_cast<Self *>(this);
-    
-    while (pCur->_pNext) pCur = pCur->_pNext;
-    
-    pCur->_pNext = new Self();
-    
-    if (!pCur->_pNext)
-    {
-        return E_OUTOFMEMORY;
-    }
-    
-    HRESULT hr = pCur->_pNext->Initialize();
-    
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    
-    return S_OK;
-}
-
 /**
  * Stores unique names used within a parsing context, especially class names.
  */
-class CNameArena : public CTBaseArena<CNameArena, WCHAR, 1024, 64>
-{
+class CNameArena
+#define BASECLASS CTBaseArena<CNameArena, const WCHAR, 1024>
+    : public BASECLASS
+{    
+    using Super = BASECLASS;
+    
 public:
     struct Iterator
     {
@@ -236,7 +120,7 @@ public:
         {
             do
             {
-                while (++_p < GetEndOfData() && _p != L'\0');
+                while (++_p < GetEndOfData() && *_p != L'\0');
                 LPCWSTR szResult = ++_p;
                 
                 if (_pNameArena->_pNext)
@@ -271,10 +155,10 @@ public:
         return Iterator();
     }
 
-    LPCWSTR Add(LPCWSTR sz);
+    ValueResult<LPCWSTR> Add(LPCWSTR sz);
 };
 
-LPCWSTR CNameArena::Add(LPCWSTR sz)
+ValueResult<LPCWSTR> CNameArena::Add(LPCWSTR sz)
 {
     DWORD cbsz = (wcslen(sz) + sizeof('\0')) * sizeof(WCHAR);
     
@@ -287,13 +171,13 @@ LPCWSTR CNameArena::Add(LPCWSTR sz)
         }
     }
     
-    if (FAILED(ResizeIfNecessary(cbsz)))
+    HRESULT hr = Super::Add(sz, cbsz);
+    if (FAILED(hr))
     {
-        return nullptr;
+        return hr;
     }
     
-    memcpy(_pvCur, sz, cbsz);
-    return (LPCWSTR)_pvCur++;
+    return (LPCWSTR)_pvCur;
 }
 
 /**
@@ -381,56 +265,59 @@ bool CSymbolManager::HasSymbol(LPCWSTR szSymName)
 /**
  * Stores unique names used within a parsing context, especially class names.
  */
-class CValueArena : public CTBaseArena<CValueArena, RectValue, 256, 64>
+class CValueArena : public CTBaseArena<CValueArena, RectValue, 64>
 {
 public:
-    IntValue *CreateIntValue(int iVal);
-    BoolValue *CreateBoolValue(BOOL fVal);
-    StringValue *CreateStringValue(LPCWSTR szVal);
+    ValueResult<IntValue *> CreateIntValue(int iVal);
+    ValueResult<BoolValue *> CreateBoolValue(BOOL fVal);
+    ValueResult<StringValue *> CreateStringValue(LPCWSTR szVal);
 };
 
-IntValue *CValueArena::CreateIntValue(int iVal)
+ValueResult<IntValue *> CValueArena::CreateIntValue(int iVal)
 {
-    if (FAILED(ResizeIfNecessary(sizeof(IntValue))))
+    HRESULT hr = ResizeIfNecessary(sizeof(IntValue));
+    if (FAILED(hr))
     {
-        return nullptr;
+        return hr;
     }
     
-    IntValue *pResult = new (_pszCur) IntValue();
+    IntValue *pResult = new (_pvCur) IntValue();
     pResult->iVal = iVal;
     return pResult;
 }
 
-BoolValue *CValueArena::CreateBoolValue(BOOL fVal)
+ValueResult<BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
 {
-    if (FAILED(ResizeIfNecessary(sizeof(BoolValue))))
+    HRESULT hr = ResizeIfNecessary(sizeof(BoolValue));
+    if (FAILED(hr))
     {
-        return nullptr;
+        return hr;
     }
     
-    BoolValue *pResult = new (_pszCur) BoolValue();
+    BoolValue *pResult = new (_pvCur) BoolValue();
     pResult->fVal = fVal;
     return pResult;
 }
 
-StringValue *CValueArena::CreateStringValue(LPCWSTR szVal)
+ValueResult<StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
 {
     DWORD cch = wcslen(szVal);
     size_t targetSize = cch * sizeof(WCHAR) + sizeof(L'\0');
     
-    if (FAILED(ResizeIfNecessary(sizeof(StringValue) + targetSize)))
+    HRESULT hr = ResizeIfNecessary(sizeof(StringValue) + targetSize);
+    if (FAILED(hr))
     {
-        return nullptr;
+        return hr;
     }
     
-    StringValue *pResult = new (_pszCur) StringValue();
+    StringValue *pResult = new (_pvCur) StringValue();
     pResult->cbSize = targetSize;
     if (!memcpy((void *)&pResult->szVal[0], szVal, targetSize))
     {
-        return nullptr;
+        return E_FAIL;
     }
     
-    return pResult;
+    return { S_OK, pResult };
 }
 
 class CIniParser
@@ -446,6 +333,8 @@ class CIniParser
     
     std::wstring ReadNextWord();
     
+    HRESULT ParseNextSectionHeader();
+    HRESULT ParseNextAssociation();
     HRESULT ParseNextCPreprocessor();
     
     HRESULT ParseCPreprocessorInclude();
@@ -454,20 +343,10 @@ class CIniParser
     HRESULT ParseCPreprocessorElse();
     HRESULT ParseCPreprocessorEndif();
     
-    struct QuotePairMap
-    {
-        LPCWSTR szOpeningQuote;
-        LPCWSTR szClosingQuote;
-    };
-    
-    static constexpr QuotePairMap s_rgQuotePairMap[] = {
-        { L"\"", L"\"" },
-        { L"'", L"'" },
-    };
-    
     static constexpr struct
     {
-        LPCWSTR szCommand;
+        // Must be the length of the longest word in the map.
+        WCHAR szCommand[sizeof(L"include")];
         HRESULT (CIniParser:: *pfnCallback)();
     } s_rgPreprocessorCommandMap[] = {
         { L"include", &CIniParser::ParseCPreprocessorInclude },
@@ -523,6 +402,25 @@ HRESULT CIniParser::Parse()
             case EParseMode::Preprocessor:
             {
                 hr = ParseNextCPreprocessor();
+                break;
+            }
+            
+            case EParseMode::SectionHeader:
+            {
+                hr = ParseNextSectionHeader();
+                break;
+            }
+            
+            case EParseMode::Assoc:
+            {
+                hr = ParseNextAssociation();
+                break;
+            }
+            
+            case EParseMode::BreakParseLoop:
+            {
+                // This is useless because it's handled in the above while loop, however Intellisense
+                // won't shut up.
                 break;
             }
         }
