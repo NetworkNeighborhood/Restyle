@@ -41,10 +41,10 @@ struct Symbol
      * The type of the symbol.
      *
      * There are two notable types of symbols: predefined (those which use a string name which
-     * restyle defines for identifying a type) and manual (those defining their own internal
+     * Restyle defines for identifying a type) and manual (those defining their own internal
      * value).
      *
-     * The use of predefined symbols is preferred by restyle. Manual symbols exist to give
+     * The use of predefined symbols is preferred by Restyle. Manual symbols exist to give
      * theme authors flexibility.
      */
     ESymbolType eSymType;

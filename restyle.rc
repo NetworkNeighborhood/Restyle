@@ -7,9 +7,9 @@
 #undef  VER_COMPANYNAME_STR
 #define VER_COMPANYNAME_STR             "aubymori"
 #undef  VER_PRODUCTNAME_STR
-#define VER_PRODUCTNAME_STR             "restyle"
-#define VER_FILEDESCRIPTION_STR         "restyle"
-#define VER_INTERNALNAME_STR            "restyle"
+#define VER_PRODUCTNAME_STR             "Restyle"
+#define VER_FILEDESCRIPTION_STR         "Restyle"
+#define VER_INTERNALNAME_STR            "Restyle"
 #define VER_LEGALCOPYRIGHT_YEARS        "2025"
 #define VER_ORIGINALFILENAME_STR        "restyle.exe"
 #undef  VER_PRODUCTVERSION

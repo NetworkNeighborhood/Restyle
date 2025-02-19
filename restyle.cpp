@@ -68,7 +68,7 @@ int wmain(int argc, wchar_t *argv[])
 {
 	// Header
 	Log(
-		L"restyle %u.%u.%u"
+		L"Restyle %u.%u.%u"
 #if DEBUG
 		L" (DEBUG BUILD)"
 #endif
