@@ -8,27 +8,6 @@
 namespace IniParser
 {
 
-static inline bool IsSpace(WCHAR c)
-{
-    WORD wCharType = 0;
-    GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
-    return wCharType & C1_SPACE;
-}
-
-static inline bool IsHexDigit(WCHAR c)
-{
-    WORD wCharType = 0;
-    GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
-    return wCharType & C1_XDIGIT;
-}
-
-static inline bool IsDigit(WCHAR c)
-{
-    WORD wCharType = 0;
-    GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
-    return wCharType & C1_DIGIT;
-}
-
 HRESULT CopyString(LPWSTR szDest, DWORD cchDest, LPCWSTR szSrc)
 {
     HRESULT hr = E_INVALIDARG;
@@ -359,6 +338,30 @@ bool CScanner::EndOfLine()
 bool CScanner::EndOfFile()
 {
     return _fEndOfFile;
+}
+
+// static
+inline bool CScanner::IsSpace(WCHAR c)
+{
+    WORD wCharType = 0;
+    GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
+    return wCharType & C1_SPACE;
+}
+
+// static
+inline bool CScanner::IsHexDigit(WCHAR c)
+{
+    WORD wCharType = 0;
+    GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
+    return wCharType & C1_XDIGIT;
+}
+
+// static
+inline bool CScanner::IsDigit(WCHAR c)
+{
+    WORD wCharType = 0;
+    GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
+    return wCharType & C1_DIGIT;
 }
 
 }

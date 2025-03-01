@@ -43,6 +43,10 @@ public:
     bool GetKeyword(LPCWSTR szKeyword);
     bool EndOfLine();
     bool EndOfFile();
+
+    static inline bool IsSpace(WCHAR c);
+    static inline bool IsHexDigit(WCHAR c);
+    static inline bool IsDigit(WCHAR c);
     
     const WCHAR *_p;
 };
