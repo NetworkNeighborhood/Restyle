@@ -773,7 +773,7 @@ ValueResult<std::wstring> CIniParser::ParseNextClassName()
  * 
  * The BaseClass component may not co-exist with a Part and/or a State. The
  * backed component, the inheriting base class that is compiled into the BCMAP in the
- * final msstyles, is usually implied from the semantic base claass in the Class component. The
+ * final msstyles, is usually implied from the semantic base class in the Class component. The
  * BaseClass component may be used for complex inheritance or otherwise
  * overriding the implicit base class. In order to force the use of no base class, the
  * case-insensitive special symbol "@None" may be used instead of a qualified class
