@@ -82,7 +82,7 @@ struct Symbol
     };
 };
 
-template <typename T>
+template <typename T = void>
 struct ValueResult
 {
     HRESULT hr = E_FAIL;

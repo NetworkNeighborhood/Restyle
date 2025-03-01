@@ -267,6 +267,36 @@ bool CSymbolManager::HasSymbol(LPCWSTR szSymName)
  */
 class CValueArena : public CTBaseArena<CValueArena, RectValue, 64>
 {
+    /**
+     * This class is used as an RAII wrapper to ensure that the methods of this
+     * function actually update the offset.
+     * 
+     * In release builds, this class will be erased by the optimising compiler.
+     */
+    class CEnsureArenaPointerChanged
+    {
+#if DEBUG
+        CValueArena *_pParent;
+        BYTE *_pvOriginal;
+
+    public:
+        inline [[nodiscard]] CEnsureArenaPointerChanged(CValueArena *pParent)
+            : _pParent(pParent)
+            , _pvOriginal(pParent->_pvCur)
+        {
+        }
+
+        inline ~CEnsureArenaPointerChanged()
+        {
+            assert(_pParent->_pvCur != _pvOriginal);
+        }
+#else
+        inline FORCEINLINE CEnsureArenaPointerChanged(CValueArena *pParent)
+        {
+        }
+#endif
+    };
+
 public:
     ValueResult<IntValue *> CreateIntValue(int iVal);
     ValueResult<BoolValue *> CreateBoolValue(BOOL fVal);
@@ -275,6 +305,8 @@ public:
 
 ValueResult<IntValue *> CValueArena::CreateIntValue(int iVal)
 {
+    CEnsureArenaPointerChanged ensurePointerChanged(this);
+
     HRESULT hr = ResizeIfNecessary(sizeof(IntValue));
     if (FAILED(hr))
     {
@@ -283,11 +315,14 @@ ValueResult<IntValue *> CValueArena::CreateIntValue(int iVal)
     
     IntValue *pResult = new (_pvCur) IntValue();
     pResult->iVal = iVal;
+    _pvCur += pResult->cbSize;
     return pResult;
 }
 
 ValueResult<BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
 {
+    CEnsureArenaPointerChanged ensurePointerChanged(this);
+
     HRESULT hr = ResizeIfNecessary(sizeof(BoolValue));
     if (FAILED(hr))
     {
@@ -296,11 +331,14 @@ ValueResult<BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
     
     BoolValue *pResult = new (_pvCur) BoolValue();
     pResult->fVal = fVal;
+    _pvCur += pResult->cbSize;
     return pResult;
 }
 
 ValueResult<StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
 {
+    CEnsureArenaPointerChanged ensurePointerChanged(this);
+
     DWORD cch = wcslen(szVal);
     size_t targetSize = cch * sizeof(WCHAR) + sizeof(L'\0');
     
@@ -316,8 +354,9 @@ ValueResult<StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
     {
         return E_FAIL;
     }
-    
-    return { S_OK, pResult };
+
+    _pvCur += pResult->cbSize;
+    return pResult;
 }
 
 class CIniParser
