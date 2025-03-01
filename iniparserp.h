@@ -82,23 +82,23 @@ struct Symbol
     };
 };
 
-template <typename T = void>
+template <typename T = int>
 struct ValueResult
 {
     HRESULT hr = E_FAIL;
-    T value = nullptr;
+    T value {};
     
-    inline FORCEINLINE bool Succeeded()
+    inline FORCEINLINE bool Succeeded() const
     {
         return SUCCEEDED(hr);
     }
     
-    inline FORCEINLINE bool Failed()
+    inline FORCEINLINE bool Failed() const
     {
         return FAILED(hr);
     }
     
-    inline FORCEINLINE HRESULT GetResult()
+    inline FORCEINLINE HRESULT GetResult() const
     {
         return hr;
     }
@@ -107,20 +107,25 @@ struct ValueResult
     {
         return value;
     }
+
+    inline FORCEINLINE ValueResult &ResultInto(HRESULT *p)
+    {
+        *p = hr;
+        return *this;
+    }
     
-    inline FORCEINLINE operator HRESULT()
+    inline FORCEINLINE operator HRESULT() const
     {
         return hr;
     }
     
-    inline FORCEINLINE operator T()
+    inline FORCEINLINE operator T() const
     {
         return value;
     }
     
     inline ValueResult(HRESULT hr)
         : hr(hr)
-        , value(nullptr)
     {
         assert(FAILED(hr));
     }
@@ -138,19 +143,41 @@ struct ValueResult
     }
 };
 
+/**
+ * Evaluates an expression and propagates the error result of a ValueResult if it failed.
+ * 
+ * The expression must end in a ValueResult or this macro will fail to produce valid
+ * code.
+ */
+#define PROPAGATE_ERROR_IF_FAILED(errorExpr)                                             \
+    do                                                                                   \
+    {                                                                                    \
+        HRESULT __hr;                                                                    \
+                                                                                         \
+        /* Evaluate the expression and get its value into the __result. */               \
+        errorExpr.ResultInto(&__hr).Unwrap();                                            \
+                                                                                         \
+        if (FAILED(__hr))                                                                \
+        {                                                                                \
+            /* Propagate error. */                                                       \
+            return __hr;                                                                 \
+        }                                                                                \
+    }                                                                                    \
+    while ((void)0, 0)
+
 template <typename NativeType = void, int iPrimTypeVal = 0>
 struct ValueBase
 {
     int iPrimType = iPrimTypeVal;
-    int cbSize = sizeof(NativeType);
+    size_t cbSize = sizeof(NativeType);
 };
 
 struct IniSection
 {
-    Symbol *pClassNameSymbol;
-    Symbol *pPartNameSymbol;
-    Symbol *pStateNameSymbol;
-    Symbol *pBaseClassNameSymbol;
+    Symbol *pSymClass;
+    Symbol *pSymPart;
+    Symbol *pSymState;
+    Symbol *pSymBaseClass;
 };
 
 struct IniAssociation
