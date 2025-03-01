@@ -30,8 +30,23 @@ private:
 public:
     CScanner(LPCWSTR szText, DWORD cchText);
     CScanner(std::wstring text);
-    inline bool Next();
-    inline WCHAR Read();
+
+    inline bool Next()
+    {
+        if (_p <= _pEndOfFile)
+        {
+            _p++;
+            return true;
+        }
+
+        return false;
+    }
+
+    inline WCHAR Read() const
+    {
+        return *_p;
+    }
+
     WCHAR ReadNext();
     bool ReadNextLine();
     bool IsNameChar(bool fSkipSpaces);
@@ -44,9 +59,9 @@ public:
     bool EndOfLine();
     bool EndOfFile();
 
-    static inline bool IsSpace(WCHAR c);
-    static inline bool IsHexDigit(WCHAR c);
-    static inline bool IsDigit(WCHAR c);
+    static bool IsSpace(WCHAR c);
+    static bool IsHexDigit(WCHAR c);
+    static bool IsDigit(WCHAR c);
     
     const WCHAR *_p;
 };

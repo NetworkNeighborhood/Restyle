@@ -151,22 +151,6 @@ bool CScanner::IsNextSequenceCommentDelinatingToken()
     }
 }
 
-inline bool CScanner::Next()
-{
-    if (_p <= _pEndOfFile)
-    {
-        _p++;
-        return true;
-    }
-    
-    return false;
-}
-
-inline WCHAR CScanner::Read()
-{
-    return *_p;
-}
-
 WCHAR CScanner::ReadNext()
 {
     WCHAR chRes = *_p;
@@ -341,7 +325,7 @@ bool CScanner::EndOfFile()
 }
 
 // static
-inline bool CScanner::IsSpace(WCHAR c)
+bool CScanner::IsSpace(WCHAR c)
 {
     WORD wCharType = 0;
     GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
@@ -349,7 +333,7 @@ inline bool CScanner::IsSpace(WCHAR c)
 }
 
 // static
-inline bool CScanner::IsHexDigit(WCHAR c)
+bool CScanner::IsHexDigit(WCHAR c)
 {
     WORD wCharType = 0;
     GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
@@ -357,7 +341,7 @@ inline bool CScanner::IsHexDigit(WCHAR c)
 }
 
 // static
-inline bool CScanner::IsDigit(WCHAR c)
+bool CScanner::IsDigit(WCHAR c)
 {
     WORD wCharType = 0;
     GetStringTypeW(CT_CTYPE1, &c, 1, &wCharType);
