@@ -26,7 +26,7 @@ private:
     const WCHAR *_pszFile = nullptr;
     WCHAR _szLineBuff[512 + 1];
     UINT _iLineNum = 0;
-    
+
 public:
     CScanner(LPCWSTR szText, DWORD cchText);
     CScanner(std::wstring text);
@@ -45,6 +45,11 @@ public:
     inline WCHAR Read() const
     {
         return *_p;
+    }
+
+    inline int GetLineNum() const
+    {
+        return _iLineNum;
     }
 
     WCHAR ReadNext();

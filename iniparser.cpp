@@ -11,10 +11,15 @@
 #include <winnls.h>
 #include <string>
 #include <vector>
+#include <variant>
 #include <winnt.h>
 
 // Uncomment to enable preprocessor support, which is currently incomplete.
 //#define ENABLE_PREPROCESSOR
+
+// Temporarily enable CIniParser to create its own instance of CSymbolManager while the code structure
+// is still being determined:
+#define TEMP_CREATE_OWN_SYMBOL_MANAGER
 
 namespace IniParser
 {
@@ -27,6 +32,31 @@ bool IsSymbolTypePredefined(ESymbolType eSymType)
 bool IsSymbolTypeManual(ESymbolType eSymType)
 {
     return eSymType >= ESymbolType::FirstManual && eSymType <= ESymbolType::LastManual;
+}
+
+struct PredefinedToManualSymbolTypeMap
+{
+    ESymbolType ePredefined;
+    ESymbolType eManual;
+};
+
+static PredefinedToManualSymbolTypeMap g_rgSymTypePredefinedToManualMap[] = {
+    { ESymbolType::Part, ESymbolType::ManualPart },
+    { ESymbolType::State, ESymbolType::ManualState },
+    { ESymbolType::PropertyKey, ESymbolType::ManualPropertyKey },
+};
+
+static ESymbolType GetManualTypeCorrespondingToPredefined(ESymbolType ePredefined)
+{
+    return GetXTypeCorrespondingToY<
+        ESymbolType, PredefinedToManualSymbolTypeMap, decltype(g_rgSymTypePredefinedToManualMap), g_rgSymTypePredefinedToManualMap,
+        &PredefinedToManualSymbolTypeMap::ePredefined, &PredefinedToManualSymbolTypeMap::eManual>(ePredefined);
+}
+
+static ESymbolType GetPredefinedTypeCorrespondingToManual(ESymbolType eManual)
+{
+    return GetXTypeCorrespondingToY<ESymbolType, PredefinedToManualSymbolTypeMap, decltype(g_rgSymTypePredefinedToManualMap), g_rgSymTypePredefinedToManualMap,
+        &PredefinedToManualSymbolTypeMap::eManual, &PredefinedToManualSymbolTypeMap::ePredefined>(eManual);
 }
 
 /**
@@ -193,7 +223,7 @@ class CSymbolManager
     
 public:
     ValueResult<Symbol *> AddSymbol(LPCWSTR szSymName, ESymbolType eSymType);
-    ValueResult<Symbol *> AddManualSymbol(int iVal, ESymbolType eSymType);
+    ValueResult<Symbol *> AddManualSymbol(int iVal, ESymbolType eSymType, OPTIONAL int iType = 0);
     LPCWSTR GetGlobalSymbolName(LPCWSTR szSymName, OUT OPTIONAL int *piSchemaOffset = nullptr);
     Symbol *FindSymbolPointer(LPCWSTR szSymName);
     bool HasSymbol(LPCWSTR szSymName);
@@ -227,7 +257,7 @@ ValueResult<Symbol *> CSymbolManager::AddSymbol(LPCWSTR szSymName, ESymbolType e
     return &_rgSymbols[_rgSymbols.size() - 1];
 }
 
-ValueResult<Symbol *> CSymbolManager::AddManualSymbol(int iVal, ESymbolType eSymType)
+ValueResult<Symbol *> CSymbolManager::AddManualSymbol(int iVal, ESymbolType eSymType, OPTIONAL int iType)
 {
     assert(IsSymbolTypeManual(eSymType));
 
@@ -244,6 +274,7 @@ ValueResult<Symbol *> CSymbolManager::AddManualSymbol(int iVal, ESymbolType eSym
 
     sym.iName = iVal;
     sym.eSymType = eSymType;
+    sym.iPrimType = iType;
 
     _rgSymbols.push_back(sym);
     return &_rgSymbols[_rgSymbols.size() - 1];
@@ -409,8 +440,16 @@ class CIniParser
 
     HRESULT Initialize();
     
-    std::wstring ReadNextWord();
+    //--------------------------------------------------------------------------------------------------------------
+    // Error handling
     
+    ParseError _parseError;
+    HRESULT SourceError(EParseErrorCode eCode, LPCWSTR szCustomMessage = nullptr, ...);
+
+    //--------------------------------------------------------------------------------------------------------------
+
+    std::wstring ReadNextWord();
+
     HRESULT ParseNextSectionHeader();
     HRESULT ParseNextAssociation();
     ValueResult<std::wstring> ParseNextClassName();
@@ -419,6 +458,114 @@ class CIniParser
     {
         int iSymbolName = 0;
         int iType = 0;
+    };
+
+    /**
+     * Used for intermediate parsing of symbols.
+     */
+    class CSymbolComponent
+    {
+        std::variant<std::monostate, std::wstring, ParseManualSymbolResult> _component;
+
+    public:
+        inline CSymbolComponent()
+        {
+        }
+
+        inline CSymbolComponent(std::wstring strComponent)
+            : _component(strComponent)
+        {
+        }
+
+        inline CSymbolComponent(LPCWSTR szComponent)
+            : CSymbolComponent(std::wstring(szComponent))
+        {
+        }
+
+        inline CSymbolComponent(ParseManualSymbolResult manualComponent)
+            : _component(manualComponent)
+        {
+        }
+
+        inline CSymbolComponent &operator =(std::wstring strComponent)
+        {
+            _component = strComponent;
+            return *this;
+        }
+
+        inline CSymbolComponent &operator =(LPCWSTR szComponent)
+        {
+            _component = std::wstring(szComponent);
+            return *this;
+        }
+
+        inline CSymbolComponent &operator =(ParseManualSymbolResult manualComponent)
+        {
+            _component = manualComponent;
+            return *this;
+        }
+
+        bool IsSet()
+        {
+            return !std::holds_alternative<std::monostate>(_component);
+        }
+
+        bool IsManual()
+        {
+            return std::holds_alternative<ParseManualSymbolResult>(_component);
+        }
+
+        ValueResult<std::wstring> GetString()
+        {
+            if (std::wstring *pStr = std::get_if<std::wstring>(&_component))
+            {
+                return *pStr;
+            }
+
+            return E_FAIL;
+        }
+
+        bool IsNonEmptyString()
+        {
+            ValueResult<std::wstring> str = GetString();
+
+            if (str.Succeeded())
+            {
+                return !str.Unwrap().empty();
+            }
+
+            return false;
+        }
+
+        ValueResult<ParseManualSymbolResult> GetParseManualSymbolResult()
+        {
+            if (ParseManualSymbolResult *pStr = std::get_if<ParseManualSymbolResult>(&_component))
+            {
+                return *pStr;
+            }
+
+            return E_FAIL;
+        }
+
+        ValueResult<Symbol *> CreateAndAddSymbol(CSymbolManager *pSymbolManager, ESymbolType eSymType)
+        {
+            if (std::wstring *pStr = std::get_if<std::wstring>(&_component))
+            {
+                return pSymbolManager->AddSymbol(pStr->c_str(), GetPredefinedTypeCorrespondingToManual(eSymType));
+            }
+            else if (ParseManualSymbolResult *pManual = std::get_if<ParseManualSymbolResult>(&_component))
+            {
+                return pSymbolManager->AddManualSymbol(pManual->iSymbolName, GetManualTypeCorrespondingToPredefined(eSymType), pManual->iType);
+            }
+            else
+            {
+                // If we don't contain any information (i.e. if our value was never changed by the parser),
+                // then we will always return a successful ValueResult containing a null pointer. Null
+                // pointers to Symbol objects are regarded by all parsing code pertaining to them, so this
+                // is fine.
+                return nullptr;
+            }
+        }
     };
 
     ValueResult<ParseManualSymbolResult> ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk = true);
@@ -453,6 +600,8 @@ public:
     // static CIniParser CreateIncludeIniParser(CIniParser *pParent, CSimpleFile *pChildFile);
     
     HRESULT Parse();
+
+    ParseError GetParseError();
     
     bool ReadName(IN OUT LPWSTR szId, DWORD cchId);
     
@@ -476,12 +625,52 @@ HRESULT CIniParser::Initialize()
     // TODO: The symbol manager needs to be loaded into the INI parser from somewhere.
     // Where do we get it from? Do we create it ourselves and just relinquish control
     // once we don't need it anymore?
+#ifdef TEMP_CREATE_OWN_SYMBOL_MANAGER
+    // This leaks, as we do not have an explicit destructor.
+    _pSymbolManager = new CSymbolManager();
+#endif
 
     // TODO: How do we elegantly make the null base class symbol work out?
     // It's a weird edge case.
     _pSymNullBaseClass = _pSymbolManager->AddSymbol(nullptr, ESymbolType::BaseClass);
 
     return S_OK;
+}
+
+HRESULT CIniParser::SourceError(EParseErrorCode eCode, LPCWSTR szCustomMessage, ...)
+{
+    _parseError.eCode = eCode;
+    _parseError.iLine = _scanner.GetLineNum();
+    
+    if (szCustomMessage)
+    {
+        va_list args;
+        va_start(args, szCustomMessage);
+
+        WCHAR szFormatted[1024];
+        swprintf_s(szFormatted, szCustomMessage, args);
+        
+        va_end(args);
+
+        _parseError.strMessage = szFormatted;
+    }
+    else
+    {
+        switch (eCode)
+        {
+            case EParseErrorCode::ExpectedCharacter:
+                _parseError.strMessage = L"Expected character";
+                break;
+            case EParseErrorCode::ExpectedNumber:
+                _parseError.strMessage = L"Expected number";
+                break;
+            case EParseErrorCode::ExpectedSymbol:
+                _parseError.strMessage = L"Expected symbol";
+                break;
+        }
+    }
+
+    return HRESULT_FROM_WIN32(ERROR_UNKNOWN_PROPERTY);
 }
 
 std::wstring CIniParser::ReadNextWord()
@@ -536,6 +725,11 @@ HRESULT CIniParser::Parse()
     return S_OK;
 }
 
+ParseError CIniParser::GetParseError()
+{
+    return _parseError;
+}
+
 /**
  * Parses manual symbol segments.
  * 
@@ -570,8 +764,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
     {
         if (!_scanner.GetChar(L'*'))
         {
-            Log(L"Expected '*'.");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '*'");
         }
     }
 
@@ -579,26 +772,22 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
 
     if (strIdentifier.empty())
     {
-        Log(L"Expected a word.");
-        return E_FAIL;
+        return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a class identifer, got nothing");
     }
 
     if (eExpectType == ESymbolType::ManualPart && !AsciiStrCmpI(strIdentifier.c_str(), L"Part"))
     {
-        Log(L"Unexpected identifier '%s', expected 'Part'.", strIdentifier.c_str());
-        return E_FAIL;
+        return SourceError(EParseErrorCode::ExpectedSymbol, L"Unexpected identifier '%s', expected 'Part'.", strIdentifier.c_str());
     }
     else if (eExpectType == ESymbolType::ManualState && !AsciiStrCmpI(strIdentifier.c_str(), L"State"))
     {
-        Log(L"Unexpected identifier '%s', expected 'State'.", strIdentifier.c_str());
-        return E_FAIL;
+        return SourceError(EParseErrorCode::ExpectedSymbol, L"Unexpected identifier '%s', expected 'State'.", strIdentifier.c_str());
     }
     else if (eExpectType == ESymbolType::ManualPropertyKey &&
         !AsciiStrCmpI(strIdentifier.c_str(), L"Prop") ||
         !AsciiStrCmpI(strIdentifier.c_str(), L"Property"))
     {
-        Log(L"Unexpected identifier '%s', expected 'Prop' or 'Property'.", strIdentifier.c_str());
-        return E_FAIL;
+        return SourceError(EParseErrorCode::ExpectedSymbol, L"Unexpected identifier '%s', expected 'Prop' or 'Property'.", strIdentifier.c_str());
     }
 
     // Skip the optional "#" if it is there.
@@ -607,11 +796,10 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
     int iValue;
     if (!_scanner.GetNumber(&iValue))
     {
-        Log(L"Expected number");
-        return E_FAIL;
+        return SourceError(EParseErrorCode::ExpectedNumber);
     }
 
-    int iType = 0;
+    int iType = 0; // 0 = Unset.
 
     // If we're parsing a property key type, then we always require a type name which is in the
     // schema. Since the schema is static data, we can validate that a specified name is legal
@@ -620,16 +808,14 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
     {
         if (_scanner.GetChar(L'<'))
         {
-            Log(L"Expected '<'");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '<'");
         }
 
         std::wstring strType = ReadNextWord();
 
         if (strType.empty())
         {
-            Log(L"Expected a type name.");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a type name");
         }
 
         // TODO: Restructure this in the future to use schemautils.
@@ -654,14 +840,12 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
         // Fail: the above loop fell through without setting a value.
         if (iType == 0)
         {
-            Log(L"Unknown type name '%s' specified", strType.c_str());
-            return E_FAIL;
+            return SourceError(EParseErrorCode::ExpectedSymbol, L"Unknown type name '%s' specified", strType.c_str());
         }
 
         if (_scanner.GetChar(L'>'))
         {
-            Log(L"Expected '>'");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '>'");
         }
     }
 
@@ -693,8 +877,7 @@ ValueResult<std::wstring> CIniParser::ParseNextClassName()
 
     if (strFirst.empty())
     {
-        Log(L"Expected a word.");
-        return E_FAIL;
+        return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a word");
     }
 
     // If we're going to follow with a "::" sequence, then we must not allow spaces
@@ -708,8 +891,7 @@ ValueResult<std::wstring> CIniParser::ParseNextClassName()
     {
         if (fNextCharIsSpace)
         {
-            Log(L"Unexpected space.");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::UnexpectedSpace);
         }
 
         strFinalClass += L"::";
@@ -718,8 +900,7 @@ ValueResult<std::wstring> CIniParser::ParseNextClassName()
 
         if (strBaseClass.empty())
         {
-            Log(L"Expected a word.");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a word");
         }
 
         strFinalClass += strBaseClass;
@@ -732,13 +913,11 @@ ValueResult<std::wstring> CIniParser::ParseNextClassName()
     {
         if (fNextCharIsSpace)
         {
-            Log(L"Unexpected '::'. You might have meant ':' instead.");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::UnexpectedSymbol, L"Unexpected '::' (you might have meant ':' instead)");
         }
         else
         {
-            Log(L"Unexpected '::'. Class names may not exceed a maximum of 2 levels of an app name and a base class.");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::UnexpectedSymbol, L"Unexpected '::'. Class names may not exceed a maximum of 2 levels of an app name and a base class.");
         }
     }
 
@@ -755,13 +934,22 @@ ValueResult<std::wstring> CIniParser::ParseNextClassName()
  * 
  * The components must be of the following types:
  *     Class = A class name. If this name does not already exist, it will be registered.
+ *     . = An optionally-parsed separation token, required if the Part component is
+ *         specified.
  *     Part = A qualified part name associated with the class, or a custom class name
- *            of the formats "*PartN" or "*Part#N" (where N is an integer number between
- *            1 and 65535), or unspecified.
+ *            of the formats "*PartN" or "*Part#N" (where N is a 32-bit signed integer
+ *            number), or unspecified.
+ *     ( = An optionally-parsed separation token, required if the State component is
+ *         specified.
  *     State = A qualified state name associated with the class or part, or a custom
- *             part name of the format "*StateN" or "*State#N" (where N is an integer
- *             number between 1 and 65535), or unspecified.
- *     BaseClass = A qualified class name, or unspecified.
+ *             part name of the format "*StateN" or "*State#N" (where N is a 32-bit
+ *             signed integer number), or unspecified.
+ *     ) = An optionally-parsed separation token, required if the State component is
+ *         specified.
+ *     : = An optionally-parsed separation token, required if the BaseClass component is
+ *         specified.
+ *     BaseClass = A qualified class name, the special keyword "*None", the integer
+ *                 number 0, or unspecified.
  * 
  * All qualified types must be referenced elsewhere in the theme codebase. Nonexistent
  * names will cause a parse error.
@@ -776,7 +964,7 @@ ValueResult<std::wstring> CIniParser::ParseNextClassName()
  * final msstyles, is usually implied from the semantic base class in the Class component. The
  * BaseClass component may be used for complex inheritance or otherwise
  * overriding the implicit base class. In order to force the use of no base class, the
- * case-insensitive special symbol "@None" may be used instead of a qualified class
+ * case-insensitive special symbol "*None" may be used instead of a qualified class
  * name, or alternatively the integer number "0" may be used for the same purpose.
  * 
  * Examples of major valid constructions include:
@@ -786,23 +974,22 @@ ValueResult<std::wstring> CIniParser::ParseNextClassName()
  *     [Class.Part(State)]
  *         whereby the State name must correlate with the Part name
  *     [Class : BaseClass]
+ *     [LVPopup::Toolbar : *None]
+ *     [LVPopup::Toolbar : 0]
  */
 HRESULT CIniParser::ParseNextSectionHeader()
 {
     if (!_scanner.GetChar(L'['))
     {
-        Log(L"Expected [", ELogLevel::Fatal);
-        return E_FAIL;
+        return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '['");
     }
 
-    std::wstring strClass, strState, strPart, strBaseClass;
+    CSymbolComponent cmClass, cmState, cmPart, cmBaseClass;
     bool fEmptyBaseClass = false;
-    bool fManualState = false, fManualPart = false;
-    ParseManualSymbolResult manualState, manualPart;
 
     // The next word should always be the class name. This is the only required part
     // of the section header.
-    PROPAGATE_ERROR_IF_FAILED(strClass = ParseNextClassName());
+    PROPAGATE_ERROR_IF_FAILED(cmClass = ParseNextClassName());
 
     // If we're going to follow with a "::" sequence, then we must not allow spaces
     // to surround it. While Restyle makes a distinction between the semantic base
@@ -816,46 +1003,23 @@ HRESULT CIniParser::ParseNextSectionHeader()
     // order, separated within an else-if chain.
     while (!_scanner.EndOfFile())
     {
-        // If we follow with a "::" sequence, then we're parsing a semantic base class.
-        if (_scanner.GetKeyword(L"::"))
-        {
-            // Ensure that we're in the right position:
-            if (!strPart.empty() || !strState.empty() && !strBaseClass.empty())
-            {
-                Log(L"Unexpected '::'. You probably meant ':'.");
-                return E_FAIL;
-            }
-            // TODO: add other cases when the error handling system is improved.
-        }
         // If we follow with a "." character, then we're parsing a part specifier.
-        else if (_scanner.GetChar(L'.'))
+        if (_scanner.GetChar(L'.'))
         {
             // Ensure that we're in the right position:
             // TODO: add cases
 
             if (_scanner.GetChar(L'*'))
             {
-                fManualPart = true;
-
-                auto result = ParseNextManualSymbolSegment(ESymbolType::ManualPart);
-                if (result.Succeeded())
-                {
-                    manualPart = result;
-                }
-                else
-                {
-                    // Propagate error:
-                    return result;
-                }
+                PROPAGATE_ERROR_IF_FAILED(cmPart = ParseNextManualSymbolSegment(ESymbolType::ManualPart));
             }
             else
             {
-                strPart = ReadNextWord();
+                cmPart = ReadNextWord();
 
-                if (strPart.empty())
+                if (!cmPart.IsNonEmptyString())
                 {
-                    Log(L"Expected a word.");
-                    return E_FAIL;
+                    return SourceError(EParseErrorCode::ExpectedSymbol);
                 }
             }
         }
@@ -867,34 +1031,21 @@ HRESULT CIniParser::ParseNextSectionHeader()
 
             if (_scanner.GetChar(L'*'))
             {
-                fManualState = true;
-
-                auto result = ParseNextManualSymbolSegment(ESymbolType::ManualState);
-                if (result.Succeeded())
-                {
-                    manualState = result;
-                }
-                else
-                {
-                    // Propagate error:
-                    return result;
-                }
+                PROPAGATE_ERROR_IF_FAILED(cmState = ParseNextManualSymbolSegment(ESymbolType::ManualState));
             }
             else
             {
-                strState = ReadNextWord();
+                cmState = ReadNextWord();
 
-                if (strState.empty())
+                if (!cmState.IsNonEmptyString())
                 {
-                    Log(L"Expected a word.");
-                    return E_FAIL;
+                    return SourceError(EParseErrorCode::ExpectedSymbol);
                 }
             }
 
             if (!_scanner.GetChar(L')'))
             {
-                Log(L"Expected ')'");
-                return E_FAIL;
+                return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected ')'");
             }
         }
         // If we follow with a ":" character, then we're parsing a manual inheriting
@@ -905,18 +1056,17 @@ HRESULT CIniParser::ParseNextSectionHeader()
             // TODO: add cases
 
             int i;
-            if (_scanner.GetKeyword(L"@None") || (_scanner.GetNumber(&i) && i == 0))
+            if (_scanner.GetKeyword(L"*None") || (_scanner.GetNumber(&i) && i == 0))
             {
                 fEmptyBaseClass = true;
             }
             else
             {
-                PROPAGATE_ERROR_IF_FAILED(strBaseClass = ParseNextClassName());
+                PROPAGATE_ERROR_IF_FAILED(cmBaseClass = ParseNextClassName());
 
-                if (strBaseClass.empty())
+                if (cmBaseClass.GetString().Unwrap().empty())
                 {
-                    Log(L"Expected a word.");
-                    return E_FAIL;
+                    return SourceError(EParseErrorCode::ExpectedSymbol);
                 }
             }
         }
@@ -930,41 +1080,23 @@ HRESULT CIniParser::ParseNextSectionHeader()
         // a parse error.
         else
         {
-            Log(L"Unexpected sequence.");
-            return E_FAIL;
+            return SourceError(EParseErrorCode::UnexpectedSequence);
         }
     }
 
-    std::wstring strFullClassName = strClass;
+    //
+    // Create symbols for each of the components:
+    //
 
-    //
-    // Create symbols for each of the components.
-    //
     Symbol *pSymClass = nullptr, *pSymPart = nullptr, *pSymState = nullptr, *pSymBaseClass = nullptr;
 
-    pSymClass = _pSymbolManager->AddSymbol(strClass.c_str(), ESymbolType::Class);
+    pSymClass = cmClass.CreateAndAddSymbol(_pSymbolManager, ESymbolType::Class);
+    pSymPart = cmPart.CreateAndAddSymbol(_pSymbolManager, ESymbolType::Part);
+    pSymState = cmPart.CreateAndAddSymbol(_pSymbolManager, ESymbolType::State);
 
-    if (!strPart.empty())
+    if (cmBaseClass.IsNonEmptyString())
     {
-        pSymPart = _pSymbolManager->AddSymbol(strPart.c_str(), ESymbolType::Part);
-    }
-    else if (fManualPart)
-    {
-        pSymPart = _pSymbolManager->AddManualSymbol(manualPart.iSymbolName, ESymbolType::ManualPart);
-    }
-
-    if (!strState.empty())
-    {
-        pSymState = _pSymbolManager->AddSymbol(strState.c_str(), ESymbolType::State);
-    }
-    else if (fManualState)
-    {
-        pSymState = _pSymbolManager->AddManualSymbol(manualState.iSymbolName, ESymbolType::ManualState);
-    }
-
-    if (!strBaseClass.empty())
-    {
-        pSymBaseClass = _pSymbolManager->AddSymbol(strBaseClass.c_str(), ESymbolType::BaseClass);
+        pSymBaseClass = cmBaseClass.CreateAndAddSymbol(_pSymbolManager, ESymbolType::BaseClass);
     }
     else if (fEmptyBaseClass)
     {
@@ -972,7 +1104,7 @@ HRESULT CIniParser::ParseNextSectionHeader()
     }
 
     //
-    // Create the internal representation of the INI section and set it as the currently-active one.
+    // Create the internal representation of the INI section and set it as the currently-active one:
     //
 
     _iniSectionCur = {};
@@ -981,6 +1113,22 @@ HRESULT CIniParser::ParseNextSectionHeader()
     _iniSectionCur.pSymPart = pSymPart;
     _iniSectionCur.pSymState = pSymState;
     _iniSectionCur.pSymBaseClass = pSymBaseClass;
+
+    //
+    // Update the current state of the parser:
+    //
+
+    if (pSymBaseClass)
+    {
+        // If we parsed an inheritance definition, then we do not allow properties under any
+        // circumstances.
+        _eMode = EParseMode::SectionHeader;
+    }
+    else
+    {
+        // Otherwise, we expect associations to follow.
+        _eMode = EParseMode::Assoc;
+    }
 
     return S_OK;
 }
@@ -993,8 +1141,8 @@ HRESULT CIniParser::ParseNextSectionHeader()
  * 
  * The components must be of the following types:
  *     Property = A qualified property name as defined in the Theme Manager schema, or a custom
- *                property of the formats "*Property#N<Type>", "*Prop#N<Type>" where N is an
- *                integer number between 1 and 65535, and Type is a qualified primitive type name
+ *                property of the formats "*Property#N<Type>", "*Prop#N<Type>" where N is a
+                  32-bit signed integer number, and Type is a qualified primitive type name
  *                or enum name as defined in the Theme Manager schema. In either case, this
  *                component has a primitive type, either implicitly retrieved from the schema, or
  *                manually specified in the case of custom properties.
@@ -1011,7 +1159,50 @@ HRESULT CIniParser::ParseNextSectionHeader()
  */
 HRESULT CIniParser::ParseNextAssociation()
 {
-    return E_NOTIMPL;
+    CSymbolComponent cmProperty;
+
+    if (_scanner.GetChar(L'*'))
+    {
+        PROPAGATE_ERROR_IF_FAILED(cmProperty = ParseNextManualSymbolSegment(ESymbolType::ManualPropertyKey));
+    }
+    else
+    {
+        // Always expect a string name.
+        cmProperty = ReadNextWord();
+
+        if (!cmProperty.IsNonEmptyString())
+        {
+            return SourceError(EParseErrorCode::ExpectedSymbol);
+        }
+
+        // Ensure that the name is statically valid from schema
+        // TODO: implement!
+    }
+
+    if (!_scanner.GetChar(L'='))
+    {
+        return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '='");
+    }
+
+    // TODO: Parsing various different types of values.
+
+    //
+    // Create symbols for each of the components:
+    //
+
+    Symbol *pSymProperty = cmProperty.CreateAndAddSymbol(_pSymbolManager, ESymbolType::PropertyKey);
+    assert(pSymProperty);
+
+    //
+    // Create the internal representation of the property and add it to the list:
+    //
+
+    IniAssociation assoc;
+    assoc.section = _iniSectionCur;
+    assoc.pKeySymbol = pSymProperty;
+    // TODO: values
+
+    return S_OK;
 }
 
 #ifdef ENABLE_PREPROCESSOR

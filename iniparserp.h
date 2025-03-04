@@ -143,11 +143,26 @@ struct ValueResult
     }
 };
 
+template <typename EType, typename EMap, typename EMapArray, const EMapArray &pMap, EType EMap::*x, EType EMap::*y>
+constexpr EType GetXTypeCorrespondingToY(EType eX)
+{
+    for (auto &i : pMap)
+    {
+        if (i.*x == eX)
+        {
+            return i.*y;
+        }
+    }
+
+    return eX;
+}
+
 /**
  * Evaluates an expression and propagates the error result of a ValueResult if it failed.
  * 
  * The expression must end in a ValueResult or this macro will fail to produce valid
- * code.
+ * code. Additionally, this macro must only be in functions returning a ValueResult or
+ * a HRESULT.
  */
 #define PROPAGATE_ERROR_IF_FAILED(errorExpr)                                             \
     do                                                                                   \
