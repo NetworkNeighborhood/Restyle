@@ -330,7 +330,7 @@ bool CSymbolManager::HasSymbol(LPCWSTR szSymName)
 /**
  * Stores unique names used within a parsing context, especially class names.
  */
-class CValueArena : public CTBaseArena<CValueArena, RectValue, 64>
+class CValueArena : public CTBaseArena<CValueArena, BYTE, kLargestValueTypeSize>
 {
     /**
      * This class is used as an RAII wrapper to ensure that the methods of this
@@ -362,42 +362,58 @@ class CValueArena : public CTBaseArena<CValueArena, RectValue, 64>
 #endif
     };
 
+    template <typename TValue, auto TValue:: *pValue>
+    ValueResult<TValue *> CreateTValue(auto nVal)
+    {
+        CEnsureArenaPointerChanged ensurePointerChanged(this);
+
+        HRESULT hr = ResizeIfNecessary(sizeof(TValue));
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+
+        TValue *pResult = new (_pvCur) TValue();
+        pResult->*pValue = nVal;
+        _pvCur += sizeof(Value<>) + pResult->cbSize;
+        return pResult;
+    }
+
 public:
     ValueResult<IntValue *> CreateIntValue(int iVal);
+    ValueResult<SizeValue *> CreateSizeValue(int iVal);
     ValueResult<BoolValue *> CreateBoolValue(BOOL fVal);
+    ValueResult<RectValue *> CreateRectValue(RECT rcVal);
+    ValueResult<MarginsValue *> CreateMarginsValue(MARGINS marVal);
     ValueResult<StringValue *> CreateStringValue(LPCWSTR szVal);
+    ValueResult<AnimationSetValue *> CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations);
 };
+
+#define CREATE_T_VALUE(TmType, specializedName) CreateTValue<Value<TmType>, &Value<TmType>::specializedName>
 
 ValueResult<IntValue *> CValueArena::CreateIntValue(int iVal)
 {
-    CEnsureArenaPointerChanged ensurePointerChanged(this);
+    return CREATE_T_VALUE(Restyle::TMT_INT, iVal)(iVal);
+}
 
-    HRESULT hr = ResizeIfNecessary(sizeof(IntValue));
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    
-    IntValue *pResult = new (_pvCur) IntValue();
-    pResult->iVal = iVal;
-    _pvCur += pResult->cbSize;
-    return pResult;
+ValueResult<SizeValue *> CValueArena::CreateSizeValue(int iVal)
+{
+    return CREATE_T_VALUE(Restyle::TMT_SIZE, iVal)(iVal);
 }
 
 ValueResult<BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
 {
-    CEnsureArenaPointerChanged ensurePointerChanged(this);
+    return CREATE_T_VALUE(Restyle::TMT_BOOL, fVal)(fVal);
+}
 
-    HRESULT hr = ResizeIfNecessary(sizeof(BoolValue));
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    
-    BoolValue *pResult = new (_pvCur) BoolValue();
-    pResult->fVal = fVal;
-    _pvCur += pResult->cbSize;
-    return pResult;
+ValueResult<RectValue *> CValueArena::CreateRectValue(RECT rcVal)
+{
+    return CREATE_T_VALUE(Restyle::TMT_RECT, rcVal)(rcVal);
+}
+
+ValueResult<MarginsValue *> CValueArena::CreateMarginsValue(MARGINS marVal)
+{
+    return CREATE_T_VALUE(Restyle::TMT_MARGINS, marVal)(marVal);
 }
 
 ValueResult<StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
@@ -417,10 +433,33 @@ ValueResult<StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
     pResult->cbSize = targetSize;
     if (!memcpy((void *)&pResult->szVal[0], szVal, targetSize))
     {
-        return E_FAIL;
+        return E_OUTOFMEMORY;
     }
 
-    _pvCur += pResult->cbSize;
+    _pvCur += sizeof(Value<>) + pResult->cbSize;
+    return pResult;
+}
+
+ValueResult<AnimationSetValue *> CValueArena::CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations)
+{
+    CEnsureArenaPointerChanged ensurePointerChanged(this);
+
+    size_t targetSize = sizeof(IniAssociation) + rgAssociations.size();
+
+    HRESULT hr = ResizeIfNecessary(sizeof(AnimationSetValue) + targetSize);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    AnimationSetValue *pResult = new (_pvCur) AnimationSetValue();
+    pResult->cbSize = targetSize;
+    if (!memcpy(pResult->rgAssociations, rgAssociations.data(), targetSize))
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    _pvCur += sizeof(Value<>) + pResult->cbSize;
     return pResult;
 }
 

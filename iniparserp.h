@@ -159,7 +159,7 @@ constexpr EType GetXTypeCorrespondingToY(EType eX)
 
 /**
  * Evaluates an expression and propagates the error result of a ValueResult if it failed.
- * 
+ *
  * The expression must end in a ValueResult or this macro will fail to produce valid
  * code. Additionally, this macro must only be in functions returning a ValueResult or
  * a HRESULT.
@@ -180,11 +180,67 @@ constexpr EType GetXTypeCorrespondingToY(EType eX)
     }                                                                                    \
     while ((void)0, 0)
 
-template <typename NativeType = void, int iPrimTypeVal = 0>
+#define MAP_TM_TO_NATIVE_TYPE(TmType, NativeType) template <> struct TmToNativeTypeMap<TmType> { using Type = NativeType; }
+#define SPECIALIZE_VALUE_FOR(TmType) template <> struct Value<TmType> : ValueBase<TmType>
+#define SPECIALIZE_EASY_VALUE_FOR(TmType, Name)                                          \
+    SPECIALIZE_VALUE_FOR(TmType)                                                         \
+    {                                                                                    \
+        TmToNativeTypeMap<TmType>::Type Name;                                            \
+    };
+
+template <int iPrimTypeVal = 0, typename NativeType = TmToNativeTypeMap<iPrimTypeVal>::Type>
 struct ValueBase
 {
+    using StoredType = NativeType;
+
     int iPrimType = iPrimTypeVal;
     size_t cbSize = sizeof(NativeType);
+};
+
+// Template specialisation just for pointers to ValueBase/Value.
+template <>
+struct ValueBase<0, void>
+{
+    using StoredType = void;
+
+    int iPrimType;
+    size_t cbSize;
+
+#pragma warning(suppress: 26495)
+    consteval ValueBase()
+    {
+        static_assert(
+            "Cannot construct a typeless Value. If you did mean to instantiate, add a type parameter."
+            "Otherwise, double check your pointer syntax."
+        );
+    }
+};
+
+// Maps for Theme Manager primitive value types to C++ primitive types:
+template <int> struct TmToNativeTypeMap; // <int> so we can do anything arbitrary
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_INT, int);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_SIZE, int);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_BOOL, BOOL);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_RECT, RECT);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_MARGINS, MARGINS);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_STRING, WCHAR *);
+
+// Private (or Restyle-specific) Theme Manager primitives:
+struct IniAssociation;
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_ANIMATIONSET, IniAssociation *);
+
+// Other special types:
+MAP_TM_TO_NATIVE_TYPE(0, void);
+
+template <int iPrimTypeVal = 0, typename NativeType = TmToNativeTypeMap<iPrimTypeVal>::Type>
+struct Value : ValueBase<iPrimTypeVal, NativeType>
+{
+};
+
+// Template specialisation just for pointers to Value.
+template <>
+struct Value<0, void> : ValueBase<0, void>
+{
 };
 
 struct IniSection
@@ -199,43 +255,57 @@ struct IniAssociation
 {
     IniSection section;
     Symbol *pKeySymbol;
-    ValueBase<> *pVal;
+    Value<> *pVal;
 };
 
-struct IntValue : public ValueBase<int, Restyle::TMT_INT>
-{
-    int iVal;
-};
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_INT, iVal);
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_SIZE, iVal);
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_BOOL, fVal);
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_RECT, rcVal);
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_MARGINS, marVal);
 
-struct SizeValue : public ValueBase<int, Restyle::TMT_SIZE>
-{
-    int iVal;
-};
-
-struct BoolValue : public ValueBase<BOOL, Restyle::TMT_BOOL>
-{
-    BOOL fVal;
-};
-
-struct RectValue : public ValueBase<RECT, Restyle::TMT_RECT>
-{
-    RECT rcVal;
-};
-
-struct MarginsValue : public ValueBase<MARGINS, Restyle::TMT_MARGINS>
-{
-    MARGINS marVal;
-};
-
-struct StringValue : public ValueBase<WCHAR, Restyle::TMT_STRING>
+SPECIALIZE_VALUE_FOR(Restyle::TMT_STRING)
 {
     WCHAR szVal[];
 };
 
-struct AnimationSetValue : public ValueBase<IniAssociation, Restyle::TMT_ANIMATIONSET>
+SPECIALIZE_VALUE_FOR(Restyle::TMT_ANIMATIONSET)
 {
     UINT cAnimations;
     IniAssociation rgAssociations[];
 };
+
+using IntValue = Value<Restyle::TMT_INT>;
+using SizeValue = Value<Restyle::TMT_SIZE>;
+using BoolValue = Value<Restyle::TMT_BOOL>;
+using RectValue = Value<Restyle::TMT_RECT>;
+using MarginsValue = Value<Restyle::TMT_MARGINS>;
+using StringValue = Value<Restyle::TMT_STRING>;
+using AnimationSetValue = Value<Restyle::TMT_ANIMATIONSET>;
+
+template <typename T>
+static constexpr T static_max(T a, T b) {
+    return a < b ? b : a;
+}
+
+template <typename T, typename... Ts>
+static constexpr T static_max(T a, Ts... bs) {
+    return static_max(a, static_max(bs...));
+}
+
+template <typename... Ts>
+constexpr size_t max_sizeof() {
+    return static_max(sizeof(Ts)...);
+};
+
+constexpr size_t kLargestValueTypeSize = max_sizeof<
+    IntValue,
+    SizeValue,
+    BoolValue,
+    RectValue,
+    MarginsValue,
+    StringValue,
+    AnimationSetValue
+>();
 
 }
