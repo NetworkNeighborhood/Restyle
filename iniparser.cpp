@@ -330,7 +330,7 @@ bool CSymbolManager::HasSymbol(LPCWSTR szSymName)
 /**
  * Stores unique names used within a parsing context, especially class names.
  */
-class CValueArena : public CTBaseArena<CValueArena, BYTE, kLargestValueTypeSize>
+class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize], 256>
 {
     /**
      * This class is used as an RAII wrapper to ensure that the methods of this
