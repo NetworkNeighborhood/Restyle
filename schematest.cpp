@@ -27,19 +27,6 @@ enum ValidationFlags : UINT
 	VF_BAD_ORDER = 2,
 };
 
-static bool StrEndsWithW(LPCWSTR a, LPCWSTR b)
-{
-	if (wcslen(a) >= wcslen(b))
-	{
-		if (wcscmp(a + wcslen(a) - wcslen(b), b) == 0)
-		{
-			return true;
-		}
-	}
-	
-	return false;
-}
-
 void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 {
 	const TMSCHEMAINFO *pSchemaInfo = GetSchemaInfo();

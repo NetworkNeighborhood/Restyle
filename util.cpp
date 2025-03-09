@@ -234,3 +234,16 @@ EParseResult GetPartAndStateName(
 
 	return EParseResult::UnknownType;
 }
+
+bool StrEndsWithW(LPCWSTR a, LPCWSTR b)
+{
+	if (wcslen(a) >= wcslen(b))
+	{
+		if (wcscmp(a + wcslen(a) - wcslen(b), b) == 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}

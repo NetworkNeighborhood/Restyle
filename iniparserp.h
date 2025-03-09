@@ -1,4 +1,5 @@
 #include "iniparser.h"
+#include "util.h"
 
 namespace IniParser
 {
@@ -80,67 +81,6 @@ struct Symbol
          */
         int iPrimType;
     };
-};
-
-template <typename T = int>
-struct ValueResult
-{
-    HRESULT hr = E_FAIL;
-    T value {};
-    
-    inline FORCEINLINE bool Succeeded() const
-    {
-        return SUCCEEDED(hr);
-    }
-    
-    inline FORCEINLINE bool Failed() const
-    {
-        return FAILED(hr);
-    }
-    
-    inline FORCEINLINE HRESULT GetResult() const
-    {
-        return hr;
-    }
-    
-    inline FORCEINLINE T &Unwrap()
-    {
-        return value;
-    }
-
-    inline FORCEINLINE ValueResult &ResultInto(HRESULT *p)
-    {
-        *p = hr;
-        return *this;
-    }
-    
-    inline FORCEINLINE operator HRESULT() const
-    {
-        return hr;
-    }
-    
-    inline FORCEINLINE operator T() const
-    {
-        return value;
-    }
-    
-    inline ValueResult(HRESULT hr)
-        : hr(hr)
-    {
-        assert(FAILED(hr));
-    }
-    
-    inline ValueResult(T value)
-        : hr(S_OK)
-        , value(value)
-    {
-    }
-    
-    inline ValueResult(HRESULT hr, T value)
-        : hr(hr)
-        , value(value)
-    {
-    }
 };
 
 template <typename EType, typename EMap, typename EMapArray, const EMapArray &pMap, EType EMap::*x, EType EMap::*y>
