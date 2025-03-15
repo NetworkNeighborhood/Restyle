@@ -25,6 +25,8 @@
 namespace IniParser
 {
 
+using namespace Restyle;
+
 bool IsSymbolTypePredefined(ESymbolType eSymType)
 {
     return eSymType >= ESymbolType::FirstPredefined && eSymType <= ESymbolType::LastPredefined;
@@ -285,7 +287,7 @@ LPCWSTR CSymbolManager::GetGlobalSymbolName(LPCWSTR szSymName, OUT OPTIONAL int 
 {
     LPCWSTR pszResult = nullptr;
 
-    const Restyle::TMPROPINFO *pPropInfo = Restyle::SearchSchema(Restyle::ESchemaSearchQuery::SearchWholeSchema, szSymName);
+    const TMPROPINFO *pPropInfo = SearchSchema(ESchemaSearchQuery::SearchWholeSchema, szSymName);
     
     // This is a unique name which only presents itself inside this INI file. This case
     // includes all of the class names. In this case, we'll copy the names over to our 
@@ -383,27 +385,27 @@ public:
 
 ValueResult<IntValue *> CValueArena::CreateIntValue(int iVal)
 {
-    return CREATE_T_VALUE(Restyle::TMT_INT, iVal)(iVal);
+    return CREATE_T_VALUE(TMT_INT, iVal)(iVal);
 }
 
 ValueResult<SizeValue *> CValueArena::CreateSizeValue(int iVal)
 {
-    return CREATE_T_VALUE(Restyle::TMT_SIZE, iVal)(iVal);
+    return CREATE_T_VALUE(TMT_SIZE, iVal)(iVal);
 }
 
 ValueResult<BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
 {
-    return CREATE_T_VALUE(Restyle::TMT_BOOL, fVal)(fVal);
+    return CREATE_T_VALUE(TMT_BOOL, fVal)(fVal);
 }
 
 ValueResult<RectValue *> CValueArena::CreateRectValue(RECT rcVal)
 {
-    return CREATE_T_VALUE(Restyle::TMT_RECT, rcVal)(rcVal);
+    return CREATE_T_VALUE(TMT_RECT, rcVal)(rcVal);
 }
 
 ValueResult<MarginsValue *> CValueArena::CreateMarginsValue(MARGINS marVal)
 {
-    return CREATE_T_VALUE(Restyle::TMT_MARGINS, marVal)(marVal);
+    return CREATE_T_VALUE(TMT_MARGINS, marVal)(marVal);
 }
 
 ValueResult<StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
@@ -848,7 +850,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
         }
 
         // Find the type of the property from the schema:
-        const Restyle::TMPROPINFO *pPrimitiveTypeInfo = Restyle::SearchSchema(Restyle::ESchemaSearchQuery::PrimitiveProperty, strType.c_str());
+        const TMPROPINFO *pPrimitiveTypeInfo = SearchSchema(ESchemaSearchQuery::PrimitiveProperty, strType.c_str());
         iType = pPrimitiveTypeInfo ? pPrimitiveTypeInfo->sEnumVal : 0;
 
         // Fail: the above loop fell through without setting a value.
