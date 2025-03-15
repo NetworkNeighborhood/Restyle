@@ -67,6 +67,7 @@ namespace Restyle
 #define TM_ENUM(val, prefix, name, prefCap)          prefix##_##name = val,
 #define TM_PART(val, prefix, name, prefCap)          prefix##_##name = val, 
 #define TM_STATE(val, prefix, name, prefCap)         prefix##_##name = val, 
+#define TM_COMMENT(comment)
 
 #define END_TM_CLASS_PARTS()                };
 #define END_TM_PART_STATES()                };
@@ -90,6 +91,7 @@ namespace Restyle
 #undef TM_PART
 #undef TM_STATE
 #undef TM_ENUM
+#undef TM_COMMENT
 #undef END_TM_CLASS_PARTS
 #undef END_TM_PART_STATES
 #undef END_TM_PROPS
@@ -123,6 +125,8 @@ namespace Restyle
         { L##prefCap, prefix##_##name, TMT_ENUMVAL, },
     #define TM_ENUM(val, prefix, name, prefCap) \
         { L##prefCap, prefix##_##name, TMT_ENUMVAL  },
+    #define TM_COMMENT(comment) \
+        { L##comment, 0, TMT_COMMENT },
 #else
     #define BEGIN_TM_CLASS_PARTS(name)    \
             { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, L#name L"PARTS", 0, ESupportedOS::All },
@@ -139,6 +143,8 @@ namespace Restyle
             { L##prefCap, prefix##_##name, TMT_ENUMVAL, L#name, val },
     #define TM_ENUM(val, prefix, name, prefCap) \
             { L##prefCap, prefix##_##name, TMT_ENUMVAL, L#name, val  },
+    #define TM_COMMENT(comment) \
+            { L##comment, 0, TMT_COMMENT, L##comment, 0 },
 #endif
 
 

@@ -57,6 +57,9 @@
     <ClInclude Include="iniparserp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SchemaUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc">
@@ -88,7 +91,9 @@
     <ClCompile Include="animationmap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="schemautils.cpp">
+    <ClCompile Include="SchemaUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -12,6 +12,7 @@ enum TmSchemaPriv
     TMT_ENUMDEF, // Referenced in schemadef.h, but not public.
     TMT_ENUMVAL, // Referenced in schemadef.h, but not public.
     TMT_ANIMATIONSET, // Unique; used for special parsing purposes by Restyle.
+    TMT_COMMENT, // Unique; used for special parsing purposes by Restyle.
 };
 
 typedef BYTE PRIMVAL;

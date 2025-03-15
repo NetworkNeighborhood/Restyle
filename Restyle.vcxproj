@@ -214,6 +214,7 @@
     <ClInclude Include="restyle_TmSchema.h" />
     <ClInclude Include="scanner.h" />
     <ClInclude Include="SchemaPriv.h" />
+    <ClInclude Include="SchemaUtils.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -227,7 +228,7 @@
     <ClCompile Include="restyle.cpp" />
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="schematest.cpp" />
-    <ClCompile Include="schemautils.cpp" />
+    <ClCompile Include="SchemaUtils.cpp" />
     <ClCompile Include="util.cpp" />
     <ClInclude Include="schematest.h" />
   </ItemGroup>

@@ -163,6 +163,8 @@ END_TM_ENUM()
 BEGIN_TM_PROPS()
 
     //---- primitive types ----
+    // These are limited to a maximum of 255 because a single byte is used to store
+    // the value.
     TM_PROP(200, TMT, ENUM, "Enum",                   ENUM)
     TM_PROP(201, TMT, STRING, "String",             STRING)
     TM_PROP(202, TMT, INT, "Int",                      INT)
@@ -192,9 +194,15 @@ BEGIN_TM_PROPS()
 #define TMT_FIRST_RCSTRING_NAME   TMT_DISPLAYNAME
 #define TMT_LAST_RCSTRING_NAME    TMT_DESCRIPTION
 
+    TM_COMMENT("The programmatic name of your theme.")
     TM_PROP(600, TMT, NAME, "Name",                  STRING)
+    
+    TM_COMMENT("The display name of your theme, which will display in File Explorer.")
     TM_PROP(601, TMT, DISPLAYNAME, "DisplayName",    STRING)
+    
+    TM_COMMENT("File type information displayed upon hovering the theme in File Explorer.")
     TM_PROP(602, TMT, TOOLTIP, "ToolTip",            STRING)
+    
     TM_PROP(603, TMT, COMPANY, "Company",            STRING)
     TM_PROP(604, TMT, AUTHOR, "Author",              STRING)
     TM_PROP(605, TMT, COPYRIGHT, "Copyright",        STRING)
@@ -226,6 +234,8 @@ BEGIN_TM_PROPS()
 #define TMT_FIRSTBOOL   TMT_FLATMENUS
 #define TMT_LASTBOOL    TMT_FLATMENUS
 
+    TM_COMMENT("Sets the flat menu style for classic menus. This affects the appearance of unthemed"
+               "applications, as well as some modified user environments.")
     TM_PROP(1001, TMT, FLATMENUS, "FlatMenus",           BOOL)
 
     //---- theme metrics: sizes ----
@@ -270,7 +280,9 @@ BEGIN_TM_PROPS()
     TM_PROP(1401, TMT, CSSNAME, "CssName",            STRING)
     TM_PROP(1402, TMT, XMLNAME, "XmlName",            STRING)
     // V4 props:
+    TM_COMMENT("A user-specified string denoting when the theme was last modified.")
     TM_PROP(1403, TMT, LASTUPDATED, "LastUpdated", STRING)
+    
     TM_PROP(1404, TMT, ALIAS, "Alias", STRING)
 
     //---- theme metrics: colors ----
@@ -2510,7 +2522,7 @@ BEGIN_TM_CLASS_PARTS_FOR_OS(ANIMATIONSPRIV, ESupportedOS::Win81)
     TM_PART(49, TAS_W81, WINDOWOPEN, "WindowOpen")
     TM_PART(50, TAS_W81, WINDOWCLOSE, "WindowClose")
     TM_PART(51, TAS_W81, WINDOWMINIMIZE, "WindowMinimize")
-    TM_PART(52, TAS_W81, WINDOWMAXMIZE, "WindowMaximize")
+    TM_PART(52, TAS_W81, WINDOWMAXIMIZE, "WindowMaximize")
     TM_PART(53, TAS_W81, WINDOWRESTOREFROMMINIMIZED, "WindowRestoreFromMinimized")
     TM_PART(54, TAS_W81, WINDOWRESTOREFROMMAXIMIZED, "WindowRestoreFromMaximized")
     TM_PART(55, TAS_W81, LOGIN, "Login")

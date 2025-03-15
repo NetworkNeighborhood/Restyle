@@ -3,6 +3,7 @@
 #if DEBUG
 
 #include "util.h"
+#include "SchemaUtils.h"
 #include "schematest.h"
 
 using namespace Restyle;
@@ -103,6 +104,12 @@ void TestSchema(ESchemaTestMode eMode, unsigned uEntryId)
 		for (unsigned i = 0; i < pSchemaInfo->iPropCount; i++)
 		{			
 			const TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable + i;
+
+			// If we're visiting a metadata type, then skip it:
+			if (IsMetadataType(pPropInfo->bPrimVal))
+			{
+				continue;
+			}
 			
 			// We're visiting a new enum, so reset our enum parsing values:
 			if (pPropInfo->bPrimVal == TMT_ENUMDEF)

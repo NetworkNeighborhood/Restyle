@@ -1,5 +1,6 @@
 #include "restyle.h"
 #include "schematest.h"
+#include "SchemaUtils.h"
 #include "binparser.h"
 #include "util.h"
 #include "file.h"
@@ -76,6 +77,11 @@ int wmain(int argc, wchar_t *argv[])
 		VER_MAJOR, VER_MINOR, VER_REVISION
 	);
 	Log(L"Built %s %s\n\n", __WDATE__, __WTIME__);
+
+	if (FAILED(Restyle::InitializeSchemaUtils()))
+	{
+		Log(L"Error: Failed to initialize schema utils.", ELogLevel::Fatal);
+	}
 
 #define IsArg(str, name)   0 == _wcsicmp(str, L"/" name)
 

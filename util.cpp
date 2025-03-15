@@ -1,4 +1,7 @@
 #include "util.h"
+#include "SchemaUtils.h"
+
+// #define NO_SCHEMAUTILS
 
 void LogV(LPCWSTR pszFormat, ELogLevel eLevel, va_list args)
 {
@@ -96,6 +99,7 @@ bool GetBinaryResource(LPCWSTR lpType, LPCWSTR lpName, LPVOID *ppvOut, DWORD *pc
 
 LPCWSTR GetSymbolValueName(long lSymbolVal)
 {
+#ifdef NO_SCHEMAUTILS
 	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
 	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
 	for (int i = 0; i < pSchemaInfo->iPropCount; i++)
@@ -108,10 +112,26 @@ LPCWSTR GetSymbolValueName(long lSymbolVal)
 			return pPropInfo[i].pszName;
 	}
 	return nullptr;
+#else
+	Restyle::SearchSchemaParams params = { 0 };
+	params.cbSize = sizeof(params);
+	params.eSearchQuery = Restyle::ESchemaSearchQuery::Property;
+	params.sEnumVal = lSymbolVal;
+
+	const Restyle::TMPROPINFO *pPropInfo = Restyle::SearchSchema(&params);
+	
+	if (pPropInfo)
+	{
+		return pPropInfo->pszName;
+	}
+
+	return nullptr;
+#endif
 }
 
 LPCWSTR GetSymbolValueNameFromEnum(LPCWSTR pszEnumName, long lSymbolVal)
 {
+#ifdef NO_SCHEMAUTILS
 	const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
 	const Restyle::TMPROPINFO *pPropInfo = pSchemaInfo->pPropTable;
 	bool fFoundEnum = false;
@@ -143,6 +163,18 @@ LPCWSTR GetSymbolValueNameFromEnum(LPCWSTR pszEnumName, long lSymbolVal)
 		}
 	}
 	return nullptr;
+#else
+	const Restyle::TMPROPINFO *pPropInfo = Restyle::FindEnumValueInfo(pszEnumName, lSymbolVal);
+
+	#if DEBUG
+		if (pPropInfo && AsciiStrCmpI(pPropInfo->pszName, L"PenRightTap"))
+		{
+			Log(L"Huh?? %s %d \n", pszEnumName, lSymbolVal, ELogLevel::Info);
+		}
+	#endif
+
+	return pPropInfo ? pPropInfo->pszName : nullptr;
+#endif
 }
 
 EParseResult GetPropName(long lPartId, BYTE bPrimType, std::unique_ptr<WCHAR[]> &pszResult)

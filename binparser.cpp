@@ -1,6 +1,7 @@
 #include "restyle.h"
 #include "binparser.h"
 #include "schemapriv.h"
+#include "SchemaUtils.h"
 #include "util.h"
 
 namespace BinParser
@@ -202,8 +203,11 @@ EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DW
 
 			int eValue = *(int *)((BYTE *)lpRecord + sizeof(VSRECORD));
 			LPCWSTR szEnumName = nullptr;
-			int iEnumDefOffset = 0;
 			LPCWSTR szValueName = nullptr;
+
+//#define NO_SCHEMAUTILS
+#ifdef NO_SCHEMAUTILS
+			int iEnumDefOffset = 0;
 
 			// First pass: find the enum name in the property table:
 			for (int i = 0; i < pSchemaInfo->iPropCount; i++)
@@ -226,6 +230,8 @@ EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DW
 			// Third pass: find the enum value name:
 			for (int i = iEnumDefOffset; i < pSchemaInfo->iPropCount; i++)
 			{
+				if (Restyle::IsMetadataType(pPropInfo[i].bPrimVal)) continue;
+
 				if (pPropInfo[i].bPrimVal != Restyle::TMT_ENUMVAL)
 				{
 					break;
@@ -237,12 +243,22 @@ EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DW
 					break;
 				}
 			}
+#else
+			const Restyle::TMPROPINFO *pEnumValInfo = Restyle::FindEnumValueInfo(lpRecord->lSymbolVal, eValue);
+			const Restyle::TMPROPINFO *pEnumDefInfo = Restyle::FindEnumDefForEnumVal(pEnumValInfo);
+
+			if (pEnumDefInfo)
+				szEnumName = pEnumDefInfo->pszName;
+			if (pEnumValInfo)
+				szValueName = pEnumValInfo->pszName;
+#endif
 
 			if (szValueName)
 			{
 				swprintf_s(pszBuffer, cchBufferMax, L"%s", szValueName);
 				return EParseResult::Success;
 			}
+
 			return EParseResult::Fail;
 		}
 
