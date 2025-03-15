@@ -1,5 +1,6 @@
 #include "iniparserp.h"
 #include "restyle.h"
+#include "SchemaUtils.h"
 #include "util.h"
 #include "file.h"
 #include "scanner.h"
@@ -283,19 +284,8 @@ ValueResult<Symbol *> CSymbolManager::AddManualSymbol(int iVal, ESymbolType eSym
 LPCWSTR CSymbolManager::GetGlobalSymbolName(LPCWSTR szSymName, OUT OPTIONAL int *piSchemaOffset)
 {
     LPCWSTR pszResult = nullptr;
-    const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
-    
-    // This is an existing name stored statically in the module in the schema:
-    for (int i = 0; i < pSchemaInfo->iPropCount; i++)
-    {
-        const Restyle::TMPROPINFO *pPropInfo = &pSchemaInfo->pPropTable[i];
-        
-        if (AsciiStrCmpI(pPropInfo->pszName, szSymName))
-        {
-            pszResult = pPropInfo->pszName;
-            break;
-        }
-    }
+
+    const Restyle::TMPROPINFO *pPropInfo = Restyle::SearchSchema(Restyle::ESchemaSearchQuery::SearchWholeSchema, szSymName);
     
     // This is a unique name which only presents itself inside this INI file. This case
     // includes all of the class names. In this case, we'll copy the names over to our 
@@ -857,24 +847,9 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
             return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a type name");
         }
 
-        // TODO: Restructure this in the future to use schemautils.
-        const Restyle::TMSCHEMAINFO *pSchemaInfo = Restyle::GetSchemaInfo();
-        for (int i = 0; i < pSchemaInfo->iPropCount; i++)
-        {
-            const Restyle::TMPROPINFO *pPropInfo = &pSchemaInfo->pPropTable[i];
-
-            // Is outside primitive range or is not an enum definition.
-            if ((pPropInfo->sEnumVal < 200 && pPropInfo->sEnumVal > 299) || pPropInfo->bPrimVal != Restyle::TMT_ENUMDEF)
-            {
-                continue;
-            }
-
-            if (AsciiStrCmpI(pPropInfo->pszName, strType.c_str()))
-            {
-                iType = pPropInfo->sEnumVal;
-                break;
-            }
-        }
+        // Find the type of the property from the schema:
+        const Restyle::TMPROPINFO *pPrimitiveTypeInfo = Restyle::SearchSchema(Restyle::ESchemaSearchQuery::PrimitiveProperty, strType.c_str());
+        iType = pPrimitiveTypeInfo ? pPrimitiveTypeInfo->sEnumVal : 0;
 
         // Fail: the above loop fell through without setting a value.
         if (iType == 0)
