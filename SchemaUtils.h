@@ -11,6 +11,7 @@ enum class ESchemaSearchQuery
     Enum,
     Parts,
     States,
+    PrimitiveProperty,
 };
 
 /**

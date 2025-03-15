@@ -269,6 +269,9 @@ const TMPROPINFO *SearchSchema(SearchSchemaParams *pParams)
         SEARCH_SCHEMA_CONDITION(eSearchQuery == Q::Property,
             !InRange(pPropInfo->bPrimVal, g_rangePrimitiveTypes)
         );
+        SEARCH_SCHEMA_CONDITION(eSearchQuery == Q::PrimitiveProperty,
+            !InRange(pPropInfo->sEnumVal, g_rangePrimitiveTypes)
+        );
 
         SEARCH_SCHEMA_CONDITION(pParams->sEnumVal, pPropInfo->sEnumVal != pParams->sEnumVal);
 
