@@ -12,6 +12,7 @@ enum EParseErrorCode
     UnexpectedSpace,
     UnexpectedSymbol,
     UnexpectedSequence,
+    InvalidSymbol,
 };
 
 struct ParseError

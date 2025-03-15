@@ -158,6 +158,7 @@ struct ValueBase<0, void>
 
 // Maps for Theme Manager primitive value types to C++ primitive types:
 template <int> struct TmToNativeTypeMap; // <int> so we can do anything arbitrary
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_ENUM, int);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_INT, int);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_SIZE, int);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_BOOL, BOOL);
@@ -198,6 +199,7 @@ struct IniAssociation
     Value<> *pVal;
 };
 
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_ENUM, iVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_INT, iVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_SIZE, iVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_BOOL, fVal);
@@ -215,6 +217,7 @@ SPECIALIZE_VALUE_FOR(Restyle::TMT_ANIMATIONSET)
     IniAssociation rgAssociations[];
 };
 
+using EnumValue = Value<Restyle::TMT_ENUM>;
 using IntValue = Value<Restyle::TMT_INT>;
 using SizeValue = Value<Restyle::TMT_SIZE>;
 using BoolValue = Value<Restyle::TMT_BOOL>;
@@ -239,6 +242,7 @@ constexpr size_t max_sizeof() {
 };
 
 constexpr size_t kLargestValueTypeSize = max_sizeof<
+    EnumValue,
     IntValue,
     SizeValue,
     BoolValue,
