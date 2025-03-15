@@ -5,6 +5,7 @@
 #include "util.h"
 #include "file.h"
 #include "iniparser.h"
+#include "BuildDate.h"
 
 WCHAR g_szThemeFilePath[MAX_PATH] = { 0 };
 HMODULE g_hThemeModule = NULL;
@@ -76,7 +77,7 @@ int wmain(int argc, wchar_t *argv[])
 		L"\n",
 		VER_MAJOR, VER_MINOR, VER_REVISION
 	);
-	Log(L"Built %s %s\n\n", __WDATE__, __WTIME__);
+	Log(L"%s\n\n", GetBuildDate());
 
 	if (FAILED(Restyle::InitializeSchemaUtils()))
 	{

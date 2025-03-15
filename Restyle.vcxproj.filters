@@ -60,6 +60,9 @@
     <ClInclude Include="SchemaUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BuildDate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc">
@@ -94,6 +97,7 @@
     <ClCompile Include="SchemaUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BuildDate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
