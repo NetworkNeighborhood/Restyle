@@ -324,6 +324,10 @@ bool CSymbolManager::HasSymbol(LPCWSTR szSymName)
  */
 class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize], 256>
 {
+    // Precached values:
+    const BoolValue _valBoolFalse = { TMT_BOOL, sizeof(BOOL), FALSE };
+    const BoolValue _valBoolTrue  = { TMT_BOOL, sizeof(BOOL), TRUE };
+
     /**
      * This class is used as an RAII wrapper to ensure that the methods of this
      * function actually update the offset.
@@ -374,7 +378,7 @@ class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize],
 public:
     ValueResult<IntValue *> CreateIntValue(int iVal);
     ValueResult<SizeValue *> CreateSizeValue(int iVal);
-    ValueResult<BoolValue *> CreateBoolValue(BOOL fVal);
+    ValueResult<const BoolValue *> CreateBoolValue(BOOL fVal);
     ValueResult<RectValue *> CreateRectValue(RECT rcVal);
     ValueResult<MarginsValue *> CreateMarginsValue(MARGINS marVal);
     ValueResult<StringValue *> CreateStringValue(LPCWSTR szVal);
@@ -395,7 +399,7 @@ ValueResult<SizeValue *> CValueArena::CreateSizeValue(int iVal)
 
 ValueResult<BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
 {
-    return CREATE_T_VALUE(TMT_BOOL, fVal)(fVal);
+    return fVal ? &_valBoolTrue : &_valBoolFalse;
 }
 
 ValueResult<RectValue *> CValueArena::CreateRectValue(RECT rcVal)
