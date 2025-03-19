@@ -29,7 +29,7 @@ HRESULT CopyString(LPWSTR szDest, DWORD cchDest, LPCWSTR szSrc)
     return hr;
 }
 
-template <typename NumberType, bool IsUnsigned = false>
+template <typename NumberType, bool IsUnsigned = std::is_unsigned_v<NumberType>>
     requires std::integral<NumberType>
 static NumberType ParseIntegerNumberLiteral(LPCWSTR sz, int *piRead = nullptr)
 {
