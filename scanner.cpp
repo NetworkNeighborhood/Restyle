@@ -4,6 +4,7 @@
 #include <strsafe.h>
 #include <winnls.h>
 #include <string>
+#include <concepts>
 
 namespace IniParser
 {
@@ -28,16 +29,26 @@ HRESULT CopyString(LPWSTR szDest, DWORD cchDest, LPCWSTR szSrc)
     return hr;
 }
 
-static int ParseNumberLiteral(LPCWSTR sz, int *iRead = nullptr)
+template <typename NumberType, bool IsUnsigned = false>
+    requires std::integral<NumberType>
+static NumberType ParseIntegerNumberLiteral(LPCWSTR sz, int *piRead = nullptr)
 {
-    int iBuf = 0;
-    int iBase = 10;
-    int nNeg = 1;
+    NumberType iBuf = 0;
+    NumberType iBase = 10;
+    NumberType nNeg = 1;
     LPCWSTR szStart = sz;
     
     if (*sz == L'-')
     {
-        nNeg = -1;
+        if (IsUnsigned)
+        {
+            // Report error?
+        }
+        else
+        {
+            nNeg = -1;
+        }
+
         sz++;
     }
     else if (*sz == L'+')
@@ -104,7 +115,7 @@ static int ParseNumberLiteral(LPCWSTR sz, int *iRead = nullptr)
                 // Stop parsing if we're parsing a base 10 number.
                 if (iBase == 10)
                 {
-                    if (iRead) *iRead = szStart - sz;
+                    if (piRead) *piRead = szStart - sz;
                     return nNeg * iBuf;
                 }
                 
@@ -116,13 +127,13 @@ static int ParseNumberLiteral(LPCWSTR sz, int *iRead = nullptr)
             // return.
             default:
             {
-                if (iRead) *iRead = szStart - sz;
+                if (piRead) *piRead = szStart - sz;
                 return nNeg * iBuf;
             }
         }
     }
     
-    if (iRead) *iRead = szStart - sz;
+    if (piRead) *piRead = szStart - sz;
     return nNeg * iBuf;
 }
 
@@ -274,7 +285,7 @@ bool CScanner::GetNumber(PINT pInt)
     }
     
     int iRead = 0;
-    *pInt = ParseNumberLiteral(_p, &iRead);
+    *pInt = ParseIntegerNumberLiteral<int>(_p, &iRead);
     _p += iRead;
     
     while (IsHexDigit(*_p))
