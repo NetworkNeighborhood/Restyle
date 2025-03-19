@@ -137,6 +137,40 @@ static NumberType ParseIntegerNumberLiteral(LPCWSTR sz, int *piRead = nullptr)
     return nNeg * iBuf;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\
+//
+// Floating point number parsing.
+// 
+// We use the C standard library functions "_(str|wcs)to(f|d)_l" for this. The locale-independent "_l"
+// variants are used in order to ensure that our result parses correctly regardless of the user's
+// operating system language.
+//
+
+template <typename FloatType>
+constexpr void *FloatParserForType;
+
+template <> constexpr decltype(&_wcstof_l) FloatParserForType<float> = _wcstof_l;
+template <> constexpr decltype(&_wcstod_l) FloatParserForType<double> = _wcstod_l;
+
+template <typename FloatType = float, auto pfnParse = FloatParserForType<FloatType>>
+static FloatType ParseFloatingPointNumberLiteral(LPCWSTR sz, int *piRead = nullptr)
+{
+    int nNeg = 1;
+
+    _locale_t hLocale = _wcreate_locale(LC_CTYPE | LC_NUMERIC, L"C");
+
+    LPCWSTR pszEnd = sz;
+    auto flRes = pfnParse(sz, (LPWSTR *)&pszEnd, hLocale);
+
+    _free_locale(hLocale);
+
+    *piRead = pszEnd - sz;
+
+    return nNeg * flRes;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 CScanner::CScanner(LPCWSTR szText, DWORD cchText)
     : _p(szText)
     , _pEndOfFile(szText + cchText)
@@ -293,6 +327,22 @@ bool CScanner::GetNumber(PINT pInt)
         Next();
     }
     
+    return true;
+}
+
+bool CScanner::GetFloatNumber(float *pFloat)
+{
+    SkipSpaces();
+
+    if (!IsNumStart())
+    {
+        return false;
+    }
+
+    int iRead = 0;
+    *pFloat = ParseFloatingPointNumberLiteral(_p, &iRead);
+    _p += iRead;
+
     return true;
 }
 

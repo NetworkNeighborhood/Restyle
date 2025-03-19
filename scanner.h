@@ -60,6 +60,7 @@ public:
     bool SkipSpaces();
     bool GetChar(const WCHAR sz);
     bool GetNumber(PINT pInt);
+    bool GetFloatNumber(float *pFloat);
     bool GetKeyword(LPCWSTR szKeyword);
     bool EndOfLine();
     bool EndOfFile();
