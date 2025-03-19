@@ -359,7 +359,7 @@ class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize],
     };
 
     template <typename TValue, auto TValue:: *pValue>
-    ValueResult<TValue *> CreateTValue(auto nVal)
+    ValueResult<const TValue *> CreateTValue(auto nVal)
     {
         CEnsureArenaPointerChanged ensurePointerChanged(this);
 
@@ -376,43 +376,43 @@ class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize],
     }
 
 public:
-    ValueResult<IntValue *> CreateIntValue(int iVal);
-    ValueResult<SizeValue *> CreateSizeValue(int iVal);
+    ValueResult<const IntValue *> CreateIntValue(int iVal);
+    ValueResult<const SizeValue *> CreateSizeValue(int iVal);
     ValueResult<const BoolValue *> CreateBoolValue(BOOL fVal);
-    ValueResult<RectValue *> CreateRectValue(RECT rcVal);
-    ValueResult<MarginsValue *> CreateMarginsValue(MARGINS marVal);
-    ValueResult<StringValue *> CreateStringValue(LPCWSTR szVal);
-    ValueResult<AnimationSetValue *> CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations);
+    ValueResult<const RectValue *> CreateRectValue(RECT rcVal);
+    ValueResult<const MarginsValue *> CreateMarginsValue(MARGINS marVal);
+    ValueResult<const StringValue *> CreateStringValue(LPCWSTR szVal);
+    ValueResult<const AnimationSetValue *> CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations);
 };
 
 #define CREATE_T_VALUE(TmType, specializedName) CreateTValue<Value<TmType>, &Value<TmType>::specializedName>
 
-ValueResult<IntValue *> CValueArena::CreateIntValue(int iVal)
+ValueResult<const IntValue *> CValueArena::CreateIntValue(int iVal)
 {
     return CREATE_T_VALUE(TMT_INT, iVal)(iVal);
 }
 
-ValueResult<SizeValue *> CValueArena::CreateSizeValue(int iVal)
+ValueResult<const SizeValue *> CValueArena::CreateSizeValue(int iVal)
 {
     return CREATE_T_VALUE(TMT_SIZE, iVal)(iVal);
 }
 
-ValueResult<BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
+ValueResult<const BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
 {
     return fVal ? &_valBoolTrue : &_valBoolFalse;
 }
 
-ValueResult<RectValue *> CValueArena::CreateRectValue(RECT rcVal)
+ValueResult<const RectValue *> CValueArena::CreateRectValue(RECT rcVal)
 {
     return CREATE_T_VALUE(TMT_RECT, rcVal)(rcVal);
 }
 
-ValueResult<MarginsValue *> CValueArena::CreateMarginsValue(MARGINS marVal)
+ValueResult<const MarginsValue *> CValueArena::CreateMarginsValue(MARGINS marVal)
 {
     return CREATE_T_VALUE(TMT_MARGINS, marVal)(marVal);
 }
 
-ValueResult<StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
+ValueResult<const StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
 {
     CEnsureArenaPointerChanged ensurePointerChanged(this);
 
@@ -436,7 +436,7 @@ ValueResult<StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
     return pResult;
 }
 
-ValueResult<AnimationSetValue *> CValueArena::CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations)
+ValueResult<const AnimationSetValue *> CValueArena::CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations)
 {
     CEnsureArenaPointerChanged ensurePointerChanged(this);
 
@@ -487,7 +487,7 @@ class CIniParser
 
     HRESULT ParseNextSectionHeader();
     HRESULT ParseNextAssociation();
-    ValueResult<std::wstring> ParseNextClassName();
+    ValueResult<const std::wstring> ParseNextClassName();
 
     struct ParseManualSymbolResult
     {
@@ -603,7 +603,7 @@ class CIniParser
         }
     };
 
-    ValueResult<ParseManualSymbolResult> ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk = true);
+    ValueResult<const ParseManualSymbolResult> ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk = true);
     
 #ifdef ENABLE_PREPROCESSOR
     HRESULT ParseNextCPreprocessor();
@@ -791,7 +791,7 @@ ParseError CIniParser::GetParseError()
  *     *State0xBADF00D
  *     *Property#1<Int>
  */
-auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk) -> ValueResult<ParseManualSymbolResult>
+auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk) -> ValueResult<const ParseManualSymbolResult>
 {
     assert(IsSymbolTypeManual(eExpectType));
 
@@ -890,7 +890,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
  *     Button
  *     Start::Button
  */
-ValueResult<std::wstring> CIniParser::ParseNextClassName()
+ValueResult<const std::wstring> CIniParser::ParseNextClassName()
 {
     std::wstring strFinalClass;
     std::wstring strFirst = strFinalClass = ReadNextWord();
