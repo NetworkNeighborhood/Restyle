@@ -377,6 +377,7 @@ class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize],
 
 public:
     ValueResult<const IntValue *> CreateIntValue(int iVal);
+    ValueResult<const FloatValue *> CreateFloatValue(float flVal);
     ValueResult<const SizeValue *> CreateSizeValue(int iVal);
     ValueResult<const BoolValue *> CreateBoolValue(BOOL fVal);
     ValueResult<const RectValue *> CreateRectValue(RECT rcVal);
@@ -390,6 +391,11 @@ public:
 ValueResult<const IntValue *> CValueArena::CreateIntValue(int iVal)
 {
     return CREATE_T_VALUE(TMT_INT, iVal)(iVal);
+}
+
+ValueResult<const FloatValue *> CValueArena::CreateFloatValue(float flVal)
+{
+    return CREATE_T_VALUE(TMT_FLOAT, flVal)(flVal);
 }
 
 ValueResult<const SizeValue *> CValueArena::CreateSizeValue(int iVal)
@@ -463,6 +469,7 @@ class CIniParser
 {
     CScanner _scanner;
     CSymbolManager *_pSymbolManager;
+    CValueArena valueArena;
     std::vector<IniAssociation> _associations;
 
     // Precached symbols:
@@ -604,6 +611,11 @@ class CIniParser
     };
 
     ValueResult<const ParseManualSymbolResult> ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk = true);
+
+    ValueResult<const IntValue *> ParseIntValue();
+    ValueResult<const FloatValue *> ParseFloatValue();
+    ValueResult<const BoolValue *> ParseBoolValue();
+    ValueResult<const EnumValue *> ParseEnumValue(CSymbolComponent &rcmProperty);
     
 #ifdef ENABLE_PREPROCESSOR
     HRESULT ParseNextCPreprocessor();
@@ -861,6 +873,20 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
         if (iType == 0)
         {
             return SourceError(EParseErrorCode::ExpectedSymbol, L"Unknown type name '%s' specified", strType.c_str());
+        }
+
+        switch (iType)
+        {
+            case TMT_ENUM:
+            case TMT_HBITMAP:
+            case TMT_DISKSTREAM:
+            case TMT_STREAM:
+            case TMT_BITMAPREF:
+                return SourceError(
+                    EParseErrorCode::UnexpectedSymbol, 
+                    L"Properties may not be special type '%s', as values thereof are impossible to represent",
+                    strType.c_str()
+                );
         }
 
         if (_scanner.GetChar(L'>'))
@@ -1166,6 +1192,7 @@ HRESULT CIniParser::ParseNextSectionHeader()
  *                or enum name as defined in the Theme Manager schema. In either case, this
  *                component has a primitive type, either implicitly retrieved from the schema, or
  *                manually specified in the case of custom properties.
+ *     `=` = A required separation character delineating the Property and Value components.
  *     Value = A value matching the format outlined for the primitive type of the Property
  *             component. For more information, see the documentation for the parsers for each of
  *             the value types.
@@ -1181,6 +1208,8 @@ HRESULT CIniParser::ParseNextAssociation()
 {
     CSymbolComponent cmProperty;
 
+    const TMPROPINFO *pPropInfo = nullptr;
+
     if (_scanner.GetChar(L'*'))
     {
         PROPAGATE_ERROR_IF_FAILED(cmProperty = ParseNextManualSymbolSegment(ESymbolType::ManualPropertyKey));
@@ -1195,8 +1224,18 @@ HRESULT CIniParser::ParseNextAssociation()
             return SourceError(EParseErrorCode::ExpectedSymbol);
         }
 
+        if (cmProperty.GetString().Failed())
+        {
+            // TODO: InvalidSymbol seems weird. Perhaps a different code should be introduced for this type.
+            return SourceError(EParseErrorCode::InvalidSymbol, L"Failed to parse property name.");
+        }
+
         // Ensure that the name is statically valid from schema
-        // TODO: implement!
+        pPropInfo = SearchSchema(ESchemaSearchQuery::SearchWholeSchema, cmProperty.GetString().Unwrap().c_str());
+        if (!pPropInfo)
+        {
+            return SourceError(EParseErrorCode::InvalidSymbol, L"Invalid symbol name '%s'", cmProperty.GetString().Unwrap().c_str());
+        }
     }
 
     if (!_scanner.GetChar(L'='))
@@ -1204,7 +1243,48 @@ HRESULT CIniParser::ParseNextAssociation()
         return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '='");
     }
 
-    // TODO: Parsing various different types of values.
+    //
+    // Determine the type of the value:
+    //
+
+    int iPrimVal;
+
+    if (!cmProperty.IsManual())
+    {
+        iPrimVal = pPropInfo->bPrimVal;
+    }
+    else
+    {
+        iPrimVal = cmProperty.GetParseManualSymbolResult().Unwrap().iType;
+    }
+
+    //
+    // Parse the value depending on the type:
+    //
+
+    Value<> *pValue = nullptr;
+
+
+    switch (iPrimVal)
+    {
+        case TMT_INT:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseIntValue());
+            break;
+        }
+
+        case TMT_BOOL:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseBoolValue());
+            break;
+        }
+
+        case TMT_ENUM:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseEnumValue(cmProperty));
+            break;
+        }
+    }
 
     //
     // Create symbols for each of the components:
@@ -1220,9 +1300,133 @@ HRESULT CIniParser::ParseNextAssociation()
     IniAssociation assoc;
     assoc.section = _iniSectionCur;
     assoc.pKeySymbol = pSymProperty;
-    // TODO: values
+    assert(pValue);
+    assoc.pVal = pValue;
 
     return S_OK;
+}
+
+/*
+ * Parses an integer value.
+ *
+ * Integer values follow the following format:
+ *      {Sign}{Number}
+ * 
+ * The components must be of the following types:
+ *      Sign = An optional signage symbol, which may not be followed by whitespace. It may
+ *             be either a "+" or "-" symbol. "+" will have no effect on the number, and "-"
+ *             will invert the number.
+ *      Number = A number parsed from a decimal number sequence using the digits 0 through 9
+ *               or a hexadecimal number sequenced, prefixed with the case insensitive prefix
+ *               "0x", using the case-insensitive digits 0 through F.
+ * 
+ * Examples of major valid constructions include:
+ *      0
+ *      123
+ *      +100
+ *      -456
+ *      2147483647
+ *      0xBADBEEF
+ */
+ValueResult<const IntValue *> CIniParser::ParseIntValue()
+{
+    int iResult;
+    if (_scanner.GetNumber(&iResult))
+    {
+        return valueArena.CreateIntValue(iResult);
+    }
+    
+    return SourceError(EParseErrorCode::ExpectedNumber, L"An integer value must be a valid integer number");
+}
+
+/*
+ * Parses a floating-point number value.
+ *
+ * Floating-point number values follow the following format:
+ *      {Sign}{Number}.{Decimal}e{Exponent}
+ *
+ * The components must be of the following types:
+ *      Sign = An optional signage symbol, which may not be followed by whitespace. It may
+ *             be either a "+" or "-" symbol. "+" will have no effect on the number, and "-"
+ *             will invert the number.
+ *      Number = A number parsed from a decimal number sequence using the digits 0 through 9,
+ *               or the built-in case-insensitive keyword "NaN", or the built-in case-insensitive
+ *               keyword "Infinity".
+ *      . = An optionally-parsed character which separates the Number and Decimal components.
+ *      Decimal = An optionally-parsed number parsed from a decimal number sequence using the
+ *                digits 0 through 9.
+ *      e = An optionally-parsed character which separates the previous Number or Decimal component
+ *          and the Exponent component.
+ *      Exponent = An optionally-parsed number parsed from a decimal number sequence using the
+ *                 digits 0 through 9.
+ *
+ * Examples of major valid constructions include:
+ *      0
+ *      123
+ *      +100
+ *      -123.456
+ *      1.234e10
+ *      -0.0
+ *      NaN
+ *      -Infinity
+ */
+ValueResult<const FloatValue *> CIniParser::ParseFloatValue()
+{
+    float flResult;
+    if (_scanner.GetFloatNumber(&flResult))
+    {
+        return valueArena.CreateFloatValue(flResult);
+    }
+
+    return SourceError(EParseErrorCode::ExpectedNumber, L"A floating-point number value must be a valid floating-point number.");
+}
+
+/**
+ * Parses a boolean value.
+ * 
+ * Boolean values follow the following format:
+ *      TrueOrFalse
+ * 
+ * The component must be of the following type:
+ *      TrueOrFalse = One of the built-in keywords case-insensitive keywords: "True" or "False".
+ * 
+ * Examples of major valid constructions include:
+ *      True
+ *      False
+ */
+ValueResult<const BoolValue *> CIniParser::ParseBoolValue()
+{
+    if (_scanner.GetKeyword(L"True"))
+    {
+        return valueArena.CreateBoolValue(TRUE);
+    }
+    else if (_scanner.GetKeyword(L"False"))
+    {
+        return valueArena.CreateBoolValue(FALSE);
+    }
+
+    return SourceError(EParseErrorCode::ExpectedSymbol, L"A boolean value must be either true or false");
+}
+
+/**
+ * Parses an enum value.
+ * 
+ * Enum values follow the following format:
+ *      EnumValue
+ * 
+ * The component must be of the following type:
+ *      EnumValue = A qualified enum value defined in the Theme Manager schema that corresponds
+ *                  to the Property component of the parsing context.
+ * 
+ * Examples of major valid constructions include, in the case of the use within associations:
+ *      ImageLayout = Vertical
+ *      BgType = ImageFile
+ *      SizingType = TrueSize
+ */
+ValueResult<const EnumValue *> CIniParser::ParseEnumValue(CSymbolComponent &rcmProperty)
+{
+    // TODO: Expand SchemaUtils to make this nicer to do.
+    return E_NOTIMPL;
 }
 
 #ifdef ENABLE_PREPROCESSOR

@@ -160,6 +160,7 @@ struct ValueBase<0, void>
 template <int> struct TmToNativeTypeMap; // <int> so we can do anything arbitrary
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_ENUM, int);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_INT, int);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_FLOAT, float);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_SIZE, int);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_BOOL, BOOL);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_RECT, RECT);
@@ -201,6 +202,7 @@ struct IniAssociation
 
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_ENUM, iVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_INT, iVal);
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_FLOAT, flVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_SIZE, iVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_BOOL, fVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_RECT, rcVal);
@@ -219,6 +221,7 @@ SPECIALIZE_VALUE_FOR(Restyle::TMT_ANIMATIONSET)
 
 using EnumValue = Value<Restyle::TMT_ENUM>;
 using IntValue = Value<Restyle::TMT_INT>;
+using FloatValue = Value<Restyle::TMT_FLOAT>;
 using SizeValue = Value<Restyle::TMT_SIZE>;
 using BoolValue = Value<Restyle::TMT_BOOL>;
 using RectValue = Value<Restyle::TMT_RECT>;
