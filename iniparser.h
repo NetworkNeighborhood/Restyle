@@ -13,6 +13,8 @@ enum EParseErrorCode
     UnexpectedSymbol,
     UnexpectedSequence,
     InvalidSymbol,
+    TypeDoesNotExist,
+    ItemCountMismatch,
 };
 
 struct ParseError

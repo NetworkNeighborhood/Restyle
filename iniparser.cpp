@@ -200,7 +200,7 @@ ValueResult<LPCWSTR> CNameArena::Add(LPCWSTR sz)
     
     for (const LPCWSTR &szExisting : *this)
     {
-        if (AsciiStrCmpI(szExisting, sz))
+        if (AsciiStrCmpI(szExisting, sz) == 0)
         {
             // Avoid inserting duplicate items:
             return szExisting;
@@ -375,22 +375,57 @@ class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize],
         return pResult;
     }
 
+    template <typename TValue, auto TValue :: *pValue>
+    ValueResult<const TValue *> CreateTListValue(auto rgnVal, UINT cVals)
+    {
+        CEnsureArenaPointerChanged ensurePointerChanged(this);
+
+        size_t cb = sizeof(int) * cVals;
+
+        HRESULT hr = ResizeIfNecessary(sizeof(TValue) + cb);
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+
+        TValue *pResult = new (_pvCur) TValue();
+        pResult->cbSize = cb;
+        if (!memcpy((void *)&(pResult->*pValue)[0], rgnVal, cb))
+        {
+            return E_OUTOFMEMORY;
+        }
+
+        _pvCur += sizeof(Value<>) + pResult->cbSize;
+        return pResult;
+    }
+
 public:
     ValueResult<const IntValue *> CreateIntValue(int iVal);
+    ValueResult<const EnumValue *> CreateEnumValue(int iVal);
     ValueResult<const FloatValue *> CreateFloatValue(float flVal);
     ValueResult<const SizeValue *> CreateSizeValue(int iVal);
     ValueResult<const BoolValue *> CreateBoolValue(BOOL fVal);
     ValueResult<const RectValue *> CreateRectValue(RECT rcVal);
     ValueResult<const MarginsValue *> CreateMarginsValue(MARGINS marVal);
+    ValueResult<const PositionValue *> CreatePositionValue(POINT ptVal);
+    ValueResult<const ColorValue *> CreateColorValue(COLORREF crVal);
+    ValueResult<const IntListValue *> CreateIntListValue(int *rgiVal, UINT cVals);
+    ValueResult<const FloatListValue *> CreateFloatListValue(float *rgflVal, UINT cVals);
     ValueResult<const StringValue *> CreateStringValue(LPCWSTR szVal);
     ValueResult<const AnimationSetValue *> CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations);
 };
 
 #define CREATE_T_VALUE(TmType, specializedName) CreateTValue<Value<TmType>, &Value<TmType>::specializedName>
+#define CREATE_T_LIST_VALUE(TmType, specializedName) CreateTListValue<Value<TmType>, &Value<TmType>::specializedName>
 
 ValueResult<const IntValue *> CValueArena::CreateIntValue(int iVal)
 {
     return CREATE_T_VALUE(TMT_INT, iVal)(iVal);
+}
+
+ValueResult<const EnumValue *> CValueArena::CreateEnumValue(int iVal)
+{
+    return CREATE_T_VALUE(TMT_ENUM, iVal)(iVal);
 }
 
 ValueResult<const FloatValue *> CValueArena::CreateFloatValue(float flVal)
@@ -416,6 +451,26 @@ ValueResult<const RectValue *> CValueArena::CreateRectValue(RECT rcVal)
 ValueResult<const MarginsValue *> CValueArena::CreateMarginsValue(MARGINS marVal)
 {
     return CREATE_T_VALUE(TMT_MARGINS, marVal)(marVal);
+}
+
+ValueResult<const ColorValue *> CValueArena::CreateColorValue(COLORREF crVal)
+{
+    return CREATE_T_VALUE(TMT_COLOR, crVal)(crVal);
+}
+
+ValueResult<const PositionValue *> CValueArena::CreatePositionValue(POINT ptVal)
+{
+    return CREATE_T_VALUE(TMT_POSITION, ptVal)(ptVal);
+}
+
+ValueResult<const IntListValue *> CValueArena::CreateIntListValue(int *rgiVal, UINT cVals)
+{
+    return CREATE_T_LIST_VALUE(TMT_INTLIST, rgiVal)(rgiVal, cVals);
+}
+
+ValueResult<const FloatListValue *> CValueArena::CreateFloatListValue(float *rgflVal, UINT cVals)
+{
+    return CREATE_T_LIST_VALUE(TMT_FLOATLIST, rgflVal)(rgflVal, cVals);
 }
 
 ValueResult<const StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
@@ -611,11 +666,20 @@ class CIniParser
     };
 
     ValueResult<const ParseManualSymbolResult> ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk = true);
+    ValueResult<const int> ParseSizeInfoUnits(int iNum, LPCWSTR pszDefaultUnits);
 
     ValueResult<const IntValue *> ParseIntValue();
     ValueResult<const FloatValue *> ParseFloatValue();
     ValueResult<const BoolValue *> ParseBoolValue();
+    ValueResult<const SizeValue *> ParseSizeValue();
     ValueResult<const EnumValue *> ParseEnumValue(CSymbolComponent &rcmProperty);
+
+    ValueResult<const IntListValue *> ParseIntListValue(UINT uLimit = 0);
+    ValueResult<const FloatListValue *> ParseFloatListValue(UINT uLimit = 0);
+    ValueResult<const RectValue *> ParseRectValue();
+    ValueResult<const MarginsValue *> ParseMarginsValue();
+    ValueResult<const PositionValue *> ParsePositionValue();
+    ValueResult<const ColorValue *> ParseColorValue();
     
 #ifdef ENABLE_PREPROCESSOR
     HRESULT ParseNextCPreprocessor();
@@ -639,6 +703,12 @@ class CIniParser
         { L"endif", &CIniParser::ParseCPreprocessorEndif },
     };
 #endif
+
+    template <typename ItemType>
+    friend ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, UINT uLimit);
+
+    template <typename T>
+    friend ValueResult<std::vector<T> > ValidateStrictLengthListValue(CIniParser *pParser, int iLength, LPCWSTR pszFailMsg);
     
 public:
     CIniParser(LPCWSTR szText, DWORD cchText);
@@ -896,6 +966,59 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
     }
 
     return ParseManualSymbolResult { iValue, iType };
+}
+
+/*
+ * Parses size info units.
+ * 
+ * Size info units are suffixes that may optionally follow numbers and specify the
+ * unit of that number.
+ * 
+ * They may be of any of the following values:
+ *     "pixels", "px" = Pixel units. The "px" synonym is a Restyle feature.
+ *     "twips"        = 1/20's of a typographical point.
+ *     "points", "pt" = Typographical points. The "pt" synonym is a Restyle feature.
+ * 
+ * As with any other symbol, spacing is optional. In our opinion, it is preferred to
+ * include a space when writing the full name of a unit (i.e. "pixels") and to leave
+ * the space out when writing the abbreviated name of a unit (i.e. "px").
+ * 
+ * Examples of major valid constructions include:
+ *     20px
+ *     43 pixels
+ *     10 twips
+ *     14pt
+ *     12 points
+ */
+ValueResult<const int> CIniParser::ParseSizeInfoUnits(int iNum, LPCWSTR pszDefaultUnits)
+{
+    std::wstring strUnits = ReadNextWord();
+
+    if (strUnits.empty())
+    {
+        strUnits = pszDefaultUnits;
+    }
+
+    LPCWSTR pszUnits = strUnits.c_str();
+
+    if (AsciiStrCmpI(pszUnits, L"pixels") == 0 || AsciiStrCmpI(pszUnits, L"px") == 0)
+    {
+        // Fallthrough; we are already in pixels.
+    }
+    else if (AsciiStrCmpI(pszUnits, L"twips") == 0)
+    {
+        iNum *= -MulDiv(iNum, 96, 72 * 20);
+    }
+    else if (AsciiStrCmpI(pszUnits, L"points") == 0 || AsciiStrCmpI(pszUnits, L"pt") == 0)
+    {
+        iNum *= -MulDiv(iNum, 96, 72);
+    }
+    else
+    {
+        return SourceError(UnexpectedSymbol, L"Unexpected unit size '%s'", pszUnits);
+    }
+
+    return iNum;
 }
 
 /**
@@ -1238,6 +1361,8 @@ HRESULT CIniParser::ParseNextAssociation()
         }
     }
 
+    assert(pPropInfo != nullptr);
+
     if (!_scanner.GetChar(L'='))
     {
         return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '='");
@@ -1264,7 +1389,6 @@ HRESULT CIniParser::ParseNextAssociation()
 
     Value<> *pValue = nullptr;
 
-
     switch (iPrimVal)
     {
         case TMT_INT:
@@ -1279,9 +1403,51 @@ HRESULT CIniParser::ParseNextAssociation()
             break;
         }
 
+        case TMT_SIZE:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseSizeValue());
+            break;
+        }
+
         case TMT_ENUM:
         {
             PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseEnumValue(cmProperty));
+            break;
+        }
+
+        case TMT_RECT:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseRectValue());
+            break;
+        }
+
+        case TMT_MARGINS:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseMarginsValue());
+            break;
+        }
+
+        case TMT_POSITION:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParsePositionValue());
+            break;
+        }
+
+        case TMT_COLOR:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseColorValue());
+            break;
+        }
+
+        case TMT_INTLIST:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseIntListValue());
+            break;
+        }
+
+        case TMT_FLOATLIST:
+        {
+            PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseFloatListValue());
             break;
         }
     }
@@ -1409,6 +1575,38 @@ ValueResult<const BoolValue *> CIniParser::ParseBoolValue()
 }
 
 /**
+ * Parses a size value.
+ * 
+ * Size values follow the following format:
+ *     {IntegerNumber}{Unit}
+ * 
+ * The components must be of the following types:
+ *     IntegerNumber = A valid integer number. See the documentation on parsing integer numbers
+ *                     for more information.
+ *     Unit = One of the valid size info units, as described in the documentation for
+ *            ParseSizeInfoUnits. The default unit is "pixels".
+ */
+ValueResult<const SizeValue *> CIniParser::ParseSizeValue()
+{
+    int iResult;
+    if (_scanner.GetNumber(&iResult))
+    {
+        // Try to read the explicit unit if it exists.:
+        ValueResult<const int> vrUnit = ParseSizeInfoUnits(iResult, L"pixels");
+
+        // If something went wrong while trying to read the explicit unit, then
+        // propagate the error. This case does not encompass the lack of a unit,
+        // since units are always optional. This case will be hit, i.e., if the
+        // specified manual unit is illegal.
+        PROPAGATE_ERROR_IF_FAILED(vrUnit);
+
+        return valueArena.CreateSizeValue(vrUnit.Unwrap());
+    }
+
+    return SourceError(EParseErrorCode::ExpectedNumber, L"An size value must be a valid integer number");
+}
+
+/**
  * Parses an enum value.
  * 
  * Enum values follow the following format:
@@ -1425,8 +1623,402 @@ ValueResult<const BoolValue *> CIniParser::ParseBoolValue()
  */
 ValueResult<const EnumValue *> CIniParser::ParseEnumValue(CSymbolComponent &rcmProperty)
 {
-    // TODO: Expand SchemaUtils to make this nicer to do.
-    return E_NOTIMPL;
+    SearchSchemaParams searchParams = { 0 };
+    searchParams.cbSize = sizeof(searchParams);
+    searchParams.eSearchQuery = ESchemaSearchQuery::Enum;
+
+    if (rcmProperty.IsManual() || rcmProperty.IsNonEmptyString())
+    {
+        return E_INVALIDARG;
+    }
+
+    searchParams.szName = rcmProperty.GetString().Unwrap().c_str();
+
+    // TODO: Implement target OS version manager.
+    searchParams.eSupportedOs = ESupportedOS::All;
+
+    const TMPROPINFO *pEnumIndex = SearchSchema(&searchParams);
+
+    if (!pEnumIndex)
+    {
+        return SourceError(EParseErrorCode::TypeDoesNotExist, L"Failed to find enum definition for %s", searchParams.szName);
+    }
+
+    // Read the next word to figure out the enum value.
+    std::wstring strEnumVal = ReadNextWord();
+
+    if (strEnumVal.empty())
+    {
+        return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected an enum value name");
+    }
+
+    // Iterate the enum properties until we find a match.
+    const TMPROPINFO *pCurVal = pEnumIndex;
+    bool fFoundVal = false;
+    while (pCurVal = SearchSchema(ESchemaSearchQuery::Enum, pCurVal, TMT_ENUM))
+    {
+        if (AsciiStrCmpI(pCurVal->pszName, strEnumVal.c_str()) == 0)
+        {
+            // We found the value, so break.
+            fFoundVal = true;
+            break;
+        }
+    }
+
+    if (!fFoundVal)
+    {
+        return SourceError(EParseErrorCode::UnexpectedSymbol, L"'%s' is not a valid value for the enum type '%s'", 
+            strEnumVal.c_str(), searchParams.szName
+        );
+    }
+
+    return valueArena.CreateEnumValue(pCurVal->sEnumVal);
+}
+
+template <typename ItemType>
+    requires std::is_same_v<ItemType, int> || 
+             std::is_same_v<ItemType, float>
+static ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, UINT uLimit)
+{
+    bool (CScanner:: *pfnGetNextValue)(OUT ItemType *);
+
+    if constexpr (std::is_same_v<ItemType, int>)
+         pfnGetNextValue = &CScanner::GetNumber;
+    else if constexpr (std::is_same_v<ItemType, float>)
+         pfnGetNextValue = &CScanner::GetFloatNumber;
+
+    // Lists are particularly hard to parse, because they can span multiple lines and have two
+    // "equally valid" characters for item separation. The number-scanning methods in CScanner
+    // already regard parsing the next separation. We only allow multi-line parsing if the line
+    // ends in a comma.
+    bool fLastCharWasComma = false;
+    int iCurrentItem = 0;
+    std::vector<ItemType> vecItems;
+    do
+    {
+        bool fIsFirstItemOfSecondaryLine = false;
+
+        if (uLimit > 0 && iCurrentItem > uLimit - 1)
+        {
+            return pParser->SourceError(
+                ItemCountMismatch,
+                L"The maximum number of items that this list can hold is %d.",
+                uLimit
+            );
+        }
+
+        // Parse the next value:
+        ItemType next{};
+        if (!(pParser->_scanner.*pfnGetNextValue)(&next))
+        {
+            return pParser->SourceError(
+                EParseErrorCode::ExpectedNumber,
+                L"Expected number at item #%d of list%s",
+                iCurrentItem,
+                (fIsFirstItemOfSecondaryLine
+                ? L". If you did not mean for this line to be parsed as a list, remove the comma from "
+                L"the end of the list on the previous line."
+                : L"")
+            );
+        }
+
+        // When we call SkipSpaces here, we want to avoid skipping to the next line so that we can perform our
+        // own special checks for such an operation.
+        pParser->_scanner.SkipSpaces(false);
+        fLastCharWasComma = pParser->_scanner.GetChar(L',');
+        pParser->_scanner.SkipSpaces(false);
+
+        // Since this flag isn't needed for the current iteration anymore, this is a good place to clear it.
+        fIsFirstItemOfSecondaryLine = false;
+
+        if (pParser->_scanner.Read() == 0) // 0 indicates end of line
+        {
+            if (!fLastCharWasComma)
+            {
+                // Even if there is data that the user intended to be relevant to us, the syntax is
+                // malformed and it's none of our business now.
+                break;
+            }
+
+            // Call SkipSpaces again and progress to the next line.
+            pParser->_scanner.SkipSpaces(true);
+            fIsFirstItemOfSecondaryLine = true;
+        }
+
+        vecItems.push_back(next);
+        iCurrentItem++;
+    }
+    while (!pParser->_scanner.EndOfFile());
+
+    return vecItems;
+}
+
+/*
+ * Parse an integer list value.
+ * 
+ * Integer list values follow the following format, where the body may repeat indefinitely:
+ *     {{IntegerNumber}{Comma}{WhiteSpace}}...
+ * 
+ * Lists of numbers may not end in a comma, as line-final commas are regarded by the parser to mark
+ * continuation of a list onto the next line.
+ * 
+ * As such, it is legal to write:
+ *     *Property#1<IntList> = 1, 2, 3, 4,
+ *                            5, 6, 7, 8
+ * 
+ * But illegal to write:
+ *     *Property#1<IntList> = 1 2 3 4
+ *                            5 6 7 8
+ * 
+ * ...due to syntactic ambiguity.
+ * 
+ * The components must be of the following types:
+ *     IntegerNumber = A valid integer number. See the documentation on parsing integer numbers
+ *                     for more information.
+ *     Comma = A "," character. This explicitly marks that there is another list entry to come.
+ *     WhiteSpace = One or more whitespace characters. This implicitly marks that there is another
+ *                  list entry to come.
+ * 
+ * Examples of major valid constructions include:
+ *     1, 2, 3, 4, 5
+ *     6 7 8 9 10
+ */
+ValueResult<const IntListValue *> CIniParser::ParseIntListValue(UINT uLimit)
+{
+    ValueResult<std::vector<int> > vrVecItems = ParseListValue<int>(this, uLimit);
+    PROPAGATE_ERROR_IF_FAILED(vrVecItems);
+    return valueArena.CreateIntListValue(vrVecItems.Unwrap().data(), vrVecItems.Unwrap().size());
+}
+
+/*
+ * Parse an floating-point number list value.
+ *
+ * Floating-point number list values follow the following format, where the body may repeat indefinitely:
+ *     {{FloatingPointNumber}{Comma}{WhiteSpace}}...
+ *
+ * Lists of numbers may not end in a comma, as line-final commas are regarded by the parser to mark
+ * continuation of a list onto the next line.
+ *
+ * As such, it is legal to write:
+ *     *Property#1<FloatList> = 1.0, 1.1, 1.2, 1.3,
+ *                              1.4, 1.5, 1.6, 1.7
+ *
+ * But illegal to write:
+ *     *Property#1<FloatList> = 1.0 1.1 1.2 1.3
+ *                              1.4 1.5 1.6 1.7
+ *
+ * ...due to syntactic ambiguity.
+ *
+ * The components must be of the following types:
+ *     FloatingPointNumber = A valid floating-point number. See the documentation on parsing
+ *                           floating-point numbers for more information.
+ *     Comma = A "," character. This explicitly marks that there is another list entry to come.
+ *     WhiteSpace = One or more whitespace characters. This implicitly marks that there is another
+ *                  list entry to come.
+ *
+ * Examples of major valid constructions include:
+ *     1.0, 2.5, 3.2, 4.6, 5.93, NaN, Infinity
+ *     6.12 7.34 8.43 -Infinity 9.288 10.499 NaN
+ */
+ValueResult<const FloatListValue *> CIniParser::ParseFloatListValue(UINT uLimit)
+{
+    ValueResult<std::vector<float> > vrVecItems = ParseListValue<float>(this, uLimit);
+    PROPAGATE_ERROR_IF_FAILED(vrVecItems);
+    return valueArena.CreateFloatListValue(vrVecItems.Unwrap().data(), vrVecItems.Unwrap().size());
+}
+
+template <typename T>
+static ValueResult<std::vector<T> > ValidateStrictLengthListValue(CIniParser *pParser, int iLength, LPCWSTR pszFailMsg)
+{
+    ValueResult<std::vector<int> > vrVecItems = ParseListValue<int>(pParser, iLength);
+
+    // If the error is not a parse error or if it is a non-item-count-mismatch parse error,
+    // then propagate the error if so. We do this to override the error mismatch for our
+    // strict count vector.
+    if (vrVecItems.GetResult() == HRESULT_FROM_WIN32(ERROR_UNKNOWN_PROPERTY) || pParser->_parseError.eCode == ItemCountMismatch)
+    {
+        return pParser->SourceError(ItemCountMismatch, pszFailMsg);
+    }
+    else if (vrVecItems.Failed())
+    {
+        PROPAGATE_ERROR_IF_FAILED(vrVecItems);
+    }
+
+    std::vector<int> &vec = vrVecItems.Unwrap();
+
+    // ParseListValue will validate the upper boundary, but not the lower boundary.
+    // As such, we valid the lower boundary here:
+    if (vec.size() != iLength)
+    {
+        return pParser->SourceError(ItemCountMismatch, pszFailMsg);
+    }
+
+    return vrVecItems;
+}
+
+/*
+ * Parses a rectangle value.
+ * 
+ * Rectangle values follow the following format:
+ *     {Left}{,}{Top}{,}{Right}{,}{Bottom}
+ * 
+ * Rectangle values are lists parsed using the same rules as the IntList type. However,
+ * they must consist of exactly 4 value components, rather than having an indefinite
+ * number like values of the IntList type can freely have.
+ * 
+ * The components must be of the following types:
+ *     , = A comma or whitespace separation character. These follow the general list
+ *         type separation rules.
+ *     Left = An integer number.
+ *     Top = An integer number.
+ *     Right = An integer number.
+ *     Bottom = An integer number.
+ * 
+ * Examples of major valid constructions include:
+ *     0, 0, 20, 20
+ *     0 0 20 20
+ */
+ValueResult<const RectValue *> CIniParser::ParseRectValue()
+{
+    constexpr LPCWSTR pszInvalidCountErrorMsg = L"Rect values must have exactly 4 specified values.";
+
+    ValueResult<std::vector<int> > vrVecItems = ValidateStrictLengthListValue<int>(this, 4, pszInvalidCountErrorMsg);
+    PROPAGATE_ERROR_IF_FAILED(vrVecItems);
+    auto &vec = vrVecItems.Unwrap();
+
+    // The parsed parts follow the order: left, top, right, bottom
+    RECT rc;
+    rc.left = vec[0];
+    rc.top = vec[1];
+    rc.right = vec[2];
+    rc.bottom = vec[3];
+
+    return valueArena.CreateRectValue(rc);
+}
+
+/*
+ * Parses a margins value.
+ *
+ * Margin values follow the following format:
+ *     {LeftWidth}{,}{RightWidth}{,}{TopHeight}{,}{BottomHeight}
+ *
+ * Margin values are lists parsed using the same rules as the IntList type. However,
+ * they must consist of exactly 4 value components, rather than having an indefinite
+ * number like values of the IntList type can freely have.
+ *
+ * The components must be of the following types:
+ *     , = A comma or whitespace separation character. These follow the general list
+ *         type separation rules.
+ *     LeftWidth = An integer number.
+ *     RightWidth = An integer number.
+ *     TopHeight = An integer number.
+ *     BottomHeight = An integer number.
+ *
+ * Examples of major valid constructions include:
+ *     5, 5, 5, 5
+ *     5 5 5 5
+ */
+ValueResult<const MarginsValue *> CIniParser::ParseMarginsValue()
+{
+    constexpr LPCWSTR pszInvalidCountErrorMsg = L"Margin values must have exactly 4 specified values.";
+
+    ValueResult<std::vector<int> > vrVecItems = ValidateStrictLengthListValue<int>(this, 4, pszInvalidCountErrorMsg);
+    PROPAGATE_ERROR_IF_FAILED(vrVecItems);
+    auto &vec = vrVecItems.Unwrap();
+
+    // The parsed parts follow the order: left width, right width, top height, bottom height
+    MARGINS mar;
+    mar.cxLeftWidth = vec[0];
+    mar.cxRightWidth = vec[1];
+    mar.cyTopHeight = vec[2];
+    mar.cyBottomHeight = vec[3];
+
+    return valueArena.CreateMarginsValue(mar);
+}
+
+/*
+ * Parses a position value.
+ *
+ * Position values follow the following format:
+ *     {X}{,}{Y}
+ *
+ * Position values are lists parsed using the same rules as the IntList type. However,
+ * they must consist of exactly 2 value components, rather than having an indefinite
+ * number like values of the IntList type can freely have.
+ *
+ * The components must be of the following types:
+ *     , = A comma or whitespace separation character. These follow the general list
+ *         type separation rules.
+ *     X = An integer number.
+ *     Y = An integer number.
+ *
+ * Examples of major valid constructions include:
+ *     32, 32
+ *     32 32
+ */
+ValueResult<const PositionValue *> CIniParser::ParsePositionValue()
+{
+    constexpr LPCWSTR pszInvalidCountErrorMsg = L"Margin values must have exactly 2 specified values.";
+
+    ValueResult<std::vector<int> > vrVecItems = ValidateStrictLengthListValue<int>(this, 2, pszInvalidCountErrorMsg);
+    PROPAGATE_ERROR_IF_FAILED(vrVecItems);
+    auto &vec = vrVecItems.Unwrap();
+
+    // The parsed parts follow the order: x, y
+    POINT pt;
+    pt.x = vec[0];
+    pt.y = vec[1];
+
+    return valueArena.CreatePositionValue(pt);
+}
+
+/*
+ * Parses a color value.
+ *
+ * Color values follow the following formats:
+ *     {Red}{,}{Green}{,}{Blue}
+ *     #HexColorDefinition
+ *
+ * Color values are lists parsed using the same rules as the IntList type. However,
+ * they must consist of exactly 3 value components, rather than having an indefinite
+ * number like values of the IntList type can freely have.
+ *
+ * For the first format, the components must be of the following types:
+ *     , = A comma or whitespace separation character. These follow the general list
+ *         type separation rules.
+ *     Red = An integer number.
+ *     Green = An integer number.
+ *     Blue = An integer number.
+ * 
+ * Restyle provides a secondary format reminiscent of color value definitions in CSS.
+ * For this format, the components must be of the following types:
+ *     # = A required prefix character to denote that this format is requested instead
+ *         of the list-based format.
+ *     HexColorDefinition = A 3-digit or 6-digit hexadecimal number sequence specifying
+ *                          the red, green, and blue color parts. In the case of 3-digit
+ *                          sequences, each digit is doubled and each hexadecimal number
+ *                          is reparsed thereafter.
+ *
+ * Examples of major valid constructions include:
+ *     255, 255, 255
+ *     255 255 255
+ *     #FFFFFF
+ */
+ValueResult<const ColorValue *> CIniParser::ParseColorValue()
+{
+    constexpr LPCWSTR pszInvalidCountErrorMsg = L"Color values must have exactly 3 specified values.";
+
+    // XXX(isabella): The parser in XP does not reject lists with more than 3 values. The excess
+    // values are just ignored. This is good for Restyle, but it would be cool to implement an
+    // option to suppress this validation for the ease of porting XP custom themes which may be
+    // malformed (by our standards).
+
+    ValueResult<std::vector<int> > vrVecItems = ValidateStrictLengthListValue<int>(this, 3, pszInvalidCountErrorMsg);
+    PROPAGATE_ERROR_IF_FAILED(vrVecItems);
+    auto &vec = vrVecItems.Unwrap();
+
+    // The parsed parts follow the order: red, green, blue
+    return valueArena.CreateColorValue(RGB(vec[0], vec[1], vec[2]));
 }
 
 #ifdef ENABLE_PREPROCESSOR

@@ -165,6 +165,10 @@ MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_SIZE, int);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_BOOL, BOOL);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_RECT, RECT);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_MARGINS, MARGINS);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_POSITION, POINT);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_COLOR, COLORREF);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_INTLIST, int *);
+MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_FLOATLIST, float *);
 MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_STRING, WCHAR *);
 
 // Private (or Restyle-specific) Theme Manager primitives:
@@ -206,10 +210,25 @@ SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_FLOAT, flVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_SIZE, iVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_BOOL, fVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_RECT, rcVal);
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_POSITION, ptVal);
+SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_COLOR, crVal);
 SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_MARGINS, marVal);
+
+SPECIALIZE_VALUE_FOR(Restyle::TMT_INTLIST)
+{
+    UINT c;
+    int rgiVal[];
+};
+
+SPECIALIZE_VALUE_FOR(Restyle::TMT_FLOATLIST)
+{
+    UINT c;
+    float rgflVal[];
+};
 
 SPECIALIZE_VALUE_FOR(Restyle::TMT_STRING)
 {
+    UINT cch;
     WCHAR szVal[];
 };
 
@@ -226,7 +245,11 @@ using SizeValue = Value<Restyle::TMT_SIZE>;
 using BoolValue = Value<Restyle::TMT_BOOL>;
 using RectValue = Value<Restyle::TMT_RECT>;
 using MarginsValue = Value<Restyle::TMT_MARGINS>;
+using PositionValue = Value<Restyle::TMT_POSITION>;
+using ColorValue = Value<Restyle::TMT_COLOR>;
 using StringValue = Value<Restyle::TMT_STRING>;
+using IntListValue = Value<Restyle::TMT_INTLIST>;
+using FloatListValue = Value<Restyle::TMT_FLOATLIST>;
 using AnimationSetValue = Value<Restyle::TMT_ANIMATIONSET>;
 
 template <typename T>
@@ -250,8 +273,12 @@ constexpr size_t kLargestValueTypeSize = max_sizeof<
     SizeValue,
     BoolValue,
     RectValue,
+    PositionValue,
     MarginsValue,
+    ColorValue,
     StringValue,
+    IntListValue,
+    FloatListValue,
     AnimationSetValue
 >();
 
