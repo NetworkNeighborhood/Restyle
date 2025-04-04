@@ -57,7 +57,7 @@ public:
     bool IsNameChar(bool fSkipSpaces);
     bool IsFileNameChar(bool fSkipSpaces);
     bool IsNumStart();
-    bool SkipSpaces();
+    bool SkipSpaces(bool fProgressLine = true);
     bool GetChar(const WCHAR sz);
     bool GetNumber(PINT pInt);
     bool GetFloatNumber(float *pFloat);

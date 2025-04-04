@@ -264,7 +264,7 @@ bool CScanner::IsNumStart()
     return IsDigit(*_p) || *_p == '-' || *_p == '+';
 }
 
-bool CScanner::SkipSpaces()
+bool CScanner::SkipSpaces(bool fProgressLine)
 {
     while (1)
     {
@@ -277,8 +277,15 @@ bool CScanner::SkipSpaces()
         {
             if (_fBlankSoFar && !_fEndOfFile)
             {
-                ReadNextLine();
-                continue;
+                if (fProgressLine)
+                {
+                    ReadNextLine();
+                    continue;
+                }
+                else
+                {
+                    break;
+                }
             }
             
             if (IsNextSequenceCommentDelinatingToken())
