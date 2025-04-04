@@ -223,11 +223,11 @@ const TMPROPINFO *SearchSchema(SearchSchemaParams *pParams)
     {
 #if DEBUG
         if (pParams && pParams->cbSize == 0)
-            assert("You forgot to set cbSize.");
+            assert(0, "You forgot to set cbSize.");
         else if (pParams)
-            assert("You used the wrong size somewhere.");
+            assert(0, "You used the wrong size somewhere.");
         else
-            assert("You passed a null pointer.");
+            assert(0, "You passed a null pointer.");
 #endif
         return nullptr;
     }
@@ -278,7 +278,7 @@ const TMPROPINFO *SearchSchema(SearchSchemaParams *pParams)
         SEARCH_SCHEMA_CONDITION(pParams->bType, pPropInfo->bPrimVal != pParams->bType);
 
         SEARCH_SCHEMA_CONDITION(eSupportedOs != ESupportedOS::NotSet, 
-            pPropInfo->supportedOS != eSupportedOs &&
+            pPropInfo->supportedOS & eSupportedOs &&
             pPropInfo->supportedOS != ESupportedOS::NotSet
         );
 
