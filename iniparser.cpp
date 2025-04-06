@@ -1,22 +1,14 @@
 #include "iniparserp.h"
-#include "restyle.h"
+
 #include "SchemaUtils.h"
 #include "util.h"
 #include "file.h"
 #include "scanner.h"
-#include "arena.h"
-#include <iterator>
-#include <stringapiset.h>
 #include <strsafe.h>
 #include <winerror.h>
-#include <winnls.h>
 #include <string>
 #include <vector>
-#include <variant>
 #include <winnt.h>
-
-// Uncomment to enable preprocessor support, which is currently incomplete.
-//#define ENABLE_PREPROCESSOR
 
 // Temporarily enable CIniParser to create its own instance of CSymbolManager while the code structure
 // is still being determined:
@@ -26,704 +18,6 @@ namespace IniParser
 {
 
 using namespace Restyle;
-
-bool IsSymbolTypePredefined(ESymbolType eSymType)
-{
-    return eSymType >= ESymbolType::FirstPredefined && eSymType <= ESymbolType::LastPredefined;
-}
-
-bool IsSymbolTypeManual(ESymbolType eSymType)
-{
-    return eSymType >= ESymbolType::FirstManual && eSymType <= ESymbolType::LastManual;
-}
-
-struct PredefinedToManualSymbolTypeMap
-{
-    ESymbolType ePredefined;
-    ESymbolType eManual;
-};
-
-static PredefinedToManualSymbolTypeMap g_rgSymTypePredefinedToManualMap[] = {
-    { ESymbolType::Part, ESymbolType::ManualPart },
-    { ESymbolType::State, ESymbolType::ManualState },
-    { ESymbolType::PropertyKey, ESymbolType::ManualPropertyKey },
-};
-
-static ESymbolType GetManualTypeCorrespondingToPredefined(ESymbolType ePredefined)
-{
-    return GetXTypeCorrespondingToY<
-        ESymbolType, PredefinedToManualSymbolTypeMap, decltype(g_rgSymTypePredefinedToManualMap), g_rgSymTypePredefinedToManualMap,
-        &PredefinedToManualSymbolTypeMap::ePredefined, &PredefinedToManualSymbolTypeMap::eManual>(ePredefined);
-}
-
-static ESymbolType GetPredefinedTypeCorrespondingToManual(ESymbolType eManual)
-{
-    return GetXTypeCorrespondingToY<ESymbolType, PredefinedToManualSymbolTypeMap, decltype(g_rgSymTypePredefinedToManualMap), g_rgSymTypePredefinedToManualMap,
-        &PredefinedToManualSymbolTypeMap::eManual, &PredefinedToManualSymbolTypeMap::ePredefined>(eManual);
-}
-
-/**
- * Stores unique names used within a parsing context, especially class names.
- */
-class CNameArena
-#define BASECLASS CTBaseArena<CNameArena, const WCHAR, 1024>
-    : public BASECLASS
-{    
-    using Super = BASECLASS;
-    
-public:
-    struct Iterator
-    {
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = LPCWSTR;
-        using pointer = value_type;
-        using reference = const value_type &;
-        
-        // Beginning (real) iterator constructor
-        Iterator(CNameArena *nameArena)
-            : _pNameArena(nameArena)
-            , _p((pointer)nameArena->_pvData)
-        {
-        }
-        
-        // Ending (sentinel) iterator constructor
-        Iterator()
-            : _pNameArena(nullptr)
-            , _p(nullptr)
-        {
-        }
-        
-        reference operator*() const
-        {
-            return _p;
-        }
-        
-        pointer operator->() const
-        {
-            return _p;
-        }
-        
-        Iterator &operator++()
-        {
-            GetNextString();
-            return *this;
-        }
-        
-        Iterator &operator++(int)
-        {
-            GetNextString();
-            return *this;
-        }
-        
-        friend bool operator==(const Iterator &a, const Iterator &b)
-        {
-            // The end iterator is always a sentinel object, with its pointer and CNameArena
-            // pointers both being nullptr.
-            assert(a._p == nullptr || b._p == nullptr);
-            
-            const Iterator *pRealIterator = a._p != nullptr ? &a : &b;
-            
-            LPCWSTR pEndOfData = pRealIterator->GetEndOfData();
-            
-            if (pRealIterator->_p > pEndOfData || pRealIterator->_fIsEnd)
-            {
-                // i == iterator.end()
-                return true;
-            }
-            
-            return false;
-        }
-        
-        friend bool operator!=(const Iterator &a, const Iterator &b)
-        {
-            return !(operator==(a, b));
-        }
-        
-    private:
-        void UseNextArena()
-        {
-            _pNameArena = _pNameArena->_pNext;
-            _p = (pointer)_pNameArena->_pvData;
-        }
-    
-        pointer GetEndOfData() const
-        {
-            return (LPCWSTR)((size_t)_pNameArena->_pvData + _pNameArena->_dwSize);
-        }
-    
-        pointer GetNextString()
-        {
-            do
-            {
-                while (++_p < GetEndOfData() && *_p != L'\0');
-                LPCWSTR szResult = ++_p;
-                
-                if (_pNameArena->_pNext)
-                {
-                    UseNextArena();
-                    continue;
-                }
-                else if (*szResult == '\0')
-                {
-                    _fIsEnd = true;
-                }
-                
-                return szResult;
-            }
-            while (1);
-        }
-    
-        CNameArena *_pNameArena;
-        bool _fIsEnd = false;
-        pointer _p;
-    };
-    
-    // C++ iterator concept
-    Iterator begin()
-    {
-        return Iterator(this);
-    }
-    
-    // C++ iterator concept
-    Iterator end()
-    {
-        return Iterator();
-    }
-
-    ValueResult<LPCWSTR> Add(LPCWSTR sz);
-};
-
-ValueResult<LPCWSTR> CNameArena::Add(LPCWSTR sz)
-{
-    size_t cbsz = (wcslen(sz) + sizeof(L'\0')) * sizeof(WCHAR);
-    
-    for (const LPCWSTR &szExisting : *this)
-    {
-        if (AsciiStrCmpI(szExisting, sz) == 0)
-        {
-            // Avoid inserting duplicate items:
-            return szExisting;
-        }
-    }
-    
-    HRESULT hr = Super::Add(sz, cbsz);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    
-    return (LPCWSTR)_pvCur;
-}
-
-/**
- * Manages symbols.
- */
-class CSymbolManager
-{
-    std::vector<Symbol> _rgSymbols;
-    CNameArena _nameArena;
-    
-public:
-    ValueResult<Symbol *> AddSymbol(LPCWSTR szSymName, ESymbolType eSymType);
-    ValueResult<Symbol *> AddManualSymbol(int iVal, ESymbolType eSymType, OPTIONAL int iType = 0);
-    LPCWSTR GetGlobalSymbolName(LPCWSTR szSymName, OUT OPTIONAL int *piSchemaOffset = nullptr);
-    Symbol *FindSymbolPointer(LPCWSTR szSymName);
-    bool HasSymbol(LPCWSTR szSymName);
-};
-
-ValueResult<Symbol *> CSymbolManager::AddSymbol(LPCWSTR szSymName, ESymbolType eSymType)
-{
-    assert(IsSymbolTypePredefined(eSymType));
-
-    if (Symbol *p = FindSymbolPointer(szSymName))
-    {
-        return p;
-    }
-    
-    int iSchemaOffset = -1;
-    LPCWSTR szSafeSymName = GetGlobalSymbolName(szSymName, &iSchemaOffset);
-    
-    if (!szSafeSymName)
-    {
-        // Probably out of memory...
-        return E_FAIL;
-    }
-    
-    Symbol sym {};
-
-    sym.szName = szSafeSymName;
-    sym.eSymType = eSymType;
-    sym.iSchemaOffset = iSchemaOffset;
-    
-    _rgSymbols.push_back(sym);
-    return &_rgSymbols[_rgSymbols.size() - 1];
-}
-
-ValueResult<Symbol *> CSymbolManager::AddManualSymbol(int iVal, ESymbolType eSymType, OPTIONAL int iType)
-{
-    assert(IsSymbolTypeManual(eSymType));
-
-    // Try to find a duplicate symbol in the array to optimise memory usage:
-    for (Symbol &s : _rgSymbols)
-    {
-        if (s.eSymType == eSymType && s.iName == iVal)
-        {
-            return &s;
-        }
-    }
-
-    Symbol sym {};
-
-    sym.iName = iVal;
-    sym.eSymType = eSymType;
-    sym.iPrimType = iType;
-
-    _rgSymbols.push_back(sym);
-    return &_rgSymbols[_rgSymbols.size() - 1];
-}
-
-LPCWSTR CSymbolManager::GetGlobalSymbolName(LPCWSTR szSymName, OUT OPTIONAL int *piSchemaOffset)
-{
-    LPCWSTR pszResult = nullptr;
-
-    const TMPROPINFO *pPropInfo = SearchSchema(ESchemaSearchQuery::SearchWholeSchema, szSymName);
-    
-    // This is a unique name which only presents itself inside this INI file. This case
-    // includes all of the class names. In this case, we'll copy the names over to our 
-    // name arena so that we can preserve them even after the INI file is freed from memory.
-    if (!pszResult)
-    {
-        _nameArena.EnsureInitialized();
-        pszResult = _nameArena.Add(szSymName);
-    }
-    
-    return pszResult;
-}
-
-Symbol *CSymbolManager::FindSymbolPointer(LPCWSTR szSymName)
-{
-    for (Symbol &s : _rgSymbols)
-    {
-        if (AsciiStrCmpI(s.szName, szSymName) == 0)
-        {
-            return &s;
-        }
-    }
-
-    return nullptr;
-}
-
-bool CSymbolManager::HasSymbol(LPCWSTR szSymName)
-{
-    return FindSymbolPointer(szSymName) != nullptr;
-}
-
-/**
- * Stores unique names used within a parsing context, especially class names.
- */
-class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize], 256>
-{
-    // Precached values:
-    const BoolValue _valBoolFalse = { TMT_BOOL, sizeof(BOOL), FALSE };
-    const BoolValue _valBoolTrue  = { TMT_BOOL, sizeof(BOOL), TRUE };
-
-    /**
-     * This class is used as an RAII wrapper to ensure that the methods of this
-     * function actually update the offset.
-     * 
-     * In release builds, this class will be erased by the optimising compiler.
-     */
-    class CEnsureArenaPointerChanged
-    {
-#if DEBUG
-        CValueArena *_pParent;
-        BYTE *_pvOriginal;
-
-    public:
-        inline [[nodiscard]] CEnsureArenaPointerChanged(CValueArena *pParent)
-            : _pParent(pParent)
-            , _pvOriginal(pParent->_pvCur)
-        {
-        }
-
-        inline ~CEnsureArenaPointerChanged()
-        {
-            assert(_pParent->_pvCur != _pvOriginal);
-        }
-#else
-        inline FORCEINLINE CEnsureArenaPointerChanged(CValueArena *pParent)
-        {
-        }
-#endif
-    };
-
-    template <typename TValue, auto TValue:: *pValue>
-    ValueResult<const TValue *> CreateTValue(auto nVal)
-    {
-        CEnsureArenaPointerChanged ensurePointerChanged(this);
-
-        HRESULT hr = ResizeIfNecessary(sizeof(TValue));
-        if (FAILED(hr))
-        {
-            return hr;
-        }
-
-        TValue *pResult = new (_pvCur) TValue();
-        pResult->*pValue = nVal;
-        _pvCur += sizeof(Value<>) + pResult->cbSize;
-        return pResult;
-    }
-
-    template <typename TValue, auto TValue :: *pValue>
-    ValueResult<const TValue *> CreateTListValue(auto rgnVal, UINT cVals)
-    {
-        CEnsureArenaPointerChanged ensurePointerChanged(this);
-
-        size_t cb = sizeof(int) * cVals;
-
-        HRESULT hr = ResizeIfNecessary(sizeof(TValue) + cb);
-        if (FAILED(hr))
-        {
-            return hr;
-        }
-
-        TValue *pResult = new (_pvCur) TValue();
-        pResult->cbSize = cb;
-        if (!memcpy((void *)&(pResult->*pValue)[0], rgnVal, cb))
-        {
-            return E_OUTOFMEMORY;
-        }
-
-        _pvCur += sizeof(Value<>) + pResult->cbSize;
-        return pResult;
-    }
-
-public:
-    ValueResult<const IntValue *> CreateIntValue(int iVal);
-    ValueResult<const EnumValue *> CreateEnumValue(int iVal);
-    ValueResult<const FloatValue *> CreateFloatValue(float flVal);
-    ValueResult<const SizeValue *> CreateSizeValue(int iVal);
-    ValueResult<const BoolValue *> CreateBoolValue(BOOL fVal);
-    ValueResult<const RectValue *> CreateRectValue(RECT rcVal);
-    ValueResult<const MarginsValue *> CreateMarginsValue(MARGINS marVal);
-    ValueResult<const PositionValue *> CreatePositionValue(POINT ptVal);
-    ValueResult<const ColorValue *> CreateColorValue(COLORREF crVal);
-    ValueResult<const IntListValue *> CreateIntListValue(int *rgiVal, UINT cVals);
-    ValueResult<const FloatListValue *> CreateFloatListValue(float *rgflVal, UINT cVals);
-    ValueResult<const StringValue *> CreateStringValue(LPCWSTR szVal);
-    ValueResult<const AnimationSetValue *> CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations);
-};
-
-#define CREATE_T_VALUE(TmType, specializedName) CreateTValue<Value<TmType>, &Value<TmType>::specializedName>
-#define CREATE_T_LIST_VALUE(TmType, specializedName) CreateTListValue<Value<TmType>, &Value<TmType>::specializedName>
-
-ValueResult<const IntValue *> CValueArena::CreateIntValue(int iVal)
-{
-    return CREATE_T_VALUE(TMT_INT, iVal)(iVal);
-}
-
-ValueResult<const EnumValue *> CValueArena::CreateEnumValue(int iVal)
-{
-    return CREATE_T_VALUE(TMT_ENUM, iVal)(iVal);
-}
-
-ValueResult<const FloatValue *> CValueArena::CreateFloatValue(float flVal)
-{
-    return CREATE_T_VALUE(TMT_FLOAT, flVal)(flVal);
-}
-
-ValueResult<const SizeValue *> CValueArena::CreateSizeValue(int iVal)
-{
-    return CREATE_T_VALUE(TMT_SIZE, iVal)(iVal);
-}
-
-ValueResult<const BoolValue *> CValueArena::CreateBoolValue(BOOL fVal)
-{
-    return fVal ? &_valBoolTrue : &_valBoolFalse;
-}
-
-ValueResult<const RectValue *> CValueArena::CreateRectValue(RECT rcVal)
-{
-    return CREATE_T_VALUE(TMT_RECT, rcVal)(rcVal);
-}
-
-ValueResult<const MarginsValue *> CValueArena::CreateMarginsValue(MARGINS marVal)
-{
-    return CREATE_T_VALUE(TMT_MARGINS, marVal)(marVal);
-}
-
-ValueResult<const ColorValue *> CValueArena::CreateColorValue(COLORREF crVal)
-{
-    return CREATE_T_VALUE(TMT_COLOR, crVal)(crVal);
-}
-
-ValueResult<const PositionValue *> CValueArena::CreatePositionValue(POINT ptVal)
-{
-    return CREATE_T_VALUE(TMT_POSITION, ptVal)(ptVal);
-}
-
-ValueResult<const IntListValue *> CValueArena::CreateIntListValue(int *rgiVal, UINT cVals)
-{
-    return CREATE_T_LIST_VALUE(TMT_INTLIST, rgiVal)(rgiVal, cVals);
-}
-
-ValueResult<const FloatListValue *> CValueArena::CreateFloatListValue(float *rgflVal, UINT cVals)
-{
-    return CREATE_T_LIST_VALUE(TMT_FLOATLIST, rgflVal)(rgflVal, cVals);
-}
-
-ValueResult<const StringValue *> CValueArena::CreateStringValue(LPCWSTR szVal)
-{
-    CEnsureArenaPointerChanged ensurePointerChanged(this);
-
-    size_t cch = wcslen(szVal);
-    size_t targetSize = cch * sizeof(WCHAR) + sizeof(L'\0');
-    
-    HRESULT hr = ResizeIfNecessary(sizeof(StringValue) + targetSize);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    
-    StringValue *pResult = new (_pvCur) StringValue();
-    pResult->cbSize = targetSize;
-    if (!memcpy((void *)&pResult->szVal[0], szVal, targetSize))
-    {
-        return E_OUTOFMEMORY;
-    }
-
-    _pvCur += sizeof(Value<>) + pResult->cbSize;
-    return pResult;
-}
-
-ValueResult<const AnimationSetValue *> CValueArena::CreateAnimationSetValue(std::vector<IniAssociation> rgAssociations)
-{
-    CEnsureArenaPointerChanged ensurePointerChanged(this);
-
-    size_t targetSize = sizeof(IniAssociation) + rgAssociations.size();
-
-    HRESULT hr = ResizeIfNecessary(sizeof(AnimationSetValue) + targetSize);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    AnimationSetValue *pResult = new (_pvCur) AnimationSetValue();
-    pResult->cbSize = targetSize;
-    if (!memcpy(pResult->rgAssociations, rgAssociations.data(), targetSize))
-    {
-        return E_OUTOFMEMORY;
-    }
-
-    _pvCur += sizeof(Value<>) + pResult->cbSize;
-    return pResult;
-}
-
-class CIniParser
-{
-    CScanner _scanner;
-    CSymbolManager *_pSymbolManager;
-    CValueArena valueArena;
-    std::vector<IniAssociation> _associations;
-
-    // Precached symbols:
-    Symbol *_pSymNullBaseClass = nullptr;
-    
-    IniSection _iniSectionCur;
-    
-    EParseMode _eMode;
-    bool _fParsingIncludeChild = false;
-
-    HRESULT Initialize();
-    
-    //--------------------------------------------------------------------------------------------------------------
-    // Error handling
-    
-    ParseError _parseError;
-    HRESULT SourceError(EParseErrorCode eCode, LPCWSTR szCustomMessage = nullptr, ...);
-
-    //--------------------------------------------------------------------------------------------------------------
-
-    std::wstring ReadNextWord();
-
-    HRESULT ParseNextSectionHeader();
-    HRESULT ParseNextAssociation();
-    ValueResult<const std::wstring> ParseNextClassName();
-
-    struct ParseManualSymbolResult
-    {
-        int iSymbolName = 0;
-        int iType = 0;
-    };
-
-    /**
-     * Used for intermediate parsing of symbols.
-     */
-    class CSymbolComponent
-    {
-        std::variant<std::monostate, std::wstring, ParseManualSymbolResult> _component;
-
-    public:
-        inline CSymbolComponent()
-        {
-        }
-
-        inline CSymbolComponent(std::wstring strComponent)
-            : _component(strComponent)
-        {
-        }
-
-        inline CSymbolComponent(LPCWSTR szComponent)
-            : CSymbolComponent(std::wstring(szComponent))
-        {
-        }
-
-        inline CSymbolComponent(ParseManualSymbolResult manualComponent)
-            : _component(manualComponent)
-        {
-        }
-
-        inline CSymbolComponent &operator =(std::wstring strComponent)
-        {
-            _component = strComponent;
-            return *this;
-        }
-
-        inline CSymbolComponent &operator =(LPCWSTR szComponent)
-        {
-            _component = std::wstring(szComponent);
-            return *this;
-        }
-
-        inline CSymbolComponent &operator =(ParseManualSymbolResult manualComponent)
-        {
-            _component = manualComponent;
-            return *this;
-        }
-
-        bool IsSet()
-        {
-            return !std::holds_alternative<std::monostate>(_component);
-        }
-
-        bool IsManual()
-        {
-            return std::holds_alternative<ParseManualSymbolResult>(_component);
-        }
-
-        ValueResult<std::wstring> GetString()
-        {
-            if (std::wstring *pStr = std::get_if<std::wstring>(&_component))
-            {
-                return *pStr;
-            }
-
-            return E_FAIL;
-        }
-
-        bool IsNonEmptyString()
-        {
-            ValueResult<std::wstring> str = GetString();
-
-            if (str.Succeeded())
-            {
-                return !str.Unwrap().empty();
-            }
-
-            return false;
-        }
-
-        ValueResult<ParseManualSymbolResult> GetParseManualSymbolResult()
-        {
-            if (ParseManualSymbolResult *pStr = std::get_if<ParseManualSymbolResult>(&_component))
-            {
-                return *pStr;
-            }
-
-            return E_FAIL;
-        }
-
-        ValueResult<Symbol *> CreateAndAddSymbol(CSymbolManager *pSymbolManager, ESymbolType eSymType)
-        {
-            if (std::wstring *pStr = std::get_if<std::wstring>(&_component))
-            {
-                return pSymbolManager->AddSymbol(pStr->c_str(), GetPredefinedTypeCorrespondingToManual(eSymType));
-            }
-            else if (ParseManualSymbolResult *pManual = std::get_if<ParseManualSymbolResult>(&_component))
-            {
-                return pSymbolManager->AddManualSymbol(pManual->iSymbolName, GetManualTypeCorrespondingToPredefined(eSymType), pManual->iType);
-            }
-            else
-            {
-                // If we don't contain any information (i.e. if our value was never changed by the parser),
-                // then we will always return a successful ValueResult containing a null pointer. Null
-                // pointers to Symbol objects are regarded by all parsing code pertaining to them, so this
-                // is fine.
-                return nullptr;
-            }
-        }
-    };
-
-    ValueResult<const ParseManualSymbolResult> ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk = true);
-    ValueResult<const int> ParseSizeInfoUnits(int iNum, LPCWSTR pszDefaultUnits);
-
-    ValueResult<const IntValue *> ParseIntValue();
-    ValueResult<const FloatValue *> ParseFloatValue();
-    ValueResult<const BoolValue *> ParseBoolValue();
-    ValueResult<const SizeValue *> ParseSizeValue();
-    ValueResult<const EnumValue *> ParseEnumValue(CSymbolComponent &rcmProperty);
-
-    ValueResult<const IntListValue *> ParseIntListValue(UINT uLimit = 0);
-    ValueResult<const FloatListValue *> ParseFloatListValue(UINT uLimit = 0);
-    ValueResult<const RectValue *> ParseRectValue();
-    ValueResult<const MarginsValue *> ParseMarginsValue();
-    ValueResult<const PositionValue *> ParsePositionValue();
-    ValueResult<const ColorValue *> ParseColorValue();
-    
-#ifdef ENABLE_PREPROCESSOR
-    HRESULT ParseNextCPreprocessor();
-
-    HRESULT ParseCPreprocessorInclude();
-    HRESULT ParseCPreprocessorIf();
-    HRESULT ParseCPreprocessorElif();
-    HRESULT ParseCPreprocessorElse();
-    HRESULT ParseCPreprocessorEndif();
-    
-    static constexpr struct
-    {
-        // Must be the length of the longest word in the map.
-        WCHAR szCommand[sizeof(L"include")];
-        HRESULT (CIniParser:: *pfnCallback)();
-    } s_rgPreprocessorCommandMap[] = {
-        { L"include", &CIniParser::ParseCPreprocessorInclude },
-        { L"if", &CIniParser::ParseCPreprocessorIf },
-        { L"elif", &CIniParser::ParseCPreprocessorElif },
-        { L"else", &CIniParser::ParseCPreprocessorElse },
-        { L"endif", &CIniParser::ParseCPreprocessorEndif },
-    };
-#endif
-
-    template <typename ItemType>
-    friend ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, UINT uLimit);
-
-    template <typename T>
-    friend ValueResult<std::vector<T> > ValidateStrictLengthListValue(CIniParser *pParser, int iLength, LPCWSTR pszFailMsg);
-    
-public:
-    CIniParser(LPCWSTR szText, DWORD cchText);
-    CIniParser(std::wstring text);
-    
-    // static CIniParser CreateIncludeIniParser(CIniParser *pParent, CSimpleFile *pChildFile);
-    
-    HRESULT Parse();
-
-    ParseError GetParseError();
-    
-    bool ReadName(IN OUT LPWSTR szId, DWORD cchId);
-    
-    HRESULT Test();
-};
 
 CIniParser::CIniParser(LPCWSTR szText, DWORD cchText)
     : _scanner(szText, cchText)
@@ -1591,7 +885,7 @@ ValueResult<const SizeValue *> CIniParser::ParseSizeValue()
     int iResult;
     if (_scanner.GetNumber(&iResult))
     {
-        // Try to read the explicit unit if it exists.:
+        // Try to read the explicit unit if it exists:
         ValueResult<const int> vrUnit = ParseSizeInfoUnits(iResult, L"pixels");
 
         // If something went wrong while trying to read the explicit unit, then
@@ -2065,12 +1359,38 @@ HRESULT CIniParser::ParseCPreprocessorInclude()
 // }
 #endif
 
+std::unique_ptr<IIniParser> CreateUniqueIniParser(std::wstring text)
+{
+    return std::make_unique<CIniParser>(text);
+}
+
+IIniParser *CreateIniParser(std::wstring text)
+{
+    return new CIniParser(text);
+}
+
+std::unique_ptr<IIniParser> CreateUniqueIniParser(LPCWSTR szText, DWORD cchText)
+{
+    return std::make_unique<CIniParser>(szText, cchText);
+}
+
+IIniParser *CreateIniParser(LPCWSTR szText, DWORD cchText)
+{
+    return new CIniParser(szText, cchText);
+}
+
+HRESULT DestroyIniParser(IIniParser *pParser)
+{
+    delete pParser;
+    return S_OK;
+}
+
 // Expects test file:
 #if 0
 [Fawk]
 Hello = 1
 
-[aaaa::bbbb.fuck(aaaaaa) : hello]
+[aaaa::bbbb.fuck(aaaaaa):hello]
 aaaaaaaaa = sijdisjfid
 
 [animation.Fawk(dd)]
@@ -2080,84 +1400,13 @@ Transforms = {
     }
 }
 #endif
-HRESULT CIniParser::Test()
-{
-    if (!_scanner.GetChar(L'['))
-    {
-        Log(L"First character bad. Parser probably getting bad input u_u. Check debugger.", ELogLevel::Fatal);
-        return E_FAIL;
-    }
-    
-    if (!_scanner.GetKeyword(L"Fawk"))
-    {
-        Log(L"Expected \"Fawk\"", ELogLevel::Fatal);
-        return E_FAIL;
-    }
-    
-    if (!_scanner.GetChar(L']'))
-    {
-        Log(L"Expected \"]\"", ELogLevel::Fatal);
-        return E_FAIL;
-    }
-    
-    if (!_scanner.GetKeyword(L"Hello"))
-    {
-        Log(L"Expected \"Hello\"", ELogLevel::Fatal);
-        return E_FAIL;
-    }
-    
-    if (!_scanner.GetChar(L'='))
-    {
-        Log(L"Expected \"=\"", ELogLevel::Fatal);
-        return E_FAIL;
-    }
-    
-    int iNumber = 0;
-    if (!_scanner.GetNumber(&iNumber) || iNumber != 1)
-    {
-        Log(L"Expected number 1, got %d", iNumber, ELogLevel::Fatal);
-        return E_FAIL;
-    }
-    
-    Log(L"Succeeded INI parsing test with no problems.", ELogLevel::Info);
-    return S_OK;
-}
 
-bool CIniParser::ReadName(IN OUT LPWSTR szId, DWORD cchId)
-{
-    if (cchId == 0)
-    {
-        return false;
-    }
-    
-    _scanner.SkipSpaces();
-    
-    WCHAR *szRead = szId;
-    
-    while (_scanner.IsNameChar(false) && --cchId)
-    {
-        *szRead++ = _scanner.ReadNext();
-    }
-    *szRead = 0; // Add null terminator
-    
-    if (szRead == szId)
-    {
-        // If we hit this case, then we didn't end up reading anything.
-        return false;
-    }
-    
-    if (_scanner.IsNameChar(false))
-    {
-        // Buffer too small
-        return false;
-    }
-    
-    return true;
-}
-
+// IniParserTest.cpp
+HRESULT RunTests();
 
 HRESULT ParseIniFile(LPCWSTR szPath)
 {
+#if 0
     CSimpleFile file;
     HRESULT hr = file.Open(szPath);
 
@@ -2189,16 +1438,17 @@ HRESULT ParseIniFile(LPCWSTR szPath)
     }
     
     CIniParser iniParser(szString, dwFileSize + sizeof('\n'));
-    iniParser.Test();
-    
-    // TODO: Add INI parsing test code here.
 
     if (szString)
     {
         delete[] szString;
     }
-    
+
     return S_OK;
+#endif
+    
+    // Temporary testing code:
+    return RunTests();
 }
 
 }

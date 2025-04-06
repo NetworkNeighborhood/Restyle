@@ -8,6 +8,18 @@ enum class ELogLevel
 	Fatal = 2,
 };
 
+// WIL clone
+#define RETURN_IF_FAILED(expr) \
+    do                         \
+    {                          \
+        HRESULT __hr = expr;   \
+        if (FAILED(__hr))      \
+        {                      \
+            return __hr;       \
+        }                      \
+    }                          \
+    while ((void)0, 0)
+
 
 // Outputs a user-displayed message to stderr. For output that can be written
 // to files by the user (e.g. /precord option), use wprintf.
@@ -26,6 +38,21 @@ EParseResult GetPartAndStateName(
 	int iPart,
 	int iState
 );
+
+template <typename T>
+static constexpr T static_max(T a, T b) {
+    return a < b ? b : a;
+}
+
+template <typename T, typename... Ts>
+static constexpr T static_max(T a, Ts... bs) {
+    return static_max(a, static_max(bs...));
+}
+
+template <typename... Ts>
+constexpr size_t max_sizeof() {
+    return static_max(sizeof(Ts)...);
+};
 
 /**
  * A result tuple which contains both a user-specified value type and a HRESULT.

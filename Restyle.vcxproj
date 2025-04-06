@@ -246,7 +246,11 @@ echo Regenerated build date.</Command>
     <ClInclude Include="scanner.h" />
     <ClInclude Include="SchemaPriv.h" />
     <ClInclude Include="SchemaUtils.h" />
+    <ClInclude Include="Symbol.h" />
+    <ClInclude Include="SymbolManager.h" />
     <ClInclude Include="util.h" />
+    <ClInclude Include="Value.h" />
+    <ClInclude Include="ValueArena.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc" />
@@ -269,11 +273,14 @@ echo Regenerated build date.</Command>
     </ClCompile>
     <ClCompile Include="file.cpp" />
     <ClCompile Include="iniparser.cpp" />
+    <ClCompile Include="IniParserTest.cpp" />
     <ClCompile Include="restyle.cpp" />
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="schematest.cpp" />
     <ClCompile Include="SchemaUtils.cpp" />
+    <ClCompile Include="SymbolManager.cpp" />
     <ClCompile Include="util.cpp" />
+    <ClCompile Include="ValueArena.cpp" />
     <ClInclude Include="schematest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

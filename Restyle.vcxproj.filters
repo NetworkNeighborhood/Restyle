@@ -63,6 +63,18 @@
     <ClInclude Include="BuildDate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SymbolManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Symbol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ValueArena.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Value.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc">
@@ -98,6 +110,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BuildDate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IniParserTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SymbolManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ValueArena.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

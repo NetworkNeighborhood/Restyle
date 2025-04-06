@@ -1,87 +1,21 @@
 #include "iniparser.h"
+
+#include <variant>
 #include "util.h"
+#include "scanner.h"
+#include "Symbol.h"
+#include "SymbolManager.h"
+#include "Value.h"
+#include "ValueArena.h"
+
+// Uncomment to enable testing:
+#define ENABLE_INIPARSER_TEST 1
+
+// Uncomment to enable preprocessor support, which is currently incomplete.
+//#define ENABLE_PREPROCESSOR
 
 namespace IniParser
 {
-
-enum class EParseMode
-{
-    Assoc,
-    SectionHeader,
-    Preprocessor,
-    BreakParseLoop,
-};
-
-enum class ESymbolType
-{
-    // -- Predefined types --
-    FirstPredefined,
-    Type = FirstPredefined,
-    Class,
-    Part,
-    State,
-    BaseClass,
-    PropertyKey,
-    EnumValue,
-    LastPredefined = EnumValue,
-    
-    // -- Manual types --
-    FirstManual,
-    ManualPart = FirstManual,  // *Part#1
-    ManualState,               // *State#1
-    ManualPropertyKey,         // *Prop#1<Type>
-    LastManual = ManualPropertyKey,
-};
-
-/**
- * A parse symbol.
- */
-struct Symbol
-{
-    /**
-     * The type of the symbol.
-     *
-     * There are two notable types of symbols: predefined (those which use a string name which
-     * Restyle defines for identifying a type) and manual (those defining their own internal
-     * value).
-     *
-     * The use of predefined symbols is preferred by Restyle. Manual symbols exist to give
-     * theme authors flexibility.
-     */
-    ESymbolType eSymType;
-    
-    // Name of property.
-    // Sharing memory because these are mutually-exclusive members:
-    union
-    {
-        /**
-         * Pointer to the name of the symbol in the name arena or schema, in the case of
-         * predefined symbols.
-         */
-        LPCWSTR szName;
-        
-        /**
-         * Integer value for the name of the symbol, in the case of manual symbols.
-         */
-        INT_PTR iName;
-    };
-    
-    // Property information.
-    // Sharing memory because these are mutually-exclusive members:
-    union
-    {
-        /**
-         * Offset in the schema table information about the symbol can be found, 
-         * in the case of predefined symbols.
-         */
-        int iSchemaOffset;
-        
-        /**
-         * The primitive type of the property, in the case of the ManualPropertyKey type.
-         */
-        int iPrimType;
-    };
-};
 
 template <typename EType, typename EMap, typename EMapArray, const EMapArray &pMap, EType EMap::*x, EType EMap::*y>
 constexpr EType GetXTypeCorrespondingToY(EType eX)
@@ -120,166 +54,234 @@ constexpr EType GetXTypeCorrespondingToY(EType eX)
     }                                                                                    \
     while ((void)0, 0)
 
-#define MAP_TM_TO_NATIVE_TYPE(TmType, NativeType) template <> struct TmToNativeTypeMap<TmType> { using Type = NativeType; }
-#define SPECIALIZE_VALUE_FOR(TmType) template <> struct Value<TmType> : ValueBase<TmType>
-#define SPECIALIZE_EASY_VALUE_FOR(TmType, Name)                                          \
-    SPECIALIZE_VALUE_FOR(TmType)                                                         \
-    {                                                                                    \
-        TmToNativeTypeMap<TmType>::Type Name;                                            \
+struct PredefinedToManualSymbolTypeMap
+{
+    ESymbolType ePredefined;
+    ESymbolType eManual;
+};
+
+static PredefinedToManualSymbolTypeMap g_rgSymTypePredefinedToManualMap[] = {
+    { ESymbolType::Part, ESymbolType::ManualPart },
+    { ESymbolType::State, ESymbolType::ManualState },
+    { ESymbolType::PropertyKey, ESymbolType::ManualPropertyKey },
+};
+
+static ESymbolType GetManualTypeCorrespondingToPredefined(ESymbolType ePredefined)
+{
+    return GetXTypeCorrespondingToY<
+        ESymbolType, PredefinedToManualSymbolTypeMap, decltype(g_rgSymTypePredefinedToManualMap), g_rgSymTypePredefinedToManualMap,
+        &PredefinedToManualSymbolTypeMap::ePredefined, &PredefinedToManualSymbolTypeMap::eManual>(ePredefined);
+}
+
+static ESymbolType GetPredefinedTypeCorrespondingToManual(ESymbolType eManual)
+{
+    return GetXTypeCorrespondingToY<ESymbolType, PredefinedToManualSymbolTypeMap, decltype(g_rgSymTypePredefinedToManualMap), g_rgSymTypePredefinedToManualMap,
+        &PredefinedToManualSymbolTypeMap::eManual, &PredefinedToManualSymbolTypeMap::ePredefined>(eManual);
+}
+
+class CIniParser : public IIniParser
+{
+    CScanner _scanner;
+    CSymbolManager *_pSymbolManager;
+    CValueArena valueArena;
+    std::vector<IniAssociation> _associations;
+
+    // Precached symbols:
+    Symbol *_pSymNullBaseClass = nullptr;
+
+    IniSection _iniSectionCur;
+
+    EParseMode _eMode;
+    bool _fParsingIncludeChild = false;
+
+    HRESULT Initialize();
+
+    //--------------------------------------------------------------------------------------------------------------
+    // Error handling
+
+    ParseError _parseError;
+    HRESULT SourceError(EParseErrorCode eCode, LPCWSTR szCustomMessage = nullptr, ...);
+
+    //--------------------------------------------------------------------------------------------------------------
+
+    std::wstring ReadNextWord();
+
+    HRESULT ParseNextSectionHeader();
+    HRESULT ParseNextAssociation();
+    ValueResult<const std::wstring> ParseNextClassName();
+
+    struct ParseManualSymbolResult
+    {
+        int iSymbolName = 0;
+        int iType = 0;
     };
 
-template <int iPrimTypeVal = 0, typename NativeType = TmToNativeTypeMap<iPrimTypeVal>::Type>
-struct ValueBase
-{
-    using StoredType = NativeType;
-
-    int iPrimType = iPrimTypeVal;
-    size_t cbSize = sizeof(NativeType);
-};
-
-// Template specialisation just for pointers to ValueBase/Value.
-template <>
-struct ValueBase<0, void>
-{
-    using StoredType = void;
-
-    int iPrimType;
-    size_t cbSize;
-
-#pragma warning(suppress: 26495)
-    consteval ValueBase()
+    /**
+     * Used for intermediate parsing of symbols.
+     */
+    class CSymbolComponent
     {
-        static_assert(
-            "Cannot construct a typeless Value. If you did mean to instantiate, add a type parameter."
-            "Otherwise, double check your pointer syntax."
-        );
-    }
+        std::variant<std::monostate, std::wstring, ParseManualSymbolResult> _component;
+
+    public:
+        inline CSymbolComponent()
+        {
+        }
+
+        inline CSymbolComponent(std::wstring strComponent)
+            : _component(strComponent)
+        {
+        }
+
+        inline CSymbolComponent(LPCWSTR szComponent)
+            : CSymbolComponent(std::wstring(szComponent))
+        {
+        }
+
+        inline CSymbolComponent(ParseManualSymbolResult manualComponent)
+            : _component(manualComponent)
+        {
+        }
+
+        inline CSymbolComponent &operator =(std::wstring strComponent)
+        {
+            _component = strComponent;
+            return *this;
+        }
+
+        inline CSymbolComponent &operator =(LPCWSTR szComponent)
+        {
+            _component = std::wstring(szComponent);
+            return *this;
+        }
+
+        inline CSymbolComponent &operator =(ParseManualSymbolResult manualComponent)
+        {
+            _component = manualComponent;
+            return *this;
+        }
+
+        bool IsSet()
+        {
+            return !std::holds_alternative<std::monostate>(_component);
+        }
+
+        bool IsManual()
+        {
+            return std::holds_alternative<ParseManualSymbolResult>(_component);
+        }
+
+        ValueResult<std::wstring> GetString()
+        {
+            if (std::wstring *pStr = std::get_if<std::wstring>(&_component))
+            {
+                return *pStr;
+            }
+
+            return E_FAIL;
+        }
+
+        bool IsNonEmptyString()
+        {
+            ValueResult<std::wstring> str = GetString();
+
+            if (str.Succeeded())
+            {
+                return !str.Unwrap().empty();
+            }
+
+            return false;
+        }
+
+        ValueResult<ParseManualSymbolResult> GetParseManualSymbolResult()
+        {
+            if (ParseManualSymbolResult *pStr = std::get_if<ParseManualSymbolResult>(&_component))
+            {
+                return *pStr;
+            }
+
+            return E_FAIL;
+        }
+
+        ValueResult<Symbol *> CreateAndAddSymbol(CSymbolManager *pSymbolManager, ESymbolType eSymType)
+        {
+            if (std::wstring *pStr = std::get_if<std::wstring>(&_component))
+            {
+                return pSymbolManager->AddSymbol(pStr->c_str(), GetPredefinedTypeCorrespondingToManual(eSymType));
+            }
+            else if (ParseManualSymbolResult *pManual = std::get_if<ParseManualSymbolResult>(&_component))
+            {
+                return pSymbolManager->AddManualSymbol(pManual->iSymbolName, GetManualTypeCorrespondingToPredefined(eSymType), pManual->iType);
+            }
+            else
+            {
+                // If we don't contain any information (i.e. if our value was never changed by the parser),
+                // then we will always return a successful ValueResult containing a null pointer. Null
+                // pointers to Symbol objects are regarded by all parsing code pertaining to them, so this
+                // is fine.
+                return nullptr;
+            }
+        }
+    };
+
+    ValueResult<const ParseManualSymbolResult> ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fParsedAsterisk = true);
+    ValueResult<const int> ParseSizeInfoUnits(int iNum, LPCWSTR pszDefaultUnits);
+
+    ValueResult<const IntValue *> ParseIntValue();
+    ValueResult<const FloatValue *> ParseFloatValue();
+    ValueResult<const BoolValue *> ParseBoolValue();
+    ValueResult<const SizeValue *> ParseSizeValue();
+    ValueResult<const EnumValue *> ParseEnumValue(CSymbolComponent &rcmProperty);
+
+    ValueResult<const IntListValue *> ParseIntListValue(UINT uLimit = 0);
+    ValueResult<const FloatListValue *> ParseFloatListValue(UINT uLimit = 0);
+    ValueResult<const RectValue *> ParseRectValue();
+    ValueResult<const MarginsValue *> ParseMarginsValue();
+    ValueResult<const PositionValue *> ParsePositionValue();
+    ValueResult<const ColorValue *> ParseColorValue();
+
+#ifdef ENABLE_PREPROCESSOR
+    HRESULT ParseNextCPreprocessor();
+
+    HRESULT ParseCPreprocessorInclude();
+    HRESULT ParseCPreprocessorIf();
+    HRESULT ParseCPreprocessorElif();
+    HRESULT ParseCPreprocessorElse();
+    HRESULT ParseCPreprocessorEndif();
+
+    static constexpr struct
+    {
+        // Must be the length of the longest word in the map.
+        WCHAR szCommand[sizeof(L"include")];
+        HRESULT(CIniParser:: *pfnCallback)();
+    } s_rgPreprocessorCommandMap[] = {
+        { L"include", &CIniParser::ParseCPreprocessorInclude },
+        { L"if", &CIniParser::ParseCPreprocessorIf },
+        { L"elif", &CIniParser::ParseCPreprocessorElif },
+        { L"else", &CIniParser::ParseCPreprocessorElse },
+        { L"endif", &CIniParser::ParseCPreprocessorEndif },
+    };
+#endif
+
+    template <typename ItemType>
+    friend ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, UINT uLimit);
+
+    template <typename T>
+    friend ValueResult<std::vector<T> > ValidateStrictLengthListValue(CIniParser *pParser, int iLength, LPCWSTR pszFailMsg);
+
+public:
+    CIniParser(LPCWSTR szText, DWORD cchText);
+    CIniParser(std::wstring text);
+
+    // static CIniParser CreateIncludeIniParser(CIniParser *pParent, CSimpleFile *pChildFile);
+
+    HRESULT Parse() override;
+    ParseError GetParseError() override;
+
+#if ENABLE_INIPARSER_TEST
+    // Ignore the warning in Visual Studio. These are implemented in IniParserTest.cpp.
+    HRESULT TestScanner();
+#endif
 };
-
-// Maps for Theme Manager primitive value types to C++ primitive types:
-template <int> struct TmToNativeTypeMap; // <int> so we can do anything arbitrary
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_ENUM, int);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_INT, int);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_FLOAT, float);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_SIZE, int);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_BOOL, BOOL);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_RECT, RECT);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_MARGINS, MARGINS);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_POSITION, POINT);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_COLOR, COLORREF);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_INTLIST, int *);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_FLOATLIST, float *);
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_STRING, WCHAR *);
-
-// Private (or Restyle-specific) Theme Manager primitives:
-struct IniAssociation;
-MAP_TM_TO_NATIVE_TYPE(Restyle::TMT_ANIMATIONSET, IniAssociation *);
-
-// Other special types:
-MAP_TM_TO_NATIVE_TYPE(0, void);
-
-template <int iPrimTypeVal = 0, typename NativeType = TmToNativeTypeMap<iPrimTypeVal>::Type>
-struct Value : ValueBase<iPrimTypeVal, NativeType>
-{
-};
-
-// Template specialisation just for pointers to Value.
-template <>
-struct Value<0, void> : ValueBase<0, void>
-{
-};
-
-struct IniSection
-{
-    Symbol *pSymClass;
-    Symbol *pSymPart;
-    Symbol *pSymState;
-    Symbol *pSymBaseClass;
-};
-
-struct IniAssociation
-{
-    IniSection section;
-    Symbol *pKeySymbol;
-    Value<> *pVal;
-};
-
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_ENUM, iVal);
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_INT, iVal);
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_FLOAT, flVal);
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_SIZE, iVal);
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_BOOL, fVal);
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_RECT, rcVal);
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_POSITION, ptVal);
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_COLOR, crVal);
-SPECIALIZE_EASY_VALUE_FOR(Restyle::TMT_MARGINS, marVal);
-
-SPECIALIZE_VALUE_FOR(Restyle::TMT_INTLIST)
-{
-    UINT c;
-    int rgiVal[];
-};
-
-SPECIALIZE_VALUE_FOR(Restyle::TMT_FLOATLIST)
-{
-    UINT c;
-    float rgflVal[];
-};
-
-SPECIALIZE_VALUE_FOR(Restyle::TMT_STRING)
-{
-    UINT cch;
-    WCHAR szVal[];
-};
-
-SPECIALIZE_VALUE_FOR(Restyle::TMT_ANIMATIONSET)
-{
-    UINT cAnimations;
-    IniAssociation rgAssociations[];
-};
-
-using EnumValue = Value<Restyle::TMT_ENUM>;
-using IntValue = Value<Restyle::TMT_INT>;
-using FloatValue = Value<Restyle::TMT_FLOAT>;
-using SizeValue = Value<Restyle::TMT_SIZE>;
-using BoolValue = Value<Restyle::TMT_BOOL>;
-using RectValue = Value<Restyle::TMT_RECT>;
-using MarginsValue = Value<Restyle::TMT_MARGINS>;
-using PositionValue = Value<Restyle::TMT_POSITION>;
-using ColorValue = Value<Restyle::TMT_COLOR>;
-using StringValue = Value<Restyle::TMT_STRING>;
-using IntListValue = Value<Restyle::TMT_INTLIST>;
-using FloatListValue = Value<Restyle::TMT_FLOATLIST>;
-using AnimationSetValue = Value<Restyle::TMT_ANIMATIONSET>;
-
-template <typename T>
-static constexpr T static_max(T a, T b) {
-    return a < b ? b : a;
-}
-
-template <typename T, typename... Ts>
-static constexpr T static_max(T a, Ts... bs) {
-    return static_max(a, static_max(bs...));
-}
-
-template <typename... Ts>
-constexpr size_t max_sizeof() {
-    return static_max(sizeof(Ts)...);
-};
-
-constexpr size_t kLargestValueTypeSize = max_sizeof<
-    EnumValue,
-    IntValue,
-    SizeValue,
-    BoolValue,
-    RectValue,
-    PositionValue,
-    MarginsValue,
-    ColorValue,
-    StringValue,
-    IntListValue,
-    FloatListValue,
-    AnimationSetValue
->();
 
 }

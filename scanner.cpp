@@ -4,6 +4,7 @@
 #include <strsafe.h>
 #include <winnls.h>
 #include <string>
+#include <locale.h>
 #include <concepts>
 
 namespace IniParser
