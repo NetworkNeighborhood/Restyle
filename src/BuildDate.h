@@ -1,5 +1,5 @@
 #pragma once
 
-#include "restylebase.h"
+#include "RestyleBase.h"
 
 LPCWSTR GetBuildDate();

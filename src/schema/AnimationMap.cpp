@@ -1,4 +1,4 @@
-#include "animationmap.h"
+#include "AnimationMap.h"
 #include <uxtheme.h>
 
 // Defines for the animation map:

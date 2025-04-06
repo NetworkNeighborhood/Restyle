@@ -1,7 +1,7 @@
 #pragma once
-#include "restyle.h"
+#include "Restyle.h"
 
-#include "util.h"
+#include "Util.h"
 #include "Symbol.h"
 
 #define MAP_TM_TO_NATIVE_TYPE(TmType, NativeType) template <> struct TmToNativeTypeMap<TmType> { using Type = NativeType; }

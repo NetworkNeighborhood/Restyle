@@ -1,12 +1,12 @@
-#include "iniparser.h"
+#include "IniParser.h"
 
 #include <variant>
-#include "util.h"
-#include "scanner.h"
-#include "Symbol.h"
-#include "SymbolManager.h"
-#include "Value.h"
-#include "ValueArena.h"
+#include "Util.h"
+#include "Scanner.h"
+#include "compiler/Symbol.h"
+#include "compiler/SymbolManager.h"
+#include "compiler/Value.h"
+#include "compiler/ValueArena.h"
 
 // Uncomment to enable testing:
 #define ENABLE_INIPARSER_TEST 1

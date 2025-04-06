@@ -1,5 +1,5 @@
 #pragma once
-#include "restyle.h"
+#include "Restyle.h"
 #include <string>
 
 namespace IniParser

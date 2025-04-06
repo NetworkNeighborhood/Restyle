@@ -1,7 +1,7 @@
 #pragma once
-#include "restyle.h"
+#include "Restyle.h"
 
-#include "arena.h"
+#include "Arena.h"
 #include "Value.h"
 
 /**

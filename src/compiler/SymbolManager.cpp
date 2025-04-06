@@ -1,6 +1,6 @@
 #include "SymbolManager.h"
-#include "arena.h"
-#include "SchemaUtils.h"
+#include "Arena.h"
+#include "schema/SchemaUtils.h"
 
 bool IsSymbolTypePredefined(ESymbolType eSymType)
 {

@@ -1,4 +1,4 @@
-#include "iniparserp.h"
+#include "IniParserP.h"
 
 #if ENABLE_INIPARSER_TEST
 

@@ -1,9 +1,9 @@
-#include "iniparserp.h"
+#include "IniParserP.h"
 
-#include "SchemaUtils.h"
-#include "util.h"
-#include "file.h"
-#include "scanner.h"
+#include "schema/SchemaUtils.h"
+#include "Util.h"
+#include "File.h"
+#include "Scanner.h"
 #include <strsafe.h>
 #include <winerror.h>
 #include <string>

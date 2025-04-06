@@ -1,6 +1,5 @@
-Release/
-Debug/
-x64/
+bin/
+build/
 .vs/
 *.user
 /.idea

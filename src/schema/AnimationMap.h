@@ -1,6 +1,6 @@
 #pragma once
 
-#include "restyle.h"
+#include "Restyle.h"
 
 typedef enum TA_TRANSFORM_TYPE_PRIV
 {

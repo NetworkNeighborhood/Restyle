@@ -1,6 +1,6 @@
 #pragma once
 
-#include "restyle.h"
+#include "Restyle.h"
 
 enum class ESchemaTestMode
 {

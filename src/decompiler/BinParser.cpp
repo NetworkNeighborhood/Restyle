@@ -1,8 +1,8 @@
-#include "restyle.h"
-#include "binparser.h"
-#include "schemapriv.h"
-#include "SchemaUtils.h"
-#include "util.h"
+#include "Restyle.h"
+#include "BinParser.h"
+#include "schema/SchemaPriv.h"
+#include "schema/SchemaUtils.h"
+#include "Util.h"
 
 namespace BinParser
 {

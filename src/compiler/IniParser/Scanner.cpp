@@ -1,5 +1,5 @@
-#include "scanner.h"
-#include "util.h"
+#include "Scanner.h"
+#include "Util.h"
 #include <stringapiset.h>
 #include <strsafe.h>
 #include <winnls.h>

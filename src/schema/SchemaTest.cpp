@@ -1,10 +1,10 @@
 #include "SchemaPriv.h"
-#include "restyle.h"
+#include "Restyle.h"
 #if DEBUG
 
-#include "util.h"
+#include "Util.h"
 #include "SchemaUtils.h"
-#include "schematest.h"
+#include "SchemaTest.h"
 
 using namespace Restyle;
 

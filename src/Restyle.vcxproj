@@ -26,6 +26,46 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BuildDate.cpp" />
+    <ClCompile Include="compiler\IniParser\IniParser.cpp" />
+    <ClCompile Include="compiler\IniParser\IniParserTest.cpp" />
+    <ClCompile Include="compiler\IniParser\Scanner.cpp" />
+    <ClCompile Include="compiler\SymbolManager.cpp" />
+    <ClCompile Include="compiler\ValueArena.cpp" />
+    <ClCompile Include="decompiler\BinParser.cpp" />
+    <ClCompile Include="File.cpp" />
+    <ClCompile Include="Restyle.cpp" />
+    <ClCompile Include="schema\SchemaUtils.cpp" />
+    <ClCompile Include="schema\AnimationMap.cpp" />
+    <ClCompile Include="schema\SchemaTest.cpp" />
+    <ClCompile Include="Util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Arena.h" />
+    <ClInclude Include="BuildDate.h" />
+    <ClInclude Include="compiler\IniParser\IniParser.h" />
+    <ClInclude Include="compiler\IniParser\IniParserP.h" />
+    <ClInclude Include="compiler\IniParser\Scanner.h" />
+    <ClInclude Include="compiler\Symbol.h" />
+    <ClInclude Include="compiler\SymbolManager.h" />
+    <ClInclude Include="compiler\Value.h" />
+    <ClInclude Include="compiler\ValueArena.h" />
+    <ClInclude Include="decompiler\BinParser.h" />
+    <ClInclude Include="File.h" />
+    <ClInclude Include="Restyle.h" />
+    <ClInclude Include="RestyleBase.h" />
+    <ClInclude Include="schema\AnimationMap.h" />
+    <ClInclude Include="schema\restyle_SchemaDef.h" />
+    <ClInclude Include="schema\restyle_TmSchema.h" />
+    <ClInclude Include="schema\SchemaPriv.h" />
+    <ClInclude Include="schema\SchemaTest.h" />
+    <ClInclude Include="schema\SchemaUtils.h" />
+    <ClInclude Include="Util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="restyle.rc" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -101,15 +141,37 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>restyle</TargetName>
+    <IntDir>../build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>../bin\$(Platform)\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>restyle</TargetName>
+    <IntDir>../build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>../bin\$(Platform)\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>restyle</TargetName>
+    <IntDir>../build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>../bin\$(Platform)\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>restyle</TargetName>
+    <IntDir>../build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>../bin\$(Platform)\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <IntDir>../build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>../bin\$(Platform)\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <IntDir>../build\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>../bin\$(Platform)\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -231,59 +293,6 @@ copy /b BuildDate.cpp +,, &gt; NUL
 echo Regenerated build date.</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="animationmap.h" />
-    <ClInclude Include="arena.h" />
-    <ClInclude Include="binparser.h" />
-    <ClInclude Include="BuildDate.h" />
-    <ClInclude Include="file.h" />
-    <ClInclude Include="iniparser.h" />
-    <ClInclude Include="iniparserp.h" />
-    <ClInclude Include="restyle.h" />
-    <ClInclude Include="restylebase.h" />
-    <ClInclude Include="restyle_SchemaDef.h" />
-    <ClInclude Include="restyle_TmSchema.h" />
-    <ClInclude Include="scanner.h" />
-    <ClInclude Include="SchemaPriv.h" />
-    <ClInclude Include="SchemaUtils.h" />
-    <ClInclude Include="Symbol.h" />
-    <ClInclude Include="SymbolManager.h" />
-    <ClInclude Include="util.h" />
-    <ClInclude Include="Value.h" />
-    <ClInclude Include="ValueArena.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="restyle.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="animationmap.cpp" />
-    <ClCompile Include="binparser.cpp" />
-    <ClCompile Include="BuildDate.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Disabled</Optimization>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</InlineFunctionExpansion>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Disabled</InlineFunctionExpansion>
-      <ExceptionHandling Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExceptionHandling>
-      <ExceptionHandling Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExceptionHandling>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Disabled</Optimization>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Disabled</Optimization>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</InlineFunctionExpansion>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Disabled</InlineFunctionExpansion>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">Disabled</InlineFunctionExpansion>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Disabled</InlineFunctionExpansion>
-    </ClCompile>
-    <ClCompile Include="file.cpp" />
-    <ClCompile Include="iniparser.cpp" />
-    <ClCompile Include="IniParserTest.cpp" />
-    <ClCompile Include="PELinker.cpp" />
-    <ClCompile Include="restyle.cpp" />
-    <ClCompile Include="scanner.cpp" />
-    <ClCompile Include="schematest.cpp" />
-    <ClCompile Include="SchemaUtils.cpp" />
-    <ClCompile Include="SymbolManager.cpp" />
-    <ClCompile Include="util.cpp" />
-    <ClCompile Include="ValueArena.cpp" />
-    <ClInclude Include="schematest.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

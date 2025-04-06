@@ -1,5 +1,5 @@
-#include "util.h"
-#include "SchemaUtils.h"
+#include "Util.h"
+#include "schema/SchemaUtils.h"
 
 // #define NO_SCHEMAUTILS
 

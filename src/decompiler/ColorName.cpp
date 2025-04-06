@@ -1,7 +1,7 @@
 /*
  * Referenced from https://color.fandom.com/wiki/Colour_namer 
  */
-#include "restyle.h"
+#include "Restyle.h"
 #include <string>
 
 struct HsvColor

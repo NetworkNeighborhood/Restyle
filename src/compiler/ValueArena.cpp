@@ -1,6 +1,6 @@
 #include "ValueArena.h"
 
-#include "iniparserp.h"
+#include "compiler/IniParser/IniParserP.h"
 
 using namespace Restyle;
 

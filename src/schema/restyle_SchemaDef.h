@@ -1,8 +1,8 @@
 //#pragma once
 
-#include "restylebase.h"
+#include "RestyleBase.h"
 
-#include "schemapriv.h" // TODO: restructure?
+#include "SchemaPriv.h" // TODO: restructure?
 
 //---------------------------------------------------------------------------
 #ifndef SCHEMA_STRINGS           // FIRST PASS of this header file

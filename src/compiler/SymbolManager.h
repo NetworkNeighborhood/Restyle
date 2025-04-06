@@ -1,7 +1,7 @@
 #pragma once
-#include "restyle.h"
-#include "util.h"
-#include "arena.h"
+#include "Restyle.h"
+#include "Util.h"
+#include "Arena.h"
 #include <iterator>
 #include "Symbol.h"
 

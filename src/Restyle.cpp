@@ -1,10 +1,10 @@
-#include "restyle.h"
-#include "schematest.h"
-#include "SchemaUtils.h"
-#include "binparser.h"
-#include "util.h"
-#include "file.h"
-#include "iniparser.h"
+#include "Restyle.h"
+#include "schema/SchemaTest.h"
+#include "schema/SchemaUtils.h"
+#include "decompiler/BinParser.h"
+#include "Util.h"
+#include "File.h"
+#include "compiler/IniParser/IniParser.h"
 #include "BuildDate.h"
 
 WCHAR g_szThemeFilePath[MAX_PATH] = { 0 };

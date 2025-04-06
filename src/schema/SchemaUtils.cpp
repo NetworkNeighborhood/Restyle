@@ -1,5 +1,5 @@
 #include "SchemaUtils.h"
-#include "util.h"
+#include "Util.h"
 
 namespace Restyle
 {
