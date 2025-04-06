@@ -109,6 +109,9 @@
     <ClCompile Include="SchemaUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PELinker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="BuildDate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

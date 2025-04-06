@@ -274,6 +274,7 @@ echo Regenerated build date.</Command>
     <ClCompile Include="file.cpp" />
     <ClCompile Include="iniparser.cpp" />
     <ClCompile Include="IniParserTest.cpp" />
+    <ClCompile Include="PELinker.cpp" />
     <ClCompile Include="restyle.cpp" />
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="schematest.cpp" />
