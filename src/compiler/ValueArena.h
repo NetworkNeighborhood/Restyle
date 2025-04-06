@@ -17,11 +17,11 @@ class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize],
      */
     class CEnsureArenaPointerChanged
     {
+    public:
         #if DEBUG
         CValueArena *_pParent;
         BYTE *_pvOriginal;
 
-    public:
         inline [[nodiscard]] CEnsureArenaPointerChanged(CValueArena *pParent)
             : _pParent(pParent)
             , _pvOriginal(pParent->_pvCur)
