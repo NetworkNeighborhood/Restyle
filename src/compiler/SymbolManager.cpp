@@ -25,13 +25,15 @@ ValueResult<LPCWSTR> CNameArena::Add(LPCWSTR sz)
         }
     }
 
+    LPCWSTR pszResult = (LPCWSTR)_pvCur;
+
     HRESULT hr = Super::Add(sz, cbsz);
     if (FAILED(hr))
     {
         return hr;
     }
 
-    return (LPCWSTR)_pvCur;
+    return pszResult;
 }
 
 ValueResult<Symbol *> CSymbolManager::AddSymbol(LPCWSTR szSymName, ESymbolType eSymType)
@@ -44,12 +46,20 @@ ValueResult<Symbol *> CSymbolManager::AddSymbol(LPCWSTR szSymName, ESymbolType e
     }
 
     int iSchemaOffset = -1;
-    LPCWSTR szSafeSymName = GetGlobalSymbolName(szSymName, &iSchemaOffset);
 
-    if (!szSafeSymName)
+    // szSymName can be nullptr in precisely one single case: the special null base class
+    // symbol. In order to prevent an attempted read-to-zero in the name arena which will
+    // cause a crash, do not attempt to look up this name at all. We will just add it.
+    LPCWSTR szSafeSymName = nullptr;
+    if (szSymName)
     {
-        // Probably out of memory...
-        return E_FAIL;
+        szSafeSymName = GetGlobalSymbolName(szSymName, &iSchemaOffset);
+
+        if (!szSafeSymName)
+        {
+            // Probably out of memory...
+            return E_FAIL;
+        }
     }
 
     Symbol sym{};

@@ -300,15 +300,16 @@ int wmain(int argc, wchar_t *argv[])
 	}
 	else if (IsArg(argv[1], "testparser"))
 	{
-		if (argc != 3)
+		if (argc != 2)
 		{
 			Log(L"FATAL: Invalid number of arguments.", ELogLevel::Fatal);
 			return 0;
 		}
 
-		LPCWSTR szPath = argv[2];
+		//LPCWSTR szPath = argv[2];
 
-		IniParser::ParseIniFile(szPath);
+		IniParser::ParseIniFile(nullptr);
+		system("pause");
 	}
 #endif
 	else

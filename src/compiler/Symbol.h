@@ -1,14 +1,6 @@
 #pragma once
 #include "Restyle.h"
 
-enum class EParseMode
-{
-    Assoc,
-    SectionHeader,
-    Preprocessor,
-    BreakParseLoop,
-};
-
 enum class ESymbolType
 {
     // -- Predefined types --

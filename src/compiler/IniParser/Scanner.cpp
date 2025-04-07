@@ -116,7 +116,7 @@ static NumberType ParseIntegerNumberLiteral(LPCWSTR sz, int *piRead = nullptr)
                 // Stop parsing if we're parsing a base 10 number.
                 if (iBase == 10)
                 {
-                    if (piRead) *piRead = szStart - sz;
+                    if (piRead) *piRead = sz - szStart;
                     return nNeg * iBuf;
                 }
                 
@@ -128,13 +128,13 @@ static NumberType ParseIntegerNumberLiteral(LPCWSTR sz, int *piRead = nullptr)
             // return.
             default:
             {
-                if (piRead) *piRead = szStart - sz;
+                if (piRead) *piRead = sz - szStart;
                 return nNeg * iBuf;
             }
         }
     }
     
-    if (piRead) *piRead = szStart - sz;
+    if (piRead) *piRead = sz - szStart;
     return nNeg * iBuf;
 }
 
@@ -173,15 +173,17 @@ static FloatType ParseFloatingPointNumberLiteral(LPCWSTR sz, int *piRead = nullp
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CScanner::CScanner(LPCWSTR szText, DWORD cchText)
-    : _p(szText)
+    : _pszFile(szText)
     , _pEndOfFile(szText + cchText)
 {
+    ReadNextLine();
 }
 
-CScanner::CScanner(std::wstring text)
-    : _p(text.c_str())
+CScanner::CScanner(std::wstring &text)
+    : _pszFile(text.c_str())
     , _pEndOfFile(text.c_str() + text.length())
 {
+    ReadNextLine();
 }
 
 bool CScanner::IsNextSequenceCommentDelinatingToken()
@@ -227,6 +229,7 @@ bool CScanner::ReadNextLine()
         _pszFile++;
     
     _p = _szLineBuff;
+    _pLine = _szLineBuff;
     _fBlankSoFar = true;
     _iLineNum++;
     
@@ -278,15 +281,16 @@ bool CScanner::SkipSpaces(bool fProgressLine)
         {
             if (_fBlankSoFar && !_fEndOfFile)
             {
-                if (fProgressLine)
-                {
-                    ReadNextLine();
-                    continue;
-                }
-                else
+                if (!fProgressLine)
                 {
                     break;
                 }
+            }
+            
+            if (!_fEndOfFile && fProgressLine)
+            {
+                ReadNextLine();
+                continue;
             }
             
             if (IsNextSequenceCommentDelinatingToken())

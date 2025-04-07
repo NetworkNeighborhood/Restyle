@@ -83,6 +83,8 @@ public:
         
         memcpy(pSelf->_pvCur, pData, cbData);
         pSelf->_dwSize += cbData;
+
+        _pvCur += cbData;
         
         return S_OK;
     }

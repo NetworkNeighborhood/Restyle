@@ -81,6 +81,15 @@ class CValueArena : public CTBaseArena<CValueArena, BYTE[kLargestValueTypeSize],
     }
 
 public:
+    CValueArena()
+    {
+        // TODO: Move somewhere where we can propagate an error result.
+        if (FAILED(EnsureInitialized()))
+        {
+            Log(L"Failed to initialize CValueArena.\n", ELogLevel::Fatal);
+        }
+    }
+
     ValueResult<const IntValue *> CreateIntValue(int iVal);
     ValueResult<const EnumValue *> CreateEnumValue(int iVal);
     ValueResult<const FloatValue *> CreateFloatValue(float flVal);

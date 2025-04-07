@@ -119,3 +119,4 @@ struct ValueResult
 };
 
 bool StrEndsWithW(LPCWSTR a, LPCWSTR b);
+bool IsBlockZeroed(void *pBlock, size_t size);

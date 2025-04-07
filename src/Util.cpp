@@ -279,3 +279,36 @@ bool StrEndsWithW(LPCWSTR a, LPCWSTR b)
 
 	return false;
 }
+
+// Very efficient memory block zero check.
+// https://stackoverflow.com/a/50835105
+bool IsBlockZeroed(void *pBlock, size_t size)
+{
+	if (pBlock == nullptr)
+	{
+		return false;
+	}
+
+	intmax_t *pbi = (intmax_t *)pBlock;
+	intmax_t *pbiUpper = ((intmax_t *)(((BYTE *)pBlock) + size)) - 1;
+
+	for (; pbi <= pbiUpper; pbi++)
+	{
+		if (*pbi)
+		{
+			// Check most of the array with the biggest int available, but without aligning it.
+			return false;
+		}
+	}
+
+	for (BYTE *p = (BYTE *)pbi; p < ((BYTE *)pBlock) + size; p++)
+	{
+		if (*p)
+		{
+			// Check end of non-aligned array:
+			return false;
+		}
+	}
+
+	return true;
+}

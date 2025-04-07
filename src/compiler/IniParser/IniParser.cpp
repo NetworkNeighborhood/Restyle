@@ -25,7 +25,7 @@ CIniParser::CIniParser(LPCWSTR szText, DWORD cchText)
     Initialize();
 }
 
-CIniParser::CIniParser(std::wstring text)
+CIniParser::CIniParser(std::wstring &text)
     : _scanner(text)
 {
     Initialize();
@@ -87,6 +87,8 @@ HRESULT CIniParser::SourceError(EParseErrorCode eCode, LPCWSTR szCustomMessage, 
 std::wstring CIniParser::ReadNextWord()
 {
     std::wstring result;
+
+    _scanner.SkipSpaces();
     
     while (_scanner.IsNameChar(false))
     {
@@ -98,12 +100,18 @@ std::wstring CIniParser::ReadNextWord()
 
 HRESULT CIniParser::Parse()
 {
-    HRESULT hr;
+    HRESULT hr = S_OK;
     
-    while (!_scanner.EndOfFile() && _eMode != EParseMode::BreakParseLoop)
+    while (!_scanner.EndOfFile() && SUCCEEDED(hr))
     {
         switch (_eMode)
         {
+            case EParseMode::FigureItOut:
+            {
+                hr = FigureOutNextParseMode();
+                break;
+            }
+
 #ifdef ENABLE_PREPROCESSOR
             case EParseMode::Preprocessor:
             {
@@ -123,16 +131,47 @@ HRESULT CIniParser::Parse()
                 hr = ParseNextAssociation();
                 break;
             }
-            
-            case EParseMode::BreakParseLoop:
-            {
-                // This is useless because it's handled in the above while loop, however Intellisense
-                // won't shut up.
-                break;
-            }
         }
     }
     
+    return hr;
+}
+
+HRESULT CIniParser::FigureOutNextParseMode()
+{
+#ifdef ENABLE_PREPROCESSOR
+    // If we're at the beginning of a line and the line begins with a "#" character, then we're
+    // parsing a preprocessor command.
+    LPCWSTR pszOriginalOffset = _scanner._p;
+    _scanner._p = _scanner._pLine;
+    _scanner.SkipSpaces(false);
+
+    // If the offset we were previously at succeeds our recalculated furthest-allowed offset for
+    // the preprocessor character, then we are not allowed to parse a preprocessor command.
+    if (_scanner._p < pszOriginalOffset)
+    {
+        _scanner._p = pszOriginalOffset;
+    }
+    else
+    {
+        // Otherwise, go and parse the preprocessor command freely:
+        assert(_scanner._p >= pszOriginalOffset); // We should have never ended up rewinding.
+
+        _eMode = EParseMode::Preprocessor;
+        return S_OK;
+    }
+#endif
+
+    // If the next character is a "[" character, denoting the opening of an INI section,
+    // then we're going to enter INI section header parsing mode:
+    if (_scanner.GetChar(L'[') && _scanner._p--)
+    {
+        _eMode = EParseMode::SectionHeader;
+        return S_OK;
+    }
+
+    // Otherwise, the default mode of the main parse loop is to parse INI associations.
+    _eMode = EParseMode::Assoc;
     return S_OK;
 }
 
@@ -175,7 +214,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
     {
         if (!_scanner.GetChar(L'*'))
         {
-            return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '*'");
+            return SourceError(ExpectedCharacter, L"Expected '*'");
         }
     }
 
@@ -183,22 +222,22 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
 
     if (strIdentifier.empty())
     {
-        return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a class identifer, got nothing");
+        return SourceError(ExpectedSymbol, L"Expected a class identifer, got nothing");
     }
 
     if (eExpectType == ESymbolType::ManualPart && !AsciiStrCmpI(strIdentifier.c_str(), L"Part"))
     {
-        return SourceError(EParseErrorCode::ExpectedSymbol, L"Unexpected identifier '%s', expected 'Part'.", strIdentifier.c_str());
+        return SourceError(ExpectedSymbol, L"Unexpected identifier '%s', expected 'Part'.", strIdentifier.c_str());
     }
     else if (eExpectType == ESymbolType::ManualState && !AsciiStrCmpI(strIdentifier.c_str(), L"State"))
     {
-        return SourceError(EParseErrorCode::ExpectedSymbol, L"Unexpected identifier '%s', expected 'State'.", strIdentifier.c_str());
+        return SourceError(ExpectedSymbol, L"Unexpected identifier '%s', expected 'State'.", strIdentifier.c_str());
     }
     else if (eExpectType == ESymbolType::ManualPropertyKey &&
         !AsciiStrCmpI(strIdentifier.c_str(), L"Prop") ||
         !AsciiStrCmpI(strIdentifier.c_str(), L"Property"))
     {
-        return SourceError(EParseErrorCode::ExpectedSymbol, L"Unexpected identifier '%s', expected 'Prop' or 'Property'.", strIdentifier.c_str());
+        return SourceError(ExpectedSymbol, L"Unexpected identifier '%s', expected 'Prop' or 'Property'.", strIdentifier.c_str());
     }
 
     // Skip the optional "#" if it is there.
@@ -207,7 +246,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
     int iValue;
     if (!_scanner.GetNumber(&iValue))
     {
-        return SourceError(EParseErrorCode::ExpectedNumber);
+        return SourceError(ExpectedNumber);
     }
 
     int iType = 0; // 0 = Unset.
@@ -219,14 +258,14 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
     {
         if (_scanner.GetChar(L'<'))
         {
-            return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '<'");
+            return SourceError(ExpectedCharacter, L"Expected '<'");
         }
 
         std::wstring strType = ReadNextWord();
 
         if (strType.empty())
         {
-            return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a type name");
+            return SourceError(ExpectedSymbol, L"Expected a type name");
         }
 
         // Find the type of the property from the schema:
@@ -236,7 +275,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
         // Fail: the above loop fell through without setting a value.
         if (iType == 0)
         {
-            return SourceError(EParseErrorCode::ExpectedSymbol, L"Unknown type name '%s' specified", strType.c_str());
+            return SourceError(ExpectedSymbol, L"Unknown type name '%s' specified", strType.c_str());
         }
 
         switch (iType)
@@ -247,7 +286,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
             case TMT_STREAM:
             case TMT_BITMAPREF:
                 return SourceError(
-                    EParseErrorCode::UnexpectedSymbol, 
+                    UnexpectedSymbol, 
                     L"Properties may not be special type '%s', as values thereof are impossible to represent",
                     strType.c_str()
                 );
@@ -255,7 +294,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
 
         if (_scanner.GetChar(L'>'))
         {
-            return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '>'");
+            return SourceError(ExpectedCharacter, L"Expected '>'");
         }
     }
 
@@ -340,7 +379,7 @@ ValueResult<const std::wstring> CIniParser::ParseNextClassName()
 
     if (strFirst.empty())
     {
-        return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a word");
+        return SourceError(ExpectedSymbol, L"Expected a word");
     }
 
     // If we're going to follow with a "::" sequence, then we must not allow spaces
@@ -354,7 +393,7 @@ ValueResult<const std::wstring> CIniParser::ParseNextClassName()
     {
         if (fNextCharIsSpace)
         {
-            return SourceError(EParseErrorCode::UnexpectedSpace);
+            return SourceError(UnexpectedSpace);
         }
 
         strFinalClass += L"::";
@@ -363,7 +402,7 @@ ValueResult<const std::wstring> CIniParser::ParseNextClassName()
 
         if (strBaseClass.empty())
         {
-            return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected a word");
+            return SourceError(ExpectedSymbol, L"Expected a word");
         }
 
         strFinalClass += strBaseClass;
@@ -376,11 +415,11 @@ ValueResult<const std::wstring> CIniParser::ParseNextClassName()
     {
         if (fNextCharIsSpace)
         {
-            return SourceError(EParseErrorCode::UnexpectedSymbol, L"Unexpected '::' (you might have meant ':' instead)");
+            return SourceError(UnexpectedSymbol, L"Unexpected '::' (you might have meant ':' instead)");
         }
         else
         {
-            return SourceError(EParseErrorCode::UnexpectedSymbol, L"Unexpected '::'. Class names may not exceed a maximum of 2 levels of an app name and a base class.");
+            return SourceError(UnexpectedSymbol, L"Unexpected '::'. Class names may not exceed a maximum of 2 levels of an app name and a base class.");
         }
     }
 
@@ -444,7 +483,7 @@ HRESULT CIniParser::ParseNextSectionHeader()
 {
     if (!_scanner.GetChar(L'['))
     {
-        return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '['");
+        return SourceError(ExpectedCharacter, L"Expected '['");
     }
 
     CSymbolComponent cmClass, cmState, cmPart, cmBaseClass;
@@ -482,7 +521,7 @@ HRESULT CIniParser::ParseNextSectionHeader()
 
                 if (!cmPart.IsNonEmptyString())
                 {
-                    return SourceError(EParseErrorCode::ExpectedSymbol);
+                    return SourceError(ExpectedSymbol);
                 }
             }
         }
@@ -502,13 +541,13 @@ HRESULT CIniParser::ParseNextSectionHeader()
 
                 if (!cmState.IsNonEmptyString())
                 {
-                    return SourceError(EParseErrorCode::ExpectedSymbol);
+                    return SourceError(ExpectedSymbol);
                 }
             }
 
             if (!_scanner.GetChar(L')'))
             {
-                return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected ')'");
+                return SourceError(ExpectedCharacter, L"Expected ')'");
             }
         }
         // If we follow with a ":" character, then we're parsing a manual inheriting
@@ -527,9 +566,9 @@ HRESULT CIniParser::ParseNextSectionHeader()
             {
                 PROPAGATE_ERROR_IF_FAILED(cmBaseClass = ParseNextClassName());
 
-                if (cmBaseClass.GetString().Unwrap().empty())
+                if (cmBaseClass.GetString().Unwrap()->empty())
                 {
-                    return SourceError(EParseErrorCode::ExpectedSymbol);
+                    return SourceError(ExpectedSymbol);
                 }
             }
         }
@@ -543,7 +582,7 @@ HRESULT CIniParser::ParseNextSectionHeader()
         // a parse error.
         else
         {
-            return SourceError(EParseErrorCode::UnexpectedSequence);
+            return SourceError(UnexpectedSequence);
         }
     }
 
@@ -581,17 +620,8 @@ HRESULT CIniParser::ParseNextSectionHeader()
     // Update the current state of the parser:
     //
 
-    if (pSymBaseClass)
-    {
-        // If we parsed an inheritance definition, then we do not allow properties under any
-        // circumstances.
-        _eMode = EParseMode::SectionHeader;
-    }
-    else
-    {
-        // Otherwise, we expect associations to follow.
-        _eMode = EParseMode::Assoc;
-    }
+    // Revert the parsing mode to move onto the next top-level construct:
+    _eMode = EParseMode::FigureItOut;
 
     return S_OK;
 }
@@ -623,6 +653,37 @@ HRESULT CIniParser::ParseNextSectionHeader()
  */
 HRESULT CIniParser::ParseNextAssociation()
 {
+    //
+    // Precondition validation:
+    //
+
+    {
+        auto &s = _iniSectionCur;
+
+        // Make sure that we have an INI section. Even if otherwise valid INI is passed to us, we do
+        // not allow it if no INI section is provided.
+        if (s.pSymClass == nullptr && s.pSymPart == nullptr && s.pSymState == nullptr)
+        {
+            return SourceError(IniSectionRequired, L"An INI file must begin with a valid INI section");
+        }
+
+        // Even if we have an INI section, we do not allow any associations to follow if it declares
+        // a base class in order to avoid confusion.
+        if (s.pSymBaseClass != nullptr)
+        {
+            return SourceError(IllegalIniAssociation, 
+                L"An INI header that declares a base class cannot have properties. "
+                L"Recommended solution: duplicate the section header again, once to declare the base class, "
+                L"and again to define the properties"
+            );
+        }
+    }
+
+
+    //
+    // Precondition success:
+    //
+
     CSymbolComponent cmProperty;
 
     const TMPROPINFO *pPropInfo = nullptr;
@@ -638,20 +699,20 @@ HRESULT CIniParser::ParseNextAssociation()
 
         if (!cmProperty.IsNonEmptyString())
         {
-            return SourceError(EParseErrorCode::ExpectedSymbol);
+            return SourceError(ExpectedSymbol, L"Could not find property name.");
         }
 
         if (cmProperty.GetString().Failed())
         {
             // TODO: InvalidSymbol seems weird. Perhaps a different code should be introduced for this type.
-            return SourceError(EParseErrorCode::InvalidSymbol, L"Failed to parse property name.");
+            return SourceError(InvalidSymbol, L"Failed to parse property name.");
         }
 
         // Ensure that the name is statically valid from schema
-        pPropInfo = SearchSchema(ESchemaSearchQuery::SearchWholeSchema, cmProperty.GetString().Unwrap().c_str());
+        pPropInfo = SearchSchema(ESchemaSearchQuery::SearchWholeSchema, cmProperty.GetString().Unwrap()->c_str());
         if (!pPropInfo)
         {
-            return SourceError(EParseErrorCode::InvalidSymbol, L"Invalid symbol name '%s'", cmProperty.GetString().Unwrap().c_str());
+            return SourceError(InvalidSymbol, L"Invalid symbol name '%s'", cmProperty.GetString().Unwrap()->c_str());
         }
     }
 
@@ -659,7 +720,7 @@ HRESULT CIniParser::ParseNextAssociation()
 
     if (!_scanner.GetChar(L'='))
     {
-        return SourceError(EParseErrorCode::ExpectedCharacter, L"Expected '='");
+        return SourceError(ExpectedCharacter, L"Expected '='");
     }
 
     //
@@ -703,6 +764,7 @@ HRESULT CIniParser::ParseNextAssociation()
             break;
         }
 
+        case TMT_ENUMDEF:
         case TMT_ENUM:
         {
             PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseEnumValue(cmProperty));
@@ -744,6 +806,11 @@ HRESULT CIniParser::ParseNextAssociation()
             PROPAGATE_ERROR_IF_FAILED(pValue = (Value<> *)ParseFloatListValue());
             break;
         }
+
+        default:
+        {
+            return SourceError(TypeDoesNotExist, L"le epic fail");
+        }
     }
 
     //
@@ -762,6 +829,15 @@ HRESULT CIniParser::ParseNextAssociation()
     assoc.pKeySymbol = pSymProperty;
     assert(pValue);
     assoc.pVal = pValue;
+
+    _associations.push_back(assoc);
+
+    //
+    // Update the current state of the parser:
+    //
+
+    // Revert the parsing mode to move onto the next top-level construct:
+    _eMode = EParseMode::FigureItOut;
 
     return S_OK;
 }
@@ -796,7 +872,7 @@ ValueResult<const IntValue *> CIniParser::ParseIntValue()
         return valueArena.CreateIntValue(iResult);
     }
     
-    return SourceError(EParseErrorCode::ExpectedNumber, L"An integer value must be a valid integer number");
+    return SourceError(ExpectedNumber, L"An integer value must be a valid integer number");
 }
 
 /*
@@ -838,7 +914,7 @@ ValueResult<const FloatValue *> CIniParser::ParseFloatValue()
         return valueArena.CreateFloatValue(flResult);
     }
 
-    return SourceError(EParseErrorCode::ExpectedNumber, L"A floating-point number value must be a valid floating-point number.");
+    return SourceError(ExpectedNumber, L"A floating-point number value must be a valid floating-point number.");
 }
 
 /**
@@ -865,7 +941,7 @@ ValueResult<const BoolValue *> CIniParser::ParseBoolValue()
         return valueArena.CreateBoolValue(FALSE);
     }
 
-    return SourceError(EParseErrorCode::ExpectedSymbol, L"A boolean value must be either true or false");
+    return SourceError(ExpectedSymbol, L"A boolean value must be either true or false");
 }
 
 /**
@@ -897,7 +973,7 @@ ValueResult<const SizeValue *> CIniParser::ParseSizeValue()
         return valueArena.CreateSizeValue(vrUnit.Unwrap());
     }
 
-    return SourceError(EParseErrorCode::ExpectedNumber, L"An size value must be a valid integer number");
+    return SourceError(ExpectedNumber, L"An size value must be a valid integer number");
 }
 
 /**
@@ -921,12 +997,12 @@ ValueResult<const EnumValue *> CIniParser::ParseEnumValue(CSymbolComponent &rcmP
     searchParams.cbSize = sizeof(searchParams);
     searchParams.eSearchQuery = ESchemaSearchQuery::Enum;
 
-    if (rcmProperty.IsManual() || rcmProperty.IsNonEmptyString())
+    if (rcmProperty.IsManual() || !rcmProperty.IsNonEmptyString())
     {
         return E_INVALIDARG;
     }
 
-    searchParams.szName = rcmProperty.GetString().Unwrap().c_str();
+    searchParams.szName = rcmProperty.GetString().Unwrap()->c_str();
 
     // TODO: Implement target OS version manager.
     searchParams.eSupportedOs = ESupportedOS::All;
@@ -935,7 +1011,7 @@ ValueResult<const EnumValue *> CIniParser::ParseEnumValue(CSymbolComponent &rcmP
 
     if (!pEnumIndex)
     {
-        return SourceError(EParseErrorCode::TypeDoesNotExist, L"Failed to find enum definition for %s", searchParams.szName);
+        return SourceError(TypeDoesNotExist, L"Failed to find enum definition for %s", searchParams.szName);
     }
 
     // Read the next word to figure out the enum value.
@@ -943,13 +1019,13 @@ ValueResult<const EnumValue *> CIniParser::ParseEnumValue(CSymbolComponent &rcmP
 
     if (strEnumVal.empty())
     {
-        return SourceError(EParseErrorCode::ExpectedSymbol, L"Expected an enum value name");
+        return SourceError(ExpectedSymbol, L"Expected an enum value name");
     }
 
     // Iterate the enum properties until we find a match.
     const TMPROPINFO *pCurVal = pEnumIndex;
     bool fFoundVal = false;
-    while (pCurVal = SearchSchema(ESchemaSearchQuery::Enum, pCurVal, TMT_ENUM))
+    while (pCurVal = SearchSchema(ESchemaSearchQuery::NextEnum, pCurVal, TMT_ENUMVAL))
     {
         if (AsciiStrCmpI(pCurVal->pszName, strEnumVal.c_str()) == 0)
         {
@@ -961,7 +1037,7 @@ ValueResult<const EnumValue *> CIniParser::ParseEnumValue(CSymbolComponent &rcmP
 
     if (!fFoundVal)
     {
-        return SourceError(EParseErrorCode::UnexpectedSymbol, L"'%s' is not a valid value for the enum type '%s'", 
+        return SourceError(UnexpectedSymbol, L"'%s' is not a valid value for the enum type '%s'", 
             strEnumVal.c_str(), searchParams.szName
         );
     }
@@ -1006,7 +1082,7 @@ static ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, U
         if (!(pParser->_scanner.*pfnGetNextValue)(&next))
         {
             return pParser->SourceError(
-                EParseErrorCode::ExpectedNumber,
+                ExpectedNumber,
                 L"Expected number at item #%d of list%s",
                 iCurrentItem,
                 (fIsFirstItemOfSecondaryLine
@@ -1342,6 +1418,13 @@ HRESULT CIniParser::ParseNextCPreprocessor()
         // Invalid keyword.
         return E_FAIL;
     }
+
+    //
+    // Update the current state of the parser:
+    //
+
+    // Revert the parsing mode to move onto the next top-level construct:
+    _eMode = EParseMode::FigureItOut;
     
     return hr;
 }
@@ -1359,12 +1442,12 @@ HRESULT CIniParser::ParseCPreprocessorInclude()
 // }
 #endif
 
-std::unique_ptr<IIniParser> CreateUniqueIniParser(std::wstring text)
+std::unique_ptr<IIniParser> CreateUniqueIniParser(std::wstring &text)
 {
     return std::make_unique<CIniParser>(text);
 }
 
-IIniParser *CreateIniParser(std::wstring text)
+IIniParser *CreateIniParser(std::wstring &text)
 {
     return new CIniParser(text);
 }

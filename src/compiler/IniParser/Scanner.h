@@ -29,7 +29,7 @@ private:
 
 public:
     CScanner(LPCWSTR szText, DWORD cchText);
-    CScanner(std::wstring text);
+    CScanner(std::wstring &text);
 
     inline bool Next()
     {
@@ -69,7 +69,8 @@ public:
     static bool IsHexDigit(WCHAR c);
     static bool IsDigit(WCHAR c);
     
-    const WCHAR *_p;
+    const WCHAR *_p = nullptr;
+    const WCHAR *_pLine = nullptr;
 };
 
 }

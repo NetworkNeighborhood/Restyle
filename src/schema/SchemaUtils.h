@@ -11,6 +11,9 @@ enum class ESchemaSearchQuery
     Enum,
     Parts,
     States,
+    NextEnum,
+    NextPart,
+    NextState,
     PrimitiveProperty,
 };
 

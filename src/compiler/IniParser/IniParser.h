@@ -15,6 +15,8 @@ enum EParseErrorCode
     InvalidSymbol,
     TypeDoesNotExist,
     ItemCountMismatch,
+    IniSectionRequired,
+    IllegalIniAssociation,
 };
 
 struct ParseError
@@ -32,11 +34,11 @@ DECLARE_INTERFACE(IIniParser)
 
 // C++ unique-pointer-based interfaces:
 std::unique_ptr<IIniParser> CreateUniqueIniParser(LPCWSTR szText, DWORD cchText);
-std::unique_ptr<IIniParser> CreateUniqueIniParser(std::wstring text);
+std::unique_ptr<IIniParser> CreateUniqueIniParser(std::wstring &text);
 
 // C raw-pointer-based interfaces:
 IIniParser *CreateIniParser(LPCWSTR szText, DWORD cchText);
-IIniParser *CreateIniParser(std::wstring text);
+IIniParser *CreateIniParser(std::wstring &text);
 HRESULT DestroyIniParser(IIniParser *pParser);
 
 HRESULT ParseIniFile(LPCWSTR szPath);

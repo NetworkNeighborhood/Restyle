@@ -79,11 +79,22 @@ static ESymbolType GetPredefinedTypeCorrespondingToManual(ESymbolType eManual)
         &PredefinedToManualSymbolTypeMap::eManual, &PredefinedToManualSymbolTypeMap::ePredefined>(eManual);
 }
 
+enum class EParseMode
+{
+    FigureItOut,
+    Assoc,
+    SectionHeader,
+    Preprocessor,
+};
+
 class CIniParser : public IIniParser
 {
     CScanner _scanner;
     CSymbolManager *_pSymbolManager;
     CValueArena valueArena;
+
+    // TODO(isabella): std::vector is reallocated every time that it needs to expand (i.e. due to a push_back). Move
+    // to an arena which preserves its location in memory or store offsets rather than pointers.
     std::vector<IniAssociation> _associations;
 
     // Precached symbols:
@@ -106,6 +117,7 @@ class CIniParser : public IIniParser
 
     std::wstring ReadNextWord();
 
+    HRESULT FigureOutNextParseMode();
     HRESULT ParseNextSectionHeader();
     HRESULT ParseNextAssociation();
     ValueResult<const std::wstring> ParseNextClassName();
@@ -171,11 +183,11 @@ class CIniParser : public IIniParser
             return std::holds_alternative<ParseManualSymbolResult>(_component);
         }
 
-        ValueResult<std::wstring> GetString()
+        ValueResult<std::wstring *> GetString()
         {
             if (std::wstring *pStr = std::get_if<std::wstring>(&_component))
             {
-                return *pStr;
+                return pStr;
             }
 
             return E_FAIL;
@@ -183,11 +195,11 @@ class CIniParser : public IIniParser
 
         bool IsNonEmptyString()
         {
-            ValueResult<std::wstring> str = GetString();
+            ValueResult<std::wstring *> str = GetString();
 
             if (str.Succeeded())
             {
-                return !str.Unwrap().empty();
+                return !str.Unwrap()->empty();
             }
 
             return false;
@@ -271,7 +283,7 @@ class CIniParser : public IIniParser
 
 public:
     CIniParser(LPCWSTR szText, DWORD cchText);
-    CIniParser(std::wstring text);
+    CIniParser(std::wstring &text);
 
     // static CIniParser CreateIncludeIniParser(CIniParser *pParent, CSimpleFile *pChildFile);
 
@@ -281,6 +293,7 @@ public:
 #if ENABLE_INIPARSER_TEST
     // Ignore the warning in Visual Studio. These are implemented in IniParserTest.cpp.
     HRESULT TestScanner();
+    HRESULT TestParser();
 #endif
 };
 

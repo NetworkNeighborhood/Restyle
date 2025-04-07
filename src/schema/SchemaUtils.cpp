@@ -235,10 +235,10 @@ const TMPROPINFO *SearchSchema(SearchSchemaParams *pParams)
     const ESchemaSearchQuery eSearchQuery = pParams->eSearchQuery;
     const ESupportedOS eSupportedOs = pParams->eSupportedOs;
 
-    UINT iIndex = pParams->pPropInfoFrom ? GetPropInfoIndex(pParams->pPropInfoFrom) : 0;
+    UINT iIndex = pParams->pPropInfoFrom ? GetPropInfoIndex(pParams->pPropInfoFrom) + 1 : 0;
     
     if (pParams->pPropInfoFrom)
-        assert(&g_pSchemaInfo->pPropTable[iIndex] == pParams->pPropInfoFrom);
+        assert(&g_pSchemaInfo->pPropTable[iIndex - 1] == pParams->pPropInfoFrom);
 
     for (UINT i = iIndex; i < g_pSchemaInfo->iPropCount; i++)
     {
@@ -251,7 +251,11 @@ const TMPROPINFO *SearchSchema(SearchSchemaParams *pParams)
 // Conditions like this are common, so I made this macro.
 #define SEARCH_SCHEMA_CONDITION(conditionA, conditionB) \
     if ((conditionA) && (conditionB))                   \
-        continue;                                       \
+        continue;
+
+#define SEARCH_SCHEMA_BREAK_CONDITION(conditionA, conditionB) \
+    if ((conditionA) && (conditionB))                        \
+        break;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -260,6 +264,11 @@ const TMPROPINFO *SearchSchema(SearchSchemaParams *pParams)
         {
             continue;
         }
+
+        SEARCH_SCHEMA_BREAK_CONDITION(eSearchQuery == Q::NextEnum || eSearchQuery == Q::NextPart || eSearchQuery == Q::NextState,
+            pPropInfo->bPrimVal != TMT_ENUMDEF &&
+            pPropInfo->bPrimVal != TMT_ENUMVAL
+        );
 
         // XXX (isabella): Queries will be used for further optimisation in the future.
         SEARCH_SCHEMA_CONDITION(eSearchQuery == Q::Enum || eSearchQuery == Q::Parts || eSearchQuery == Q::States, 
