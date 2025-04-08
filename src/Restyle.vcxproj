@@ -167,11 +167,13 @@
     <IntDir>../build\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>../bin\$(Platform)\$(Configuration)\</OutDir>
     <IncludePath>$(ProjectDir);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <TargetName>restyle</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <IntDir>../build\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>../bin\$(Platform)\$(Configuration)\</OutDir>
     <IncludePath>$(ProjectDir);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <TargetName>restyle</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

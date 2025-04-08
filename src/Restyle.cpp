@@ -79,6 +79,38 @@ int wmain(int argc, wchar_t *argv[])
 	);
 	Log(L"%s\n\n", GetBuildDate());
 
+// Inform the user to use native if they're running under emulation on ARM64.
+// We don't do this for x86-32 builds on x86-64 as those still run as native code.
+#if _M_X64 || _M_IX86
+	// This function only exists since 1709, which is too recent for me to be comfortable
+	// statically linking against.
+	HMODULE hKernel32 = LoadLibraryW(L"kernel32.dll");
+	if (hKernel32)
+	{
+		BOOL (WINAPI *pfnIsWow64Process2)(HANDLE hProcess, USHORT *pProcessMachine, USHORT *pNativeMachine) = nullptr;
+		pfnIsWow64Process2 = (decltype(pfnIsWow64Process2))GetProcAddress(hKernel32, "IsWow64Process2");
+		if (pfnIsWow64Process2)
+		{
+			USHORT uProcessMachine = 0;
+			USHORT uNativeMachine = 0;
+			if (pfnIsWow64Process2(GetCurrentProcess(), &uProcessMachine, &uNativeMachine))
+			{
+				if (uNativeMachine == IMAGE_FILE_MACHINE_ARM64)
+				{
+#if _WIN64
+					Log(L"\nYou are using an x64 version of Restyle.\n", ELogLevel::Warning);
+#else
+					Log(L"\nYou are using an x86 version of Restyle.\n", ELogLevel::Warning);
+#endif
+					Log(L"For faster performance on your ARM CPU, we recommend that you download the native ARM64 version of Restyle.\n\n", ELogLevel::Warning);
+				}
+			}
+		}
+
+		FreeLibrary(hKernel32);
+	}
+#endif
+
 	if (FAILED(Restyle::InitializeSchemaUtils()))
 	{
 		Log(L"Error: Failed to initialize schema utils.", ELogLevel::Fatal);
