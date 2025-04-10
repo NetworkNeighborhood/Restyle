@@ -11,6 +11,7 @@ protected:
     BYTE *_pvData = nullptr;
     BYTE *_pvCur = nullptr;
     DWORD _dwSize = 0;
+    DWORD _dwMaxSize = kInitialSize;
     Self *_pNext = nullptr;
     
     Self *GetEffectiveSelf()
@@ -63,7 +64,7 @@ public:
         if ((_pvData = new BYTE[kInitialSize]))
         {
             ZeroMemory(_pvData, kInitialSize);
-            _dwSize = kInitialSize;
+            _dwSize = 0;
             _pvCur = _pvData;
             _fInitialized = true;
             return S_OK;
@@ -74,6 +75,7 @@ public:
     
     HRESULT Add(BaseType *pData, DWORD cbData)
     {
+        assert(_fInitialized);
         Self *pSelf = GetEffectiveSelf();
     
         if (FAILED(pSelf->ResizeIfNecessary(cbData)))
@@ -88,19 +90,43 @@ public:
         
         return S_OK;
     }
+
+    HRESULT Push(DWORD cb)
+    {
+        assert(_fInitialized);
+        Self *pSelf = GetEffectiveSelf();
+
+        if (FAILED(pSelf->ResizeIfNecessary(cb)))
+        {
+            return E_OUTOFMEMORY;
+        }
+
+        pSelf->_dwSize += cb;
+        _pvCur += cb;
+        ZeroMemory(pSelf->_pvCur, cb);
+
+        return S_OK;
+    }
     
     HRESULT Pop(DWORD cb)
     {
+        assert(_fInitialized);
         Self *pSelf = GetEffectiveSelf();
     
         pSelf->_pCur -= cb;
-        ZeroMemory(pSelf->_pCur, cb);
+        ZeroMemory(pSelf->_pvCur, cb);
         
         return S_OK;
+    }
+
+    BaseType *GetCurrent()
+    {
+        return (BaseType *)_pvCur;
     }
     
     HRESULT Resize()
     {
+        assert(_fInitialized);
         Self *pCur = GetEffectiveSelf();
     
         pCur->_pNext = new Self();
@@ -122,9 +148,10 @@ public:
     
     HRESULT ResizeIfNecessary(DWORD cbRequested)
     {
+        assert(_fInitialized);
         Self *pSelf = GetEffectiveSelf();
     
-        if ((size_t)pSelf->_pvCur + cbRequested - (size_t)pSelf->_pvData > _dwSize)
+        if ((size_t)pSelf->_pvCur + cbRequested - (size_t)pSelf->_pvData > _dwMaxSize)
         {
             if (FAILED(pSelf->Resize()))
             {

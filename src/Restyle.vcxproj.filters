@@ -116,6 +116,9 @@
     <ClInclude Include="compiler\IniParser\Scanner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ArenaArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc">

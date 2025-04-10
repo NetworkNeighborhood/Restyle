@@ -16,7 +16,7 @@ ValueResult<LPCWSTR> CNameArena::Add(LPCWSTR sz)
 {
     size_t cbsz = (wcslen(sz) + sizeof('\0')) * sizeof(WCHAR);
 
-    for (const LPCWSTR &szExisting : *this)
+    for (LPCWSTR &szExisting : *this)
     {
         if (AsciiStrCmpI(szExisting, sz) == 0)
         {
@@ -36,11 +36,18 @@ ValueResult<LPCWSTR> CNameArena::Add(LPCWSTR sz)
     return pszResult;
 }
 
-ValueResult<Symbol *> CSymbolManager::AddSymbol(LPCWSTR szSymName, ESymbolType eSymType)
+HRESULT CSymbolManager::Initialize()
+{
+    HRESULT hr = _nameArena.EnsureInitialized();
+    hr = _symbolArena.EnsureInitialized();
+    return S_OK;
+}
+
+ValueResult<const Symbol *> CSymbolManager::AddSymbol(LPCWSTR szSymName, ESymbolType eSymType)
 {
     assert(IsSymbolTypePredefined(eSymType));
 
-    if (Symbol *p = FindSymbolPointer(szSymName))
+    if (const Symbol *p = FindSymbolPointer(szSymName))
     {
         return p;
     }
@@ -62,22 +69,23 @@ ValueResult<Symbol *> CSymbolManager::AddSymbol(LPCWSTR szSymName, ESymbolType e
         }
     }
 
-    Symbol sym{};
+    _symbolArena.EnsureInitialized();
+    Symbol *pSym = _symbolArena.GetCurrent();
 
-    sym.szName = szSafeSymName;
-    sym.eSymType = eSymType;
-    sym.iSchemaOffset = iSchemaOffset;
+    pSym->szName = szSafeSymName;
+    pSym->eSymType = eSymType;
+    pSym->iSchemaOffset = iSchemaOffset;
 
-    _rgSymbols.push_back(sym);
-    return &_rgSymbols[_rgSymbols.size() - 1];
+    _symbolArena.Push(sizeof(Symbol));
+    return pSym;
 }
 
-ValueResult<Symbol *> CSymbolManager::AddManualSymbol(int iVal, ESymbolType eSymType, OPTIONAL int iType)
+ValueResult<const Symbol *> CSymbolManager::AddManualSymbol(int iVal, ESymbolType eSymType, OPTIONAL int iType)
 {
     assert(IsSymbolTypeManual(eSymType));
 
     // Try to find a duplicate symbol in the array to optimise memory usage:
-    for (Symbol &s : _rgSymbols)
+    for (const Symbol &s : _symbolArena)
     {
         if (s.eSymType == eSymType && s.iName == iVal)
         {
@@ -85,37 +93,42 @@ ValueResult<Symbol *> CSymbolManager::AddManualSymbol(int iVal, ESymbolType eSym
         }
     }
 
-    Symbol sym{};
+    _symbolArena.EnsureInitialized();
+    Symbol *pSym = _symbolArena.GetCurrent();
 
-    sym.iName = iVal;
-    sym.eSymType = eSymType;
-    sym.iPrimType = iType;
+    pSym->iName = iVal;
+    pSym->eSymType = eSymType;
+    pSym->iPrimType = iType;
 
-    _rgSymbols.push_back(sym);
-    return &_rgSymbols[_rgSymbols.size() - 1];
+    _symbolArena.Push(sizeof(Symbol));
+    return pSym;
 }
 
 LPCWSTR CSymbolManager::GetGlobalSymbolName(LPCWSTR szSymName, OUT OPTIONAL int *piSchemaOffset)
 {
-    LPCWSTR pszResult = nullptr;
-
     const Restyle::TMPROPINFO *pPropInfo = Restyle::SearchSchema(Restyle::ESchemaSearchQuery::SearchWholeSchema, szSymName);
+    LPCWSTR pszResult = nullptr;
 
     // This is a unique name which only presents itself inside this INI file. This case
     // includes all of the class names. In this case, we'll copy the names over to our 
     // name arena so that we can preserve them even after the INI file is freed from memory.
-    if (!pszResult)
+    if (!pPropInfo)
     {
         _nameArena.EnsureInitialized();
         pszResult = _nameArena.Add(szSymName);
+    }
+    else
+    {
+        pszResult = pPropInfo->pszName;
+        *piSchemaOffset = Restyle::GetPropInfoIndex(pPropInfo);
     }
 
     return pszResult;
 }
 
-Symbol *CSymbolManager::FindSymbolPointer(LPCWSTR szSymName)
+const Symbol *CSymbolManager::FindSymbolPointer(LPCWSTR szSymName)
 {
-    for (Symbol &s : _rgSymbols)
+    for (const Symbol &s : _symbolArena)
     {
         if (AsciiStrCmpI(s.szName, szSymName) == 0)
         {

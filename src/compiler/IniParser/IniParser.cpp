@@ -39,11 +39,14 @@ HRESULT CIniParser::Initialize()
 #ifdef TEMP_CREATE_OWN_SYMBOL_MANAGER
     // This leaks, as we do not have an explicit destructor.
     _pSymbolManager = new CSymbolManager();
+    _pSymbolManager->Initialize();
 #endif
 
     // TODO: How do we elegantly make the null base class symbol work out?
     // It's a weird edge case.
     _pSymNullBaseClass = _pSymbolManager->AddSymbol(nullptr, ESymbolType::BaseClass);
+
+    //_associationsArena.EnsureInitialized();
 
     return S_OK;
 }
@@ -590,7 +593,7 @@ HRESULT CIniParser::ParseNextSectionHeader()
     // Create symbols for each of the components:
     //
 
-    Symbol *pSymClass = nullptr, *pSymPart = nullptr, *pSymState = nullptr, *pSymBaseClass = nullptr;
+    const Symbol *pSymClass = nullptr, *pSymPart = nullptr, *pSymState = nullptr, *pSymBaseClass = nullptr;
 
     pSymClass = cmClass.CreateAndAddSymbol(_pSymbolManager, ESymbolType::Class);
     pSymPart = cmPart.CreateAndAddSymbol(_pSymbolManager, ESymbolType::Part);
@@ -817,7 +820,7 @@ HRESULT CIniParser::ParseNextAssociation()
     // Create symbols for each of the components:
     //
 
-    Symbol *pSymProperty = cmProperty.CreateAndAddSymbol(_pSymbolManager, ESymbolType::PropertyKey);
+    const Symbol *pSymProperty = cmProperty.CreateAndAddSymbol(_pSymbolManager, ESymbolType::PropertyKey);
     assert(pSymProperty);
 
     //
@@ -830,7 +833,8 @@ HRESULT CIniParser::ParseNextAssociation()
     assert(pValue);
     assoc.pVal = pValue;
 
-    _associations.push_back(assoc);
+    //_associationsArena.Add(&assoc, sizeof(assoc));
+    _associationsArena.push_back(assoc);
 
     //
     // Update the current state of the parser:
@@ -869,7 +873,7 @@ ValueResult<const IntValue *> CIniParser::ParseIntValue()
     int iResult;
     if (_scanner.GetNumber(&iResult))
     {
-        return valueArena.CreateIntValue(iResult);
+        return _valueArena.CreateIntValue(iResult);
     }
     
     return SourceError(ExpectedNumber, L"An integer value must be a valid integer number");
@@ -911,7 +915,7 @@ ValueResult<const FloatValue *> CIniParser::ParseFloatValue()
     float flResult;
     if (_scanner.GetFloatNumber(&flResult))
     {
-        return valueArena.CreateFloatValue(flResult);
+        return _valueArena.CreateFloatValue(flResult);
     }
 
     return SourceError(ExpectedNumber, L"A floating-point number value must be a valid floating-point number.");
@@ -934,11 +938,11 @@ ValueResult<const BoolValue *> CIniParser::ParseBoolValue()
 {
     if (_scanner.GetKeyword(L"True"))
     {
-        return valueArena.CreateBoolValue(TRUE);
+        return _valueArena.CreateBoolValue(TRUE);
     }
     else if (_scanner.GetKeyword(L"False"))
     {
-        return valueArena.CreateBoolValue(FALSE);
+        return _valueArena.CreateBoolValue(FALSE);
     }
 
     return SourceError(ExpectedSymbol, L"A boolean value must be either true or false");
@@ -970,7 +974,7 @@ ValueResult<const SizeValue *> CIniParser::ParseSizeValue()
         // specified manual unit is illegal.
         PROPAGATE_ERROR_IF_FAILED(vrUnit);
 
-        return valueArena.CreateSizeValue(vrUnit.Unwrap());
+        return _valueArena.CreateSizeValue(vrUnit.Unwrap());
     }
 
     return SourceError(ExpectedNumber, L"An size value must be a valid integer number");
@@ -1042,7 +1046,7 @@ ValueResult<const EnumValue *> CIniParser::ParseEnumValue(CSymbolComponent &rcmP
         );
     }
 
-    return valueArena.CreateEnumValue(pCurVal->sEnumVal);
+    return _valueArena.CreateEnumValue(pCurVal->sEnumVal);
 }
 
 template <typename ItemType>
@@ -1157,7 +1161,7 @@ ValueResult<const IntListValue *> CIniParser::ParseIntListValue(UINT uLimit)
 {
     ValueResult<std::vector<int> > vrVecItems = ParseListValue<int>(this, uLimit);
     PROPAGATE_ERROR_IF_FAILED(vrVecItems);
-    return valueArena.CreateIntListValue(vrVecItems.Unwrap().data(), vrVecItems.Unwrap().size());
+    return _valueArena.CreateIntListValue(vrVecItems.Unwrap().data(), vrVecItems.Unwrap().size());
 }
 
 /*
@@ -1194,7 +1198,7 @@ ValueResult<const FloatListValue *> CIniParser::ParseFloatListValue(UINT uLimit)
 {
     ValueResult<std::vector<float> > vrVecItems = ParseListValue<float>(this, uLimit);
     PROPAGATE_ERROR_IF_FAILED(vrVecItems);
-    return valueArena.CreateFloatListValue(vrVecItems.Unwrap().data(), vrVecItems.Unwrap().size());
+    return _valueArena.CreateFloatListValue(vrVecItems.Unwrap().data(), vrVecItems.Unwrap().size());
 }
 
 template <typename T>
@@ -1263,7 +1267,7 @@ ValueResult<const RectValue *> CIniParser::ParseRectValue()
     rc.right = vec[2];
     rc.bottom = vec[3];
 
-    return valueArena.CreateRectValue(rc);
+    return _valueArena.CreateRectValue(rc);
 }
 
 /*
@@ -1303,7 +1307,7 @@ ValueResult<const MarginsValue *> CIniParser::ParseMarginsValue()
     mar.cyTopHeight = vec[2];
     mar.cyBottomHeight = vec[3];
 
-    return valueArena.CreateMarginsValue(mar);
+    return _valueArena.CreateMarginsValue(mar);
 }
 
 /*
@@ -1339,7 +1343,7 @@ ValueResult<const PositionValue *> CIniParser::ParsePositionValue()
     pt.x = vec[0];
     pt.y = vec[1];
 
-    return valueArena.CreatePositionValue(pt);
+    return _valueArena.CreatePositionValue(pt);
 }
 
 /*
@@ -1388,7 +1392,7 @@ ValueResult<const ColorValue *> CIniParser::ParseColorValue()
     auto &vec = vrVecItems.Unwrap();
 
     // The parsed parts follow the order: red, green, blue
-    return valueArena.CreateColorValue(RGB(vec[0], vec[1], vec[2]));
+    return _valueArena.CreateColorValue(RGB(vec[0], vec[1], vec[2]));
 }
 
 #ifdef ENABLE_PREPROCESSOR

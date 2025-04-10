@@ -87,18 +87,19 @@ enum class EParseMode
     Preprocessor,
 };
 
+class CAssociationsArena : public CTBaseArena<CAssociationsArena, IniAssociation, 256>
+{
+};
+
 class CIniParser : public IIniParser
 {
     CScanner _scanner;
     CSymbolManager *_pSymbolManager;
-    CValueArena valueArena;
-
-    // TODO(isabella): std::vector is reallocated every time that it needs to expand (i.e. due to a push_back). Move
-    // to an arena which preserves its location in memory or store offsets rather than pointers.
-    std::vector<IniAssociation> _associations;
+    CValueArena _valueArena;
+    std::vector<IniAssociation> _associationsArena;
 
     // Precached symbols:
-    Symbol *_pSymNullBaseClass = nullptr;
+    const Symbol *_pSymNullBaseClass = nullptr;
 
     IniSection _iniSectionCur;
 
@@ -215,7 +216,7 @@ class CIniParser : public IIniParser
             return E_FAIL;
         }
 
-        ValueResult<Symbol *> CreateAndAddSymbol(CSymbolManager *pSymbolManager, ESymbolType eSymType)
+        ValueResult<const Symbol *> CreateAndAddSymbol(CSymbolManager *pSymbolManager, ESymbolType eSymType)
         {
             if (std::wstring *pStr = std::get_if<std::wstring>(&_component))
             {

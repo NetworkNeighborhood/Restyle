@@ -75,16 +75,16 @@ struct Value<0, void> : ValueBase<0, void>
 
 struct IniSection
 {
-    Symbol *pSymClass;
-    Symbol *pSymPart;
-    Symbol *pSymState;
-    Symbol *pSymBaseClass;
+    const Symbol *pSymClass;
+    const Symbol *pSymPart;
+    const Symbol *pSymState;
+    const Symbol *pSymBaseClass;
 };
 
 struct IniAssociation
 {
     IniSection section;
-    Symbol *pKeySymbol;
+    const Symbol *pKeySymbol;
     Value<> *pVal;
 };
 

@@ -2,6 +2,7 @@
 #include "Restyle.h"
 #include "Util.h"
 #include "Arena.h"
+#include "ArenaArray.h"
 #include <iterator>
 #include "Symbol.h"
 
@@ -12,43 +13,18 @@ bool IsSymbolTypeManual(ESymbolType eSymType);
  * Stores unique names used within a parsing context, especially class names.
  */
 class CNameArena
-#define BASECLASS CTBaseArena<CNameArena, const WCHAR, 1024>
+#define BASECLASS CTArenaArray<CNameArena, const WCHAR, 1024>
     : public BASECLASS
 {
     using Super = BASECLASS;
 #undef BASECLASS
 
 public:
-    struct Iterator
+    struct Iterator : public Super::CTIterator<const WCHAR, LPCWSTR, LPCWSTR &>
     {
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = LPCWSTR;
-        using pointer = value_type;
-        using reference = const value_type &;
-
-        // Beginning (real) iterator constructor
-        Iterator(CNameArena *nameArena)
-            : _pNameArena(nameArena)
-            , _p((pointer)nameArena->_pvData)
+        LPCWSTR &operator*() const
         {
-        }
-
-        // Ending (sentinel) iterator constructor
-        Iterator()
-            : _pNameArena(nullptr)
-            , _p(nullptr)
-        {
-        }
-
-        reference operator*() const
-        {
-            return _p;
-        }
-
-        pointer operator->() const
-        {
-            return _p;
+            return (LPCWSTR &)_p;
         }
 
         Iterator &operator++()
@@ -63,50 +39,20 @@ public:
             return *this;
         }
 
-        friend bool operator==(const Iterator &a, const Iterator &b)
-        {
-            // The end iterator is always a sentinel object, with its pointer and CNameArena
-            // pointers both being nullptr.
-            assert(a._p == nullptr || b._p == nullptr);
-
-            const Iterator *pRealIterator = a._p != nullptr ? &a : &b;
-
-            LPCWSTR pEndOfData = pRealIterator->GetEndOfData();
-
-            if (pRealIterator->_p > pEndOfData || pRealIterator->_fIsEnd)
-            {
-                // i == iterator.end()
-                return true;
-            }
-
-            return false;
-        }
-
-        friend bool operator!=(const Iterator &a, const Iterator &b)
-        {
-            return !(operator==(a, b));
-        }
-
     private:
-        void UseNextArena()
+        LPCWSTR GetEndOfData() const
         {
-            _pNameArena = _pNameArena->_pNext;
-            _p = (pointer)_pNameArena->_pvData;
+            return (LPCWSTR)((size_t)_pArena->_pvData + _pArena->_dwSize);
         }
 
-        pointer GetEndOfData() const
-        {
-            return (LPCWSTR)((size_t)_pNameArena->_pvData + _pNameArena->_dwSize);
-        }
-
-        pointer GetNextString()
+        LPCWSTR GetNextString()
         {
             do
             {
                 while (++_p < GetEndOfData() && *_p != L'\0');
-                LPCWSTR szResult = ++_p;
+                LPCWSTR szResult = (LPCWSTR)++_p;
 
-                if (_pNameArena->_pNext)
+                if (_pArena->_pNext)
                 {
                     UseNextArena();
                     continue;
@@ -117,12 +63,22 @@ public:
                 }
 
                 return szResult;
-            } while (1);
+            }
+            while (1);
         }
 
-        CNameArena *_pNameArena;
-        bool _fIsEnd = false;
-        pointer _p;
+    public:
+        // Beginning (real) iterator constructor
+        Iterator(CNameArena *nameArena)
+            : CTIterator(nameArena)
+        {
+        }
+
+        // Ending (sentinel) iterator constructor
+        Iterator()
+            : CTIterator()
+        {
+        }
     };
 
     // C++ iterator concept
@@ -140,18 +96,21 @@ public:
     ValueResult<LPCWSTR> Add(LPCWSTR sz);
 };
 
+class CSymbolArena : public CTArenaArray<CSymbolArena, Symbol, 512> {};
+
 /**
  * Manages symbols.
  */
 class CSymbolManager
 {
-    std::vector<Symbol> _rgSymbols;
+    CSymbolArena _symbolArena;
     CNameArena _nameArena;
 
 public:
-    ValueResult<Symbol *> AddSymbol(LPCWSTR szSymName, ESymbolType eSymType);
-    ValueResult<Symbol *> AddManualSymbol(int iVal, ESymbolType eSymType, OPTIONAL int iType = 0);
+    HRESULT Initialize();
+    ValueResult<const Symbol *> AddSymbol(LPCWSTR szSymName, ESymbolType eSymType);
+    ValueResult<const Symbol *> AddManualSymbol(int iVal, ESymbolType eSymType, OPTIONAL int iType = 0);
     LPCWSTR GetGlobalSymbolName(LPCWSTR szSymName, OUT OPTIONAL int *piSchemaOffset = nullptr);
-    Symbol *FindSymbolPointer(LPCWSTR szSymName);
+    const Symbol *FindSymbolPointer(LPCWSTR szSymName);
     bool HasSymbol(LPCWSTR szSymName);
 };
