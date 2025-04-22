@@ -314,7 +314,7 @@ bool IsBlockZeroed(void *pBlock, size_t size)
 }
 
 /* Why is this not a C standard function?????? */
-const wchar_t *wcsrstr(const wchar_t *str, const wchar_t *search)
+const wchar_t *wcsristr(const wchar_t *str, const wchar_t *search)
 {
 	if (!str || !search)
 		return nullptr;
@@ -325,12 +325,51 @@ const wchar_t *wcsrstr(const wchar_t *str, const wchar_t *search)
 	if (!*str)
 		return nullptr;
 
-	size_t searchLength = wcslen(search);
-	const wchar_t *found = str;
-	while (found = wcsstr(found, search))
+	int length = wcslen(str);
+	int searchLength = wcslen(search);
+	for (int i = length - searchLength; i >= 0; i--)
 	{
-		found += searchLength;
+		if (0 == _wcsnicmp(&str[i], search, searchLength))
+			return &str[i];
+	}
+	return nullptr;
+}
+
+// Get the expected base class name of a function.
+// e.g. Explorer::ListView -> ListView
+std::wstring GetBaseClassName(const std::wstring &spszClassName)
+{
+	std::wstring spszBaseClassName = spszClassName;
+	LPCWSTR lpDoubleColon = wcsristr(spszBaseClassName.c_str(), L"::");
+	if (lpDoubleColon)
+		spszBaseClassName.erase(0, (size_t)(lpDoubleColon - spszBaseClassName.c_str()) + 2);
+	return spszBaseClassName;
+}
+
+// Get the class name to use when searching for parts.
+// e.g. Explorer::ListView -> ListView
+// e.g. ButtonStyle -> Button
+std::wstring GetClassSearchName(const std::wstring &spszClassName)
+{
+	// Some classes ending in "Style" do not correlate to a base
+	// class. Exclude them from having "Style" removed.
+	static LPCWSTR kExcludeStyleClasses[] = {
+		L"TextStyle"
+	};
+
+	std::wstring spszSearchClassName = GetBaseClassName(spszClassName);
+
+	for (LPCWSTR pszExclusion : kExcludeStyleClasses)
+	{
+		if (spszSearchClassName == pszExclusion)
+			return spszSearchClassName;
 	}
 
-	return (found == str) ? nullptr : (found - searchLength);
+	LPCWSTR lpStyle = wcsristr(spszSearchClassName.c_str(), L"Style");
+	if (lpStyle && 0 == _wcsicmp(lpStyle, L"Style"))
+	{
+		constexpr size_t kStyleLen = sizeof("Style") - 1;
+		spszSearchClassName.erase((size_t)(lpStyle - spszSearchClassName.c_str()), kStyleLen);
+	}
+	return spszSearchClassName;
 }

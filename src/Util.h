@@ -121,4 +121,13 @@ struct ValueResult
 bool StrEndsWithW(LPCWSTR a, LPCWSTR b);
 bool IsBlockZeroed(void *pBlock, size_t size);
 
-const wchar_t *wcsrstr(const wchar_t *str, const wchar_t *search);
+const wchar_t *wcsristr(const wchar_t *str, const wchar_t *search);
+
+// Get the expected base class name of a function.
+// e.g. Explorer::ListView -> ListView
+std::wstring GetBaseClassName(const std::wstring &spszClassName);
+
+// Get the class name to use when searching for parts.
+// e.g. Explorer::ListView -> ListView
+// e.g. ButtonStyle -> Button
+std::wstring GetClassSearchName(const std::wstring &spszClassName);

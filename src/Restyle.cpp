@@ -2,6 +2,7 @@
 #include "schema/SchemaTest.h"
 #include "schema/SchemaUtils.h"
 #include "decompiler/BinParser.h"
+#include "decompiler/Decompiler.h"
 #include "Util.h"
 #include "File.h"
 #include "compiler/IniParser/IniParser.h"
@@ -130,8 +131,12 @@ int wmain(int argc, wchar_t *argv[])
 	}
 	else if (IsArg(argv[1], "d"))
 	{
-		Log(L"FATAL: Unimplemented action '/d'\n", ELogLevel::Fatal);
-		return 1;
+		if (!LoadThemeModule(argv[2]))
+			return 1;
+
+		if (!DecompileTheme(nullptr))
+			return 1;
+		return 0;
 	}
 	else if (IsArg(argv[1], "pcmap"))
 	{

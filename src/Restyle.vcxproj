@@ -34,6 +34,7 @@
     <ClCompile Include="compiler\SymbolManager.cpp" />
     <ClCompile Include="compiler\ValueArena.cpp" />
     <ClCompile Include="decompiler\BinParser.cpp" />
+    <ClCompile Include="decompiler\Decompiler.cpp" />
     <ClCompile Include="File.cpp" />
     <ClCompile Include="Restyle.cpp" />
     <ClCompile Include="schema\SchemaUtils.cpp" />
@@ -52,6 +53,7 @@
     <ClInclude Include="compiler\Value.h" />
     <ClInclude Include="compiler\ValueArena.h" />
     <ClInclude Include="decompiler\BinParser.h" />
+    <ClInclude Include="decompiler\Decompiler.h" />
     <ClInclude Include="File.h" />
     <ClInclude Include="Restyle.h" />
     <ClInclude Include="RestyleBase.h" />

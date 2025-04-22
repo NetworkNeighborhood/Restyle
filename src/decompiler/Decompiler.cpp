@@ -9,15 +9,6 @@ struct ThemeINILine
 
 typedef std::map<std::wstring, std::vector<ThemeINILine>> ThemeINIFile;
 
-std::wstring GetBaseClassName(const std::wstring &className)
-{
-	LPCWSTR lpStr = wcsrstr(className.c_str(), L"::");
-	if (lpStr)
-		return std::wstring(lpStr + 2);
-	else
-		return className;
-}
-
 std::wstring GetSectionName(const VSRECORD *lpRecord)
 {
 	std::wstring spszResult;
@@ -54,28 +45,52 @@ std::wstring GetSectionName(const VSRECORD *lpRecord)
 	}
 	else
 	{
-		std::wstring spszSearchName = GetBaseClassName(lpClassName);
+		std::wstring spszSearchName = GetClassSearchName(lpClassName);
+		std::wstring spszStateSearchName = spszSearchName;
 
 		if (lpRecord->iPart)
 		{
-			//spszResult += L'.';
+			spszResult += L'.';
 
-			//Restyle::SearchSchemaParams params = {};
-			//params.cbSize = sizeof(params);
-			//params.eSearchQuery = Restyle::ESchemaSearchQuery::Parts;
-			//params.szName = spszSearchName.c_str();
-			//params.bType = lpRecord->lType;
-			//params.sEnumVal = lpRecord->iPart;
-			//const Restyle::TMPROPINFO *pPropInfo = Restyle::SearchSchema(&params);
-			//if (pPropInfo)
-			//{
-			//	spszResult += pPropInfo->pszName;
-			//}
-			//else
-			//{
-			//	spszResult += L"*Part";
-			//	spszResult += lpRecord->iPart;
-			//}
+			std::wstring spszEnumName = spszSearchName;
+			spszEnumName += L"PARTS";
+
+			const Restyle::TMPROPINFO *pPropInfo =
+				Restyle::FindEnumValueInfo(spszEnumName.c_str(), lpRecord->iPart);
+
+			if (pPropInfo)
+			{
+				spszResult += pPropInfo->pszName;
+				
+			}
+			else
+			{
+				spszResult += L"*Part";
+				spszResult += std::to_wstring(lpRecord->iPart);
+			}
+		}
+
+		if (lpRecord->iState)
+		{
+			spszResult += L'(';
+			
+			std::wstring spszEnumName = spszSearchName;
+			spszEnumName += L"STATES";
+
+			const Restyle::TMPROPINFO *pPropInfo =
+				Restyle::FindEnumValueInfo(spszEnumName.c_str(), lpRecord->iPart);
+
+			if (pPropInfo)
+			{
+				spszResult += pPropInfo->pszName;
+			}
+			else
+			{
+				spszResult += L"*State";
+				spszResult += std::to_wstring(lpRecord->iPart);
+			}
+
+			spszResult += L')';
 		}
 	}
 	return spszResult;
@@ -84,7 +99,8 @@ std::wstring GetSectionName(const VSRECORD *lpRecord)
 bool ParseRecordToThemeINIFile(const VSRECORD *lpRecord, void *lpParam)
 {
 	ThemeINIFile *lpFile = (ThemeINIFile *)lpParam;
-
+	std::wstring spszHeaderName = GetSectionName(lpRecord);
+	Log(L"%s\n", spszHeaderName.c_str());
 	return true;
 }
 
@@ -94,7 +110,7 @@ bool DecompileTheme(LPCWSTR pszOutFolder)
 		return false;
 
 	ThemeINIFile rmap;
-	if (!BinParser::ParseRecordResource(L"RMAP", L"RMAP", &rmap, ParseRecordToThemeINIFile))
+	if (!BinParser::ParseRecordResource(L"VARIANT", L"NORMAL", &rmap, ParseRecordToThemeINIFile))
 		return false;
 
 

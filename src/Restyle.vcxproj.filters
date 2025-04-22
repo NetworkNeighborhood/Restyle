@@ -54,6 +54,9 @@
     <ClCompile Include="compiler\IniParser\Scanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="decompiler\Decompiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="restyle.h">
@@ -116,7 +119,7 @@
     <ClInclude Include="compiler\IniParser\Scanner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArenaArray.h">
+    <ClInclude Include="decompiler\Decompiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
