@@ -109,7 +109,7 @@ bool ParseVariantMap(void)
 	return true;
 }
 
-bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pfnCallback)
+bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, void *lpParam, RecordParserCallback pfnCallback)
 {
 	assert(pfnCallback);
 
@@ -121,7 +121,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pf
 	VSRECORD *lpRecord = (VSRECORD *)lpResource;
 	while ((long long)lpRecord < ((long long)lpResource + dwSize))
 	{
-		if (!pfnCallback(lpRecord))
+		if (!pfnCallback(lpRecord, lpParam))
 			break;
 
 		DWORD dwNextOffset = 0;
@@ -150,6 +150,17 @@ DWORD IDOfClass(LPCWSTR pszClassName)
 	{
 		if (0 == _wcsicmp(classMap.at(i).c_str(), pszClassName))
 			return i;
+	}
+	return (DWORD)-1;
+}
+
+
+DWORD GetBaseClass(UINT id)
+{
+	for (const BASECLASS &bc : baseClassMap)
+	{
+		if (bc.dwDerivedId == id)
+			return bc.dwBaseId;
 	}
 	return (DWORD)-1;
 }

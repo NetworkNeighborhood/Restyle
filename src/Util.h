@@ -120,3 +120,5 @@ struct ValueResult
 
 bool StrEndsWithW(LPCWSTR a, LPCWSTR b);
 bool IsBlockZeroed(void *pBlock, size_t size);
+
+const wchar_t *wcsrstr(const wchar_t *str, const wchar_t *search);

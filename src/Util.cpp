@@ -312,3 +312,25 @@ bool IsBlockZeroed(void *pBlock, size_t size)
 
 	return true;
 }
+
+/* Why is this not a C standard function?????? */
+const wchar_t *wcsrstr(const wchar_t *str, const wchar_t *search)
+{
+	if (!str || !search)
+		return nullptr;
+
+	if (!*search)
+		return str;
+
+	if (!*str)
+		return nullptr;
+
+	size_t searchLength = wcslen(search);
+	const wchar_t *found = str;
+	while (found = wcsstr(found, search))
+	{
+		found += searchLength;
+	}
+
+	return (found == str) ? nullptr : (found - searchLength);
+}

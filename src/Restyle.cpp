@@ -204,7 +204,7 @@ int wmain(int argc, wchar_t *argv[])
 	}
 	else if (IsArg(argv[1], "precord"))
 	{
-		auto callback = [](const VSRECORD *lpRecord) -> bool
+		auto callback = [](const VSRECORD *lpRecord, void *lpParam) -> bool
 		{
 			std::unique_ptr<WCHAR[]> pszPropName, pszPartName, pszStateName;
 			EParseResult result = GetPropName(lpRecord->lSymbolVal, lpRecord->lType, pszPropName);
@@ -252,7 +252,7 @@ int wmain(int argc, wchar_t *argv[])
 		if (argc < 5
 		|| !LoadThemeModule(argv[2])
 		|| !BinParser::ParseClassMap() // Need class names for debug output
-		|| !BinParser::ParseRecordResource(argv[3], argv[4], callback))
+		|| !BinParser::ParseRecordResource(argv[3], argv[4], nullptr, callback))
 			return 1;
 	}
 #if DEBUG

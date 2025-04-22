@@ -44,7 +44,7 @@ typedef struct _FLOATLIST
 	float flValues[MAX_INTLIST_COUNT];
 } FLOATLIST, *PFLOATLIST;
 
-typedef bool (*RecordParserCallback)(const VSRECORD *lpRecord);
+typedef bool (*RecordParserCallback)(const VSRECORD *lpRecord, void *lpParam);
 
 namespace BinParser
 {
@@ -55,9 +55,12 @@ namespace BinParser
 	bool ParseClassMap(void);
 	bool ParseBaseClassMap(void);
 	bool ParseVariantMap(void);
-	bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, RecordParserCallback pfnCallback);
+	bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, void *lpParam, RecordParserCallback pfnCallback);
+
 	LPCWSTR NameOfClass(UINT id);
 	DWORD IDOfClass(LPCWSTR pszClassName);
+
+	DWORD GetBaseClass(UINT id);
 
 	::EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DWORD cchBufferMax);
 };
