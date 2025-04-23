@@ -85,17 +85,8 @@ std::wstring GetSectionName(const VSRECORD *lpRecord)
 			
 			spszStateSearchName += L"STATES";
 
-			// First attempt to search via part name (or class name if part is 0)
 			const Restyle::TMPROPINFO *pPropInfo =
-				Restyle::FindEnumValueInfo(spszStateSearchName.c_str(), lpRecord->iPart, g_eSupportedOS);
-
-			// If we did part name and failed, try class
-			if (!pPropInfo && lpRecord->iPart)
-			{
-				spszStateSearchName = spszSearchName;
-				spszStateSearchName += L"STATES";
-				pPropInfo = Restyle::FindEnumValueInfo(spszStateSearchName.c_str(), lpRecord->iPart, g_eSupportedOS);
-			}
+				Restyle::FindEnumValueInfo(spszStateSearchName.c_str(), lpRecord->iState, g_eSupportedOS);
 
 			if (pPropInfo)
 			{

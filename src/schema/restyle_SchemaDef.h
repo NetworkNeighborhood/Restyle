@@ -39,6 +39,7 @@ namespace Restyle
 #define BEGIN_TM_CLASS_PARTS(name)          enum name##PARTS { name##PartFiller0,
 #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS) enum { // TODO: how to do this?
 #define BEGIN_TM_PART_STATES(name)          enum name##STATES { name##StateFiller0,
+#define BEGIN_TM_PART_STATES_FOR_OS(name, supportedOS) enum { // TODO: how to do this?
 
 #define TM_PROP(val, prefix, name, prefCap, primval) prefix##_##name = val, 
 #define TM_ENUM(val, prefix, name, prefCap)          prefix##_##name = val,
@@ -64,6 +65,7 @@ namespace Restyle
 #undef BEGIN_TM_CLASS_PARTS
 #undef BEGIN_TM_CLASS_PARTS_FOR_OS
 #undef BEGIN_TM_PART_STATES
+#undef BEGIN_TM_PART_STATES_FOR_OS
 #undef TM_PROP
 #undef TM_PART
 #undef TM_STATE
@@ -92,7 +94,9 @@ namespace Restyle
     #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
         { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, supportedOS },
     #define BEGIN_TM_PART_STATES(name)    \
-        { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF },
+        { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF, ESupportedOS::All },
+    #define BEGIN_TM_PART_STATES_FOR_OS(name, supportedOS)    \
+        { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF, supportedOS },
 
     #define TM_PROP(val, prefix, name, prefCap, primval) \
         { L##prefCap, prefix##_##name, TMT_##primval },
@@ -110,7 +114,9 @@ namespace Restyle
     #define BEGIN_TM_CLASS_PARTS_FOR_OS(name, supportedOS)    \
             { L#name L"PARTS", TMT_ENUMDEF, TMT_ENUMDEF, L#name L"PARTS", 0, supportedOS },
     #define BEGIN_TM_PART_STATES(name)    \
-            { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF, L#name L"STATES" },
+            { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF, L#name L"STATES", 0, ESupportedOS::All },
+    #define BEGIN_TM_PART_STATES_FOR_OS(name, supportedOS)    \
+            { L#name L"STATES", TMT_ENUMDEF, TMT_ENUMDEF, L#name L"STATES", 0, supportedOS },
 
     #define TM_PROP(val, prefix, name, prefCap, primval) \
             { L##prefCap, prefix##_##name, TMT_##primval, L#name, val },

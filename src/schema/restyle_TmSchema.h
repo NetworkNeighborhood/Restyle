@@ -861,12 +861,17 @@ BEGIN_TM_PART_STATES(COMMANDLINK)
     TM_STATE(6, CMDLS, DEFAULTED_ANIMATING, "Defaulted_Animating")
 END_TM_PART_STATES()
 
-BEGIN_TM_PART_STATES(COMMANDLINKGLPYH)
+BEGIN_TM_PART_STATES(COMMANDLINKGLYPH)
     TM_STATE(1, CMDLGS, NORMAL, "Normal")
     TM_STATE(2, CMDLGS, HOT, "Hot")
     TM_STATE(3, CMDLGS, PRESSED, "Pressed")
     TM_STATE(4, CMDLGS, DISABLED, "Disabled")
     TM_STATE(5, CMDLGS, DEFAULTED, "Defaulted")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(PUSHBUTTONDROPDOWN)
+    TM_STATE(1, PBDDS, NORMAL, "Normal")
+    TM_STATE(2, PBDDS, DISABLED, "Disabled")
 END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
@@ -911,6 +916,8 @@ BEGIN_TM_PART_STATES(TOOLBAR)
     TM_STATE(4, TS, DISABLED, "Disabled")
     TM_STATE(5, TS, CHECKED, "Checked")
     TM_STATE(6, TS, HOTCHECKED, "HotChecked")
+    TM_STATE(7, TS, NEARHOT, "NearHot")
+    TM_STATE(8, TS, OTHERSIDEHOT, "OtherSideHot")
 END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
@@ -945,26 +952,39 @@ BEGIN_TM_CLASS_PARTS(LISTVIEW)
     TM_PART(10, LVP, COLUMNDETAIL, "ColumnDetail")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(LISTITEM)
+    TM_STATE(1, LISS, NORMAL, "Normal")
+    TM_STATE(2, LISS, HOT, "Hot")
+    TM_STATE(3, LISS, SELECTED, "Selected")
+    TM_STATE(4, LISS, DISABLED, "Disabled")
+    TM_STATE(5, LISS, SELECTEDNOTFOCUS, "SelectedNotFocus")
+    TM_STATE(6, LISS, HOTSELECTED, "HotSelected")
+END_TM_PART_STATES()
+
 BEGIN_TM_PART_STATES(COLLAPSEBUTTON)
     TM_STATE(1, LVCB, NORMAL, "Normal")
     TM_STATE(2, LVCB, HOVER, "Hover")
     TM_STATE(3, LVCB, PUSHED, "Pushed")
 END_TM_PART_STATES()
 
-//
-//  LIS prefix has been changed to LISS
-//
-#ifndef SCHEMA_VERIFY_VSSYM32
-
-BEGIN_TM_PART_STATES(LISTITEM)
-    TM_STATE(1, LIS, NORMAL, "Normal")
-    TM_STATE(2, LIS, HOT, "Hot")
-    TM_STATE(3, LIS, SELECTED, "Selected")
-    TM_STATE(4, LIS, DISABLED, "Disabled")
-    TM_STATE(5, LIS, SELECTEDNOTFOCUS, "SelectedNotFocus")
+BEGIN_TM_PART_STATES(GROUPHEADER)
+    TM_STATE(1, LVGH, OPEN, "Open")
+    TM_STATE(2, LVGH, OPENHOT, "OpenHot")
+    TM_STATE(3, LVGH, OPENSELECTED, "OpenSelected")
+    TM_STATE(4, LVGH, OPENSELECTEDHOT, "OpenSelectedHot")
+    TM_STATE(5, LVGH, OPENSELECTEDNOTFOCUSED, "OpenSelectedNotFocused")
+    TM_STATE(6, LVGH, OPENSELECTEDNOTFOCUSEDHOT, "OpenSelectedNotFocusedHot")
+    TM_STATE(7, LVGH, OPENMIXEDSELECTION, "OpenMixedSelection")
+    TM_STATE(8, LVGH, OPENMIXEDSELECTIONHOT, "OpenMixedSelectionHot")
+    TM_STATE(9, LVGH, CLOSE, "Close")
+    TM_STATE(10, LVGH, CLOSEHOT, "CloseHot")
+    TM_STATE(11, LVGH, CLOSESELECTED, "CloseSelected")
+    TM_STATE(12, LVGH, CLOSESELECTEDHOT, "CloseSelectedHot")
+    TM_STATE(13, LVGH, CLOSESELECTEDNOTFOCUSED, "CloseSelectedNotFocused")
+    TM_STATE(14, LVGH, CLOSESELECTEDNOTFOCUSEDHOT, "CloseSelectedNotFocusedHot")
+    TM_STATE(15, LVGH, CLOSEMIXEDSELECTION, "CloseMixedselection")
+    TM_STATE(16, LVGH, CLOSEMIXEDSELECTIONHOT, "CloseMixedselectionHot")
 END_TM_PART_STATES()
-
-#endif //#ifndef SCHEMA_VERIFY_VSSYM32
 
 //---------------------------------------------------------------------------------------
 //   "Header" Parts & States
@@ -1021,6 +1041,30 @@ BEGIN_TM_CLASS_PARTS(PROGRESS)
     TM_PART(11, PP, TRANSPARENTBAR, "TransparentBar")
     TM_PART(12, PP, TRANSPARENTBARVERT, "TransparentBarVert")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(FILL)
+    TM_STATE(1, PBFS, NORMAL, "Normal")
+    TM_STATE(2, PBFS, ERROR, "Error")
+    TM_STATE(3, PBFS, PAUSED, "Paused")
+    TM_STATE(4, PBFS, PARTIAL, "Partial")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(FILLVERT)
+    TM_STATE(1, PBFVS, NORMAL, "Normal")
+    TM_STATE(2, PBFVS, ERROR, "Error")
+    TM_STATE(3, PBFVS, PAUSED, "Paused")
+    TM_STATE(4, PBFVS, PARTIAL, "Partial")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(TRANSPARENTBAR)
+    TM_STATE(1, PBBS, NORMAL, "Normal")
+    TM_STATE(2, PBBS, PARTIAL, "Partial")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(TRANSPARENTBARVERT)
+    TM_STATE(1, PBBVS, NORMAL, "Normal")
+    TM_STATE(2, PBBVS, PARTIAL, "Partial")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "Tab" Parts & States
@@ -1399,6 +1443,16 @@ BEGIN_TM_PART_STATES(EDITTEXT)
     TM_STATE(5, ETS, FOCUSED, "Focused")
     TM_STATE(6, ETS, READONLY, "ReadOnly")
     TM_STATE(7, ETS, ASSIST, "Assist")
+    TM_STATE(8, ETS, CUEBANNER, "CueBanner")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(BACKGROUND)
+    TM_STATE(1, EBS, NORMAL, "Normal")
+    TM_STATE(2, EBS, HOT, "Hot")
+    TM_STATE(3, EBS, DISABLED, "Disabled")
+    TM_STATE(4, EBS, FOCUSED, "Focused")
+    TM_STATE(5, EBS, READONLY, "Readonly")
+    TM_STATE(6, EBS, ASSIST, "Assist")
 END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
@@ -1424,6 +1478,53 @@ BEGIN_TM_PART_STATES(COMBOBOX)
     TM_STATE(2, CBXS, HOT, "Hot")
     TM_STATE(3, CBXS, PRESSED, "Pressed")
     TM_STATE(4, CBXS, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(TRANSPARENTBACKGROUND)
+    TM_STATE(1, CBTBS, NORMAL, "Normal")
+    TM_STATE(2, CBTBS, HOT, "Hot")
+    TM_STATE(3, CBTBS, DISABLED, "Disabled")
+    TM_STATE(4, CBTBS, FOCUSED, "Focused")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(BORDER)
+    TM_STATE(1, CBB, NORMAL, "Normal")
+    TM_STATE(2, CBB, HOT, "Hot")
+    TM_STATE(3, CBB, FOCUSED, "Focused")
+    TM_STATE(4, CBB, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(READONLY)
+    TM_STATE(1, CBRO, NORMAL, "Normal")
+    TM_STATE(2, CBRO, HOT, "Hot")
+    TM_STATE(3, CBRO, PRESSED, "Pressed")
+    TM_STATE(4, CBRO, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(DROPDOWNBUTTONRIGHT)
+    TM_STATE(1, CBXSR, NORMAL, "Normal")
+    TM_STATE(2, CBXSR, HOT, "Hot")
+    TM_STATE(3, CBXSR, PRESSED, "Pressed")
+    TM_STATE(4, CBXSR, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(DROPDOWNBUTTONLEFT)
+    TM_STATE(1, CBXSL, NORMAL, "Normal")
+    TM_STATE(2, CBXSL, HOT, "Hot")
+    TM_STATE(3, CBXSL, PRESSED, "Pressed")
+    TM_STATE(4, CBXSL, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(CUEBANNER)
+    TM_STATE(1, CBCB, NORMAL, "Normal")
+    TM_STATE(2, CBCB, HOT, "Hot")
+    TM_STATE(3, CBCB, PRESSED, "Pressed")
+    TM_STATE(4, CBCB, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(DROPDOWNITEM)
+    TM_STATE(1, CBDI, NORMAL, "Normal")
+    TM_STATE(2, CBDI, HIGHLIGHTED, "Highlighted")
 END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
@@ -1521,6 +1622,14 @@ BEGIN_TM_CLASS_PARTS(TASKBAND2)
     TM_PART(9, TDP2, GLOMVERTICALINACTIVE, "GlomVerticalInactive")
     TM_PART(10, TDP2, GLOMDIVIDER, "GlomDivider")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(SINGLEBUTTON)
+    TM_STATE(1, TBSB, NORMAL, "Normal")
+    TM_STATE(2, TBSB, HOVER, "Hover")
+    TM_STATE(3, TBSB, PRESSED, "Pressed")
+    TM_STATE(4, TBSB, FLASH, "Flash")
+    TM_STATE(5, TBSB, SELECTED, "Selected")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "TaskBar Show Desktop" Parts & States (Windows 7+ Superbar)
@@ -1709,6 +1818,19 @@ BEGIN_TM_CLASS_PARTS(AEROWIZARD)
     TM_PART(5, AW, BUTTON, "Button")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(TITLEBAR)
+    TM_STATE(1, AW_S_TITLEBAR, ACTIVE, "Active")
+    TM_STATE(2, AW_S_TITLEBAR, INACTIVE, "Inactive")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEADERAREA)
+    TM_STATE(1, AW_S_HEADERAREA, NOMARGIN, "NoMargin")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(CONTENTAREA)
+    TM_STATE(1, AW_S_CONTENTAREA, NOMARGIN, "NoMargin")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Alt Tab" Parts & States (Windows Vista+)
 //---------------------------------------------------------------------------------------
@@ -1737,6 +1859,12 @@ BEGIN_TM_CLASS_PARTS(COMMUNICATIONS)
     TM_PART(1, CSST, TAB, "Tab")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(TAB)
+    TM_STATE(1, CSTB, NORMAL, "Normal")
+    TM_STATE(2, CSTB, HOT, "Hot")
+    TM_STATE(3, CSTB, SELECTED, "Selected")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Control Panel" Parts & States (v4)
 //--------------------------------------------------------------------------------------
@@ -1762,6 +1890,33 @@ BEGIN_TM_CLASS_PARTS(CONTROLPANEL)
     TM_PART(19, CPANEL, BODYTITLE, "BodyTitle")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(HELPLINK)
+    TM_STATE(1, CPHL, NORMAL, "Normal")
+    TM_STATE(2, CPHL, HOT, "Hot")
+    TM_STATE(3, CPHL, PRESSED, "Pressed")
+    TM_STATE(4, CPHL, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(TASKLINK)
+    TM_STATE(1, CPTL, NORMAL, "Normal")
+    TM_STATE(2, CPTL, HOT, "Hot")
+    TM_STATE(3, CPTL, PRESSED, "Pressed")
+    TM_STATE(4, CPTL, DISABLED, "Disabled")
+    TM_STATE(5, CPTL, PAGE, "Page")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(CONTENTLINK)
+    TM_STATE(1, CPCL, NORMAL, "Normal")
+    TM_STATE(2, CPCL, HOT, "Hot")
+    TM_STATE(3, CPCL, PRESSED, "Pressed")
+    TM_STATE(4, CPCL, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(SECTIONTITLELINK)
+    TM_STATE(1, CPSTL, NORMAL, "Normal")
+    TM_STATE(2, CPSTL, HOT, "Hot")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Copy Close" Parts & States (v4)
 //---------------------------------------------------------------------------------------
@@ -1786,6 +1941,12 @@ BEGIN_TM_CLASS_PARTS(DATEPICKER)
     TM_STATE(3, DP, SHOWCALENDARBUTTONRIGHT, "ShowCalendarButtonRight")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(DATETEXT)
+    TM_STATE(1, DPDT, NORMAL, "Normal")
+    TM_STATE(2, DPDT, DISABLED, "Disabled")
+    TM_STATE(3, DPDT, SELECTED, "Selected")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Drag Drop" Parts & States (v4)
 //---------------------------------------------------------------------------------------
@@ -1799,6 +1960,36 @@ BEGIN_TM_CLASS_PARTS(DRAGDROP)
     TM_PART(7, DD, IMAGEBG, "ImageBg")
     TM_PART(8, DD, TEXTBG, "TextBg")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(COPY)
+    TM_STATE(1, DDCOPY, HIGHLIGHT, "Highlight")
+    TM_STATE(2, DDCOPY, NOHIGHLIGHT, "NoHighlight")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(MOVE)
+    TM_STATE(1, DDMOVE, HIGHLIGHT, "Highlight")
+    TM_STATE(2, DDMOVE, NOHIGHLIGHT, "NoHighlight")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(UPDATEMETADATA)
+    TM_STATE(1, DDUPDATEMETADATA, HIGHLIGHT, "Highlight")
+    TM_STATE(2, DDUPDATEMETADATA, NOHIGHLIGHT, "NoHighlight")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(CREATELINK)
+    TM_STATE(1, DDCREATELINK, HIGHLIGHT, "Highlight")
+    TM_STATE(2, DDCREATELINK, NOHIGHLIGHT, "NoHighlight")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(WARNING)
+    TM_STATE(1, DDWARNING, HIGHLIGHT, "Highlight")
+    TM_STATE(2, DDWARNING, NOHIGHLIGHT, "NoHighlight")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(NONE)
+    TM_STATE(1, DDNONE, HIGHLIGHT, "Highlight")
+    TM_STATE(2, DDNONE, NOHIGHLIGHT, "NoHighlight")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "Drop List" Parts & States (v4)
@@ -1828,6 +2019,28 @@ BEGIN_TM_CLASS_PARTS(FLYOUT)
     TM_PART(8, FLYOUT, LINKHEADER, "LinkHeader")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(BODY)
+    TM_STATE(1, FBS, NORMAL, "Normal")
+    TM_STATE(2, FBS, EMPHASIZED, "Emphasized")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(LABEL)
+    TM_STATE(1, FLS, NORMAL, "Normal")
+    TM_STATE(2, FLS, SELECTED, "Selected")
+    TM_STATE(3, FLS, EMPHASIZED, "Emphasized")
+    TM_STATE(4, FLS, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(LINK)
+    TM_STATE(1, FLYOUTLINK, NORMAL, "Normal")
+    TM_STATE(2, FLYOUTLINK, HOVER, "Hover")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(LINKHEADER)
+    TM_STATE(1, FLH, NORMAL, "Normal")
+    TM_STATE(2, FLH, HOVER, "Hover")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Help Searchbox" Parts & States (v4)
 //---------------------------------------------------------------------------------------
@@ -1850,6 +2063,13 @@ BEGIN_TM_PART_STATES(INFOBAR)
     TM_STATE(4, IBARS, KEYFOCUSED, "KeyFocused")
 END_TM_PART_STATES()
 
+BEGIN_TM_PART_STATES(BARFOREGROUND)
+    TM_STATE(1, IBARFG, NORMAL, "Normal")
+    TM_STATE(2, IBARFG, HOT, "Hot")
+    TM_STATE(3, IBARFG, PRESSED, "Pressed")
+    TM_STATE(4, IBARFG, KEYFOCUSED, "Keyfocused")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Items View" Parts & States (v4)
 //---------------------------------------------------------------------------------------
@@ -1861,6 +2081,41 @@ BEGIN_TM_CLASS_PARTS(ITEMSVIEW)
     TM_PART(5, IV, EMPTYTEXT, "EmptyText")
     TM_PART(6, IV, FOCUSRECTINNER, "FocusRectInner")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(SEARCHHIT)
+    TM_STATE(1, IVSH, START, "Start")
+    TM_STATE(2, IVSH, FINAL, "Final")
+    TM_STATE(3, IVSH, STARTSELECTED, "StartSelected")
+    TM_STATE(4, IVSH, FINALSELECTED, "FinalSelected")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(FOCUSRECT)
+    TM_STATE(1, IVFR, NORMAL, "Normal")
+    TM_STATE(2, IVFR, HOVER, "Hover")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(PROPERTY)
+    TM_STATE(1, IVP, SUBPROPERTY, "SubProperty")
+    TM_STATE(2, IVP, FILENAMEPROPERTY, "FileNameProperty")
+    TM_STATE(3, IVP, FILENAMESELECTEDPROPERTY, "FileNameSelectedProperty")
+    TM_STATE(4, IVP, SUBPROPERTYSELECTED, "SubPropertySelected")
+    TM_STATE(5, IVP, FILENAMECOMPRESSEDPROPERTY, "FileNameCompressedProperty")
+    TM_STATE(6, IVP, FILENAMESELECTEDCOMPRESSEDPROPERTY, "FileNameSelectedCompressedProperty")
+    TM_STATE(7, IVP, FILENAMEENCRYPTEDPROPERTY, "FileNameEncryptedProperty")
+    TM_STATE(8, IVP, FILENAMESELECTEDENCRYPTEDPROPERTY, "FileNameSelectedEncryptedProperty")
+    // TODO: Some build between 14393 and 19041 added these two parts. Figure out which release it is
+    // and add an ESupportedOS entry for it.
+    TM_STATE(9, IVP, FILENAMEDISCONNECTEDPROPERTY, "FileNameDisconnectedProperty")
+    TM_STATE(10, IVP, FILENAMESELECTEDDISCONNECTEDPROPERTY, "FileNameSelectedDisconnectedProperty")
+    // END NEW PARTS
+    TM_STATE(11, IVP, CONFLICTTILETEXT, "ConflictTileText")
+    TM_STATE(12, IVP, CONFLICTTILETEXTFOCUSED, "ConflictTileTextFocused")
+    TM_STATE(13, IVP, PROGRESSBAR, "ProgressBar")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(FOCUSRECTINNER)
+    TM_STATE(1, IVFRIN, NORMAL, "Normal")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "List Box" Parts & States (v4)
@@ -1879,6 +2134,11 @@ END_TM_CLASS_PARTS()
 BEGIN_TM_CLASS_PARTS(LINK)
     TM_PART(1, LP, HYPERLINK, "HyperLink")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(HYPERLINK)
+    TM_STATE(1, HLS, NORMALTEXT, "NormalText")
+    TM_STATE(2, HLS, LINKTEXT, "LinkText")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "Menu" Parts & States (Windows Vista+)
@@ -1922,6 +2182,22 @@ BEGIN_TM_CLASS_PARTS(MENU)
     TM_PART(27, MENU, POPUPITEM_FOCUSABLE, "PopupItem_Focusable")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(BARITEM)
+    TM_STATE(1, MBI, NORMAL, "Normal")
+    TM_STATE(2, MBI, HOT, "Hot")
+    TM_STATE(3, MBI, PUSHED, "Pushed")
+    TM_STATE(4, MBI, DISABLED, "Disabled")
+    TM_STATE(5, MBI, DISABLEDHOT, "DisabledHot")
+    TM_STATE(6, MBI, DISABLEDPUSHED, "DisabledPushed")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(POPUPITEM)
+    TM_STATE(1, MPI, NORMAL, "Normal")
+    TM_STATE(2, MPI, HOT, "Hot")
+    TM_STATE(3, MPI, DISABLED, "Disabled")
+    TM_STATE(4, MPI, DISABLEDHOT, "DisabledHot")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Navigation" Parts & States (v4)
 //---------------------------------------------------------------------------------------
@@ -1948,6 +2224,51 @@ BEGIN_TM_CLASS_PARTS(MONTHCAL)
     TM_PART(11, MC, NAVPREV, "NavPrev")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(GRIDCELLBACKGROUND)
+    TM_STATE(1, MCGCB, SELECTED, "Selected")
+    TM_STATE(2, MCGCB, HOT, "Hot")
+    TM_STATE(3, MCGCB, SELECTEDHOT, "Selectedhot")
+    TM_STATE(4, MCGCB, SELECTEDNOTFOCUSED, "SelectedNotFocused")
+    TM_STATE(5, MCGCB, TODAY, "Today")
+    TM_STATE(6, MCGCB, TODAYSELECTED, "TodaySelected")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(GRIDCELL)
+    TM_STATE(1, MCGC, HOT, "Hot")
+    TM_STATE(2, MCGC, HASSTATE, "HasState")
+    TM_STATE(3, MCGC, HASSTATEHOT, "HasStateHot")
+    TM_STATE(4, MCGC, TODAY, "Today")
+    TM_STATE(5, MCGC, TODAYSELECTED, "TodaySelected")
+    TM_STATE(6, MCGC, SELECTED, "Selected")
+    TM_STATE(7, MCGC, SELECTEDHOT, "SelectedHot")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(GRIDCELLUPPER)
+    TM_STATE(1, MCGCU, HOT, "Hot")
+    TM_STATE(2, MCGCU, HASSTATE, "HasState")
+    TM_STATE(3, MCGCU, HASSTATEHOT, "HasStatehot")
+    TM_STATE(4, MCGCU, SELECTED, "Selected")
+    TM_STATE(5, MCGCU, SELECTEDHOT, "SelectedHot")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(TRAILINGGRIDCELL)
+    TM_STATE(1, MCTGC, HOT, "Hot")
+    TM_STATE(2, MCTGC, HASSTATE, "HasState")
+    TM_STATE(3, MCTGC, HASSTATEHOT, "HasStateHot")
+    TM_STATE(4, MCTGC, TODAY, "Today")
+    TM_STATE(5, MCTGC, TODAYSELECTED, "TodaySelected")
+    TM_STATE(6, MCTGC, SELECTED, "Selected")
+    TM_STATE(7, MCTGC, SELECTEDHOT, "SelectedHot")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(TRAILINGGRIDCELLUPPER)
+    TM_STATE(1, MCTGCU, HOT, "Hot")
+    TM_STATE(2, MCTGCU, HASSTATE, "HasState")
+    TM_STATE(3, MCTGCU, HASSTATEHOT, "HasStateHot")
+    TM_STATE(4, MCTGCU, SELECTED, "Selected")
+    TM_STATE(5, MCTGCU, SELECTEDHOT, "SelectedHot")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Pause" Parts & States (v4)
 //---------------------------------------------------------------------------------------
@@ -1969,6 +2290,21 @@ BEGIN_TM_CLASS_PARTS(PREVIEWPANE)
     TM_PART(8, PP, LABELCID, "LabelCID")
     TM_PART(9, PP, VALUECID, "ValueCID")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(PREVIEWBACKGROUND)
+    TM_STATE(1, PPS, HORIZONTAL, "Horizontal")
+    TM_STATE(2, PPS, VERTICAL, "Vertical")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(VALUE)
+    TM_STATE(1, PPVA, READONLY, "ReadOnly")
+    TM_STATE(2, PPVA, READWRITE, "ReadWrite")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(VALUECID)
+    TM_STATE(1, PPVACID, READONLY, "ReadOnly")
+    TM_STATE(2, PPVACID, READWRITE, "ReadWrite")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "Proper Tree" Parts & States (v4)
@@ -1999,8 +2335,14 @@ END_TM_CLASS_PARTS()
 //   "Search Editbox" Parts & States (v4)
 //---------------------------------------------------------------------------------------
 BEGIN_TM_CLASS_PARTS(SEARCHEDITBOX)
-    TM_PART(1, SEBP, SEARCHEDITBOXTEXT, "SearchEditboxText")
+    TM_PART(1, SEBP, SEARCHEDITBOXTEXT, "SearchEditBoxText")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(SEARCHEDITBOXTEXT)
+    TM_STATE(1, SEBTS, CUETEXT, "CueText")
+    TM_STATE(2, SEBTS, FORMATTED, "Formatted")
+    TM_STATE(3, SEBTS, GLYPH, "Glyph")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "Search Home" Parts & States (v4)
@@ -2051,6 +2393,21 @@ BEGIN_TM_CLASS_PARTS(TASKDIALOG)
     TM_PART(21, TDLG, RADIOBUTTONPANE, "RadioButtonPane")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(CONTENTPANE)
+    TM_STATE(1, TDLGCPS, STANDALONE, "Standalone")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(EXPANDOBUTTON)
+    TM_STATE(1, TDLGEBS, NORMAL, "Normal")
+    TM_STATE(2, TDLGEBS, HOVER, "Hover")
+    TM_STATE(3, TDLGEBS, PRESSED, "Pressed")
+    TM_STATE(4, TDLGEBS, EXPANDEDNORMAL, "ExpandedNormal")
+    TM_STATE(5, TDLGEBS, EXPANDEDHOVER, "ExpandedHover")
+    TM_STATE(6, TDLGEBS, EXPANDEDPRESSED, "ExpandedPressed")
+    TM_STATE(7, TDLGEBS, NORMALDISABLED, "NormalDisabled")
+    TM_STATE(8, TDLGEBS, EXPANDEDDISABLED, "ExpandedDisabled")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Text Glow" Parts & States (v4)
 //---------------------------------------------------------------------------------------
@@ -2079,6 +2436,18 @@ BEGIN_TM_CLASS_PARTS(TEXTSTYLE)
     TM_PART(8, TEXT, LABEL, "Label")
     TM_PART(9, TEXT, CONTROLLABEL, "ControlLabel")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(HYPERLINKTEXT)
+    TM_STATE(1, TS_HYPERLINK, NORMAL, "Normal")
+    TM_STATE(2, TS_HYPERLINK, HOT, "Hot")
+    TM_STATE(3, TS_HYPERLINK, PRESSED, "Pressed")
+    TM_STATE(4, TS_HYPERLINK, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(CONTROLLABEL)
+    TM_STATE(1, TS_CONTROLLABEL, NORMAL, "Normal")
+    TM_STATE(2, TS_CONTROLLABEL, DISABLED, "Disabled")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "Try Harder" Parts & States (v4)
@@ -2472,6 +2841,18 @@ BEGIN_TM_CLASS_PARTS(DWMWINDOW)
     TM_PART(90, DWMWP, BUTTONACTIVECAPTIONENDDARK, "ButtonActiveCaptionEndDark")
     TM_PART(91, DWMWP, BUTTONINACTIVECAPTIONENDDARK, "ButtonInactiveCaptionEndDark")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(TOPFRAME)
+    TM_STATE(1, DWMTFS, ACTIVE, "Active")
+    TM_STATE(2, DWMTFS, INACTIVE, "Inactive")
+    TM_STATE(3, DWMTFS, MAXACTIVE, "MaxActive")
+    TM_STATE(4, DWMTFS, MAXINACTIVE, "MaxInactive")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(SMALLTOPFRAME)
+    TM_STATE(1, DWMSTFS, ACTIVE, "Active")
+    TM_STATE(2, DWMSTFS, INACTIVE, "Inactive")
+END_TM_PART_STATES()
 //---------------------------------------------------------------------------------------
 //   "Animations" Parts & States (Windows 8+)
 //---------------------------------------------------------------------------------------
@@ -2846,8 +3227,53 @@ BEGIN_TM_CLASS_PARTS(TASKMANAGER)
     TM_PART(46, TM, COLUMNDIVIDERHOT, "ColumnDividerHot")
 END_TM_CLASS_PARTS()
 
-BEGIN_TM_PART_STATES(COLHEADER)
+BEGIN_TM_PART_STATES(HEATMAP_COLOR0)
+    TM_STATE(1, TM_HM_C0, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_COLOR1)
+    TM_STATE(1, TM_HM_C1, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_COLOR2)
+    TM_STATE(1, TM_HM_C2, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_COLOR3)
+    TM_STATE(1, TM_HM_C3, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_COLOR4)
+    TM_STATE(1, TM_HM_C4, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_COLOR5)
+    TM_STATE(1, TM_HM_C5, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_COLOR6)
+    TM_STATE(1, TM_HM_C6, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_COLOR7)
+    TM_STATE(1, TM_HM_C7, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_COLOR8)
+    TM_STATE(1, TM_HM_C8, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(HEATMAP_CONTENTIONMARKER)
+    TM_STATE(1, TM_HM_CM, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(COLUMNHEADERTEXT)
     TM_STATE(1, TM_COLHEADER, NORMAL, "Normal")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(CONTENTION_COLUMN_HEADER)
+    TM_STATE(1, TM_CONCOLHEADER, NORMAL, "Normal")
+    TM_STATE(2, TM_CONCOLHEADER, HOT, "Hot")
 END_TM_PART_STATES()
 
 BEGIN_TM_CLASS_PARTS(CHARTVIEW)
@@ -2894,6 +3320,42 @@ BEGIN_TM_CLASS_PARTS(CHARTVIEW)
     TM_PART(41, CV, NETWORK_SCALELINE, "Network_ScaleLine")
     TM_PART(42, CV, NETWORK_SCALELINETEXT, "Network_ScaleLineText")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(COPY_BORDER)
+    TM_STATE(1, CV_COPB, ACTIVE, "Active")
+    TM_STATE(2, CV_COPB, IDLE, "Idle")
+    TM_STATE(3, CV_COPB, ERROR, "Error")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(COPY_GRID)
+    TM_STATE(1, CV_COPG, ACTIVE, "Active")
+    TM_STATE(2, CV_COPG, IDLE, "Idle")
+    TM_STATE(3, CV_COPG, ERROR, "Error")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(COPY_LINE1)
+    TM_STATE(1, CV_COPL1L, ACTIVE, "Active")
+    TM_STATE(2, CV_COPL1L, IDLE, "Idle")
+    TM_STATE(3, CV_COPL1L, ERROR, "Error")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(COPY_LINE1FILL)
+    TM_STATE(1, CV_COPL1F, ACTIVE, "Active")
+    TM_STATE(2, CV_COPL1F, IDLE, "Idle")
+    TM_STATE(3, CV_COPL1F, ERROR, "Error")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(COPY_LINE2)
+    TM_STATE(1, CV_COPL2L, ACTIVE, "Active")
+    TM_STATE(2, CV_COPL2L, IDLE, "Idle")
+    TM_STATE(3, CV_COPL2L, ERROR, "Error")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(COPY_LINE2FILL)
+    TM_STATE(1, CV_COPL2F, ACTIVE, "Active")
+    TM_STATE(2, CV_COPL2F, IDLE, "Idle")
+    TM_STATE(3, CV_COPL2F, ERROR, "Error")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "Command Module" Parts & States (Windows Vista+)
@@ -2943,6 +3405,42 @@ BEGIN_TM_CLASS_PARTS(COMMANDMODULE)
     TM_PART(10, CMOD, LIBRARYPANEBACKGROUND, "LibraryPaneBackground")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(TASKBUTTON)
+    TM_STATE(1, CMTB, NORMAL, "Normal")
+    TM_STATE(2, CMTB, HOT, "Hot")
+    TM_STATE(3, CMTB, PRESSED, "Pressed")
+    TM_STATE(4, CMTB, KEYFOCUSED, "KeyFocused")
+    TM_STATE(5, CMTB, NEARHOT, "NearHot")
+    TM_STATE(6, CMTB, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(SPLITBUTTONLEFT)
+    TM_STATE(1, CMSBL, NORMAL, "Normal")
+    TM_STATE(2, CMSBL, HOT, "Hot")
+    TM_STATE(3, CMSBL, PRESSED, "Pressed")
+    TM_STATE(4, CMSBL, KEYFOCUSED, "KeyFocused")
+    TM_STATE(5, CMSBL, NEARHOT, "NearHot")
+    TM_STATE(6, CMSBL, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(SPLITBUTTONRIGHT)
+    TM_STATE(1, CMSBR, NORMAL, "Normal")
+    TM_STATE(2, CMSBR, HOT, "Hot")
+    TM_STATE(3, CMSBR, PRESSED, "Pressed")
+    TM_STATE(4, CMSBR, KEYFOCUSED, "KeyFocused")
+    TM_STATE(5, CMSBR, NEARHOT, "NearHot")
+    TM_STATE(6, CMSBR, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(LIBRARYPANETOPVIEW)
+    TM_STATE(1, CMLPTV, NORMAL, "Normal")
+    TM_STATE(2, CMLPTV, HOT, "Hot")
+    TM_STATE(3, CMLPTV, PRESSED, "Pressed")
+    TM_STATE(4, CMLPTV, KEYFOCUSED, "KeyFocused")
+    TM_STATE(5, CMLPTV, NEARHOT, "NearHot")
+    TM_STATE(6, CMLPTV, DISABLED, "Disabled")
+END_TM_PART_STATES()
+
 //---------------------------------------------------------------------------------------
 //   "Common Items Dialog" Parts & States (Windows 10 ???)
 //---------------------------------------------------------------------------------------
@@ -2966,6 +3464,10 @@ BEGIN_TM_CLASS_PARTS(FileExplorerBannerContainer)
     TM_PART(1, FEBC, CLOSEGLYPH, "CloseGlyph")
 END_TM_CLASS_PARTS()
 
+BEGIN_TM_PART_STATES(CLOSEGLYPH)
+    TM_STATE(1, FEBCCGS, NORMAL, "Normal")
+    TM_STATE(2, FEBCCGS, ACTIVE, "Active")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------
 END_TM_SCHEMA(ThemeMgrSchema)
