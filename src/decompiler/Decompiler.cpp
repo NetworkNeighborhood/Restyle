@@ -105,7 +105,7 @@ HRESULT ValueToString(const VSRECORD *lpRecord, std::wstring &spszValue)
 			}
 			else
 			{
-				spszValue = *(LPCWSTR *)lpData;
+				spszValue = (LPCWSTR)lpData;
 				return S_OK;
 			}
 
@@ -162,8 +162,43 @@ HRESULT ValueToString(const VSRECORD *lpRecord, std::wstring &spszValue)
 			return S_OK;
 		}
 
+		case Restyle::TMT_FONT:
+		{
+			if (!lpRecord->uResID)
+			{
+				Log(L"FATAL: Font property missing resource ID.\n", ELogLevel::Fatal);
+				return E_FAIL;
+			}
+			// No idea. UXTheme does this.
+			MINIMUM_SIZE(0x5C);
+
+			// UXTheme uses a fixed 128-char buffer for this, so we'll do the same.
+			WCHAR szBuffer[128];
+			LoadStringW(g_hThemeModule, lpRecord->uResID, szBuffer, 128);
+
+			spszValue = szBuffer;
+			return S_OK;
+		}
+
+		// FUCK this type. They made a primitive type for an enum...
+		case Restyle::TMT_HCCOLOR:
+		{
+			EXPECTED_SIZE(sizeof(int));
+			int iVal = *(int *)lpData;
+			const Restyle::TMPROPINFO *pValInfo =
+				Restyle::FindEnumValueInfo(L"HIGHCONTRASTCOLOR", iVal, g_eSupportedOS);
+			if (!pValInfo)
+			{
+				Log(L"FATAL: Invalid high contrast color type %d\n", ELogLevel::Fatal, iVal);
+				return E_FAIL;
+			}
+
+			spszValue = pValInfo->pszName;
+			return S_OK;
+		}
+
 		default:
-			Log(L"FATAL: Type %d does not exist or cannot be represented as a string\n", lpRecord->lType);
+			Log(L"FATAL: Type %d does not exist or cannot be represented as a string\n", ELogLevel::Fatal, lpRecord->lType);
 			return E_FAIL;
 	}
 
@@ -300,8 +335,26 @@ bool ParseRecordToThemeINIFile(const VSRECORD *lpRecord, void *lpParam)
 		__debugbreak();
 #endif
 
+	std::wstring spszValue;
+	// Special handler to dump images
+	if (lpRecord->lType == Restyle::TMT_FILENAME
+	|| lpRecord->lType == Restyle::TMT_DISKSTREAM)
+	{
+
+	}
+	else
+	{
+		if (FAILED(ValueToString(lpRecord, spszValue)))
+			return false;
+	}
+
+	LPCWSTR pszComment = Restyle::GetCommentForProperty(pPropInfo);
+
 	ThemeINILine line;
 	line.spszKey = pPropInfo->pszName;
+	line.spszValue = spszValue;
+	if (pszComment)
+		line.spszComment = pszComment;
 	file[spszHeaderName].push_back(line);
 
 	return true;
