@@ -122,6 +122,9 @@
     <ClInclude Include="decompiler\Decompiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="schema\SupportedOS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="restyle.rc">

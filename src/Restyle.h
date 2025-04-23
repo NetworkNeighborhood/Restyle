@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <assert.h>
+#include <shlwapi.h>
 #include "schema/restyle_TmSchema.h"
 #define SCHEMA_STRINGS
 #include "schema/restyle_TmSchema.h"
@@ -21,11 +22,6 @@ enum class EParseResult
 
 #define PARSE_FAILED(r)                 (r == EParseResult::Fail)
 #define RETURN_IF_PARSE_FAILED(r, v)    if (PARSE_FAILED(r)) return v
-
-#define VER_MAJOR       0
-#define VER_MINOR       2
-#define VER_REVISION    0
-#define VER_STRING      "0.2.0"
 
 #define WIDE2(x) L##x
 #define WIDE1(x) WIDE2(x)

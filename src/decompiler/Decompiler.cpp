@@ -1,5 +1,7 @@
 #include "Decompiler.h"
 
+Restyle::ESupportedOS g_eSupportedOS = Restyle::ESupportedOS::NotSet;
+
 struct ThemeINILine
 {
 	std::wstring spszKey;
@@ -21,7 +23,7 @@ std::wstring GetSectionName(const VSRECORD *lpRecord)
 		if (dwBaseClass != (DWORD)-1)
 			lpBaseClassName = BinParser::NameOfClass(dwBaseClass);
 		bool fExpectedBaseClass = (nullptr != wcsstr(lpClassName, L"::"));
-;		// Expected implicit base class but got none. We explicitly derive from
+		// Expected implicit base class but got none. We explicitly derive from
 		// none in this edge case.
 		if (dwBaseClass == (DWORD)-1 && fExpectedBaseClass)
 		{
@@ -56,15 +58,22 @@ std::wstring GetSectionName(const VSRECORD *lpRecord)
 			spszEnumName += L"PARTS";
 
 			const Restyle::TMPROPINFO *pPropInfo =
-				Restyle::FindEnumValueInfo(spszEnumName.c_str(), lpRecord->iPart);
+				Restyle::FindEnumValueInfo(spszEnumName.c_str(), lpRecord->iPart, g_eSupportedOS);
 
 			if (pPropInfo)
 			{
 				spszResult += pPropInfo->pszName;
-				
+				spszStateSearchName = pPropInfo->pszName;
 			}
 			else
 			{
+				Log(
+					L"WARNING: Unknown part name for class '%s', part %d. Defaulting to *Part%d.\n",
+					ELogLevel::Warning,
+					spszSearchName.c_str(),
+					lpRecord->iPart,
+					lpRecord->iPart
+				);
 				spszResult += L"*Part";
 				spszResult += std::to_wstring(lpRecord->iPart);
 			}
@@ -74,11 +83,19 @@ std::wstring GetSectionName(const VSRECORD *lpRecord)
 		{
 			spszResult += L'(';
 			
-			std::wstring spszEnumName = spszSearchName;
-			spszEnumName += L"STATES";
+			spszStateSearchName += L"STATES";
 
+			// First attempt to search via part name (or class name if part is 0)
 			const Restyle::TMPROPINFO *pPropInfo =
-				Restyle::FindEnumValueInfo(spszEnumName.c_str(), lpRecord->iPart);
+				Restyle::FindEnumValueInfo(spszStateSearchName.c_str(), lpRecord->iPart, g_eSupportedOS);
+
+			// If we did part name and failed, try class
+			if (!pPropInfo && lpRecord->iPart)
+			{
+				spszStateSearchName = spszSearchName;
+				spszStateSearchName += L"STATES";
+				pPropInfo = Restyle::FindEnumValueInfo(spszStateSearchName.c_str(), lpRecord->iPart, g_eSupportedOS);
+			}
 
 			if (pPropInfo)
 			{
@@ -86,8 +103,16 @@ std::wstring GetSectionName(const VSRECORD *lpRecord)
 			}
 			else
 			{
+				Log(
+					L"WARNING: Unknown state name for class '%s', part %d, state %d. Defaulting to *State%d.\n",
+					ELogLevel::Warning,
+					spszSearchName.c_str(),
+					lpRecord->iPart,
+					lpRecord->iState,
+					lpRecord->iState
+				);
 				spszResult += L"*State";
-				spszResult += std::to_wstring(lpRecord->iPart);
+				spszResult += std::to_wstring(lpRecord->iState);
 			}
 
 			spszResult += L')';
@@ -100,14 +125,16 @@ bool ParseRecordToThemeINIFile(const VSRECORD *lpRecord, void *lpParam)
 {
 	ThemeINIFile *lpFile = (ThemeINIFile *)lpParam;
 	std::wstring spszHeaderName = GetSectionName(lpRecord);
-	Log(L"%s\n", spszHeaderName.c_str());
+	wprintf(L"%s\n", spszHeaderName.c_str());
 	return true;
 }
 
-bool DecompileTheme(LPCWSTR pszOutFolder)
+bool DecompileTheme(LPCWSTR pszOutFolder, Restyle::ESupportedOS eSupportedOS)
 {
 	if (!BinParser::ParseClassMap() || !BinParser::ParseBaseClassMap() || !BinParser::ParseVariantMap())
 		return false;
+
+	g_eSupportedOS = eSupportedOS;
 
 	ThemeINIFile rmap;
 	if (!BinParser::ParseRecordResource(L"VARIANT", L"NORMAL", &rmap, ParseRecordToThemeINIFile))

@@ -39,6 +39,16 @@ void PrintUsage(void)
 		L"\n"
 		L"Options:\n"
 		L"    /out: Output file or folder of the /c and /d actions.\n"
+		L"    /os: Windows version to use part and state names from for decompilation.\n"
+		// Keep up to date with ESupportedOS enum in schema/SupportedOS.h
+		L"         Can be one of the following:\n"
+		L"             WinVista\n"
+		L"             Win7\n"
+		L"             Win8\n"
+		L"             Win81\n"
+		L"             Win10_1507\n"
+		L"             Win10_1607\n"
+		L"             Win11_22H2\n"
 	);
 }
 
@@ -117,7 +127,9 @@ int wmain(int argc, wchar_t *argv[])
 		Log(L"Error: Failed to initialize schema utils.", ELogLevel::Fatal);
 	}
 
-#define IsArg(str, name)   0 == _wcsicmp(str, L"/" name)
+#define IsArg(str, name)       (0 == _wcsicmp(str, L"/" name))
+#define IsValueArg(str, name)  (0 == _wcsnicmp(str, L"/" name, sizeof(name)))
+#define GetArgValue(str, name) (str + sizeof("/" name))
 
 	if (argc <= 1 || IsArg(argv[1], "?") || IsArg(argv[1], "help"))
 	{
@@ -131,10 +143,65 @@ int wmain(int argc, wchar_t *argv[])
 	}
 	else if (IsArg(argv[1], "d"))
 	{
+		if (argc < 3)
+		{
+			Log(L"FATAL: Too few arguments\n", ELogLevel::Fatal);
+			return 1;
+		}
+
+		Restyle::ESupportedOS eSupportedOS = Restyle::ESupportedOS::NotSet;
+		WCHAR szOutPath[MAX_PATH] = { 0 };
+
 		if (!LoadThemeModule(argv[2]))
 			return 1;
 
-		if (!DecompileTheme(nullptr))
+		for (int i = 3; i < argc; i++)
+		{
+			if (IsValueArg(argv[i], "os"))
+			{
+				LPCWSTR pszOS = GetArgValue(argv[i], "os");
+				eSupportedOS = Restyle::StringToSupportedOS(pszOS);
+				if (eSupportedOS == Restyle::ESupportedOS::NotSet)
+				{
+					Log(L"FATAL: Unrecognized OS name '%s'\n", ELogLevel::Fatal, pszOS);
+					return 1;
+				}
+			}
+			else if (IsValueArg(argv[i], "out"))
+			{
+				(void)_wfullpath(szOutPath, GetArgValue(argv[i], "out"), MAX_PATH);
+
+				DWORD dwAttrib = GetFileAttributesW(szOutPath);
+				if (dwAttrib == INVALID_FILE_ATTRIBUTES || !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
+				{
+					if (!CreateDirectoryW(szOutPath, nullptr))
+					{
+						Log(L"FATAL: Failed to create directory '%s'.\n", ELogLevel::Fatal, szOutPath);
+						return 1;
+					}
+				}
+
+				if (!PathIsDirectoryEmptyW(szOutPath))
+				{
+					Log(L"FATAL: Directory '%s' is not empty.\n", ELogLevel::Fatal, szOutPath);
+					return 1;
+				}
+			}
+		}
+
+		if (!szOutPath[0])
+		{
+			Log(L"FATAL: No out directory defined.\n", ELogLevel::Fatal);
+			return 1;
+		}
+
+		if (eSupportedOS == Restyle::ESupportedOS::NotSet)
+		{
+			eSupportedOS = Restyle::ESupportedOS::Win10_1607;
+			Log(L"WARNING: No OS defined, defaulting to Win10_1607.\n", ELogLevel::Warning);
+		}
+
+		if (!DecompileTheme(szOutPath, eSupportedOS))
 			return 1;
 		return 0;
 	}
@@ -355,8 +422,6 @@ int wmain(int argc, wchar_t *argv[])
 		Log(L"Try `restyle /?` to see a list of actions\n");
 		return 1;
 	}
-
-#undef IsArg
 
 	return 0;
 }

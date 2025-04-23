@@ -6,4 +6,4 @@
 #include "schema/SchemaUtils.h"
 #include <map>
 
-bool DecompileTheme(LPCWSTR pszOutFolder);
+bool DecompileTheme(LPCWSTR pszOutFolder, Restyle::ESupportedOS eSupportedOS);

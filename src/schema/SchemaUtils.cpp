@@ -287,8 +287,8 @@ const TMPROPINFO *SearchSchema(SearchSchemaParams *pParams)
         SEARCH_SCHEMA_CONDITION(pParams->bType, pPropInfo->bPrimVal != pParams->bType);
 
         SEARCH_SCHEMA_CONDITION(eSupportedOs != ESupportedOS::NotSet, 
-            pPropInfo->supportedOS & eSupportedOs &&
-            pPropInfo->supportedOS != ESupportedOS::NotSet
+            pPropInfo->supportedOS != ESupportedOS::NotSet &&
+            !(pPropInfo->supportedOS & eSupportedOs)
         );
 
         SEARCH_SCHEMA_CONDITION(pParams->szName, AsciiStrCmpI(pPropInfo->pszName, pParams->szName) != 0);

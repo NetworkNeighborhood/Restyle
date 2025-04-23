@@ -1,7 +1,7 @@
 //#pragma once
 
 #include "RestyleBase.h"
-
+#include "SupportedOS.h"
 #include "SchemaPriv.h" // TODO: restructure?
 
 //---------------------------------------------------------------------------
@@ -12,30 +12,7 @@
 #define SCHEMADEF_H
 
 namespace Restyle
-{
-    enum class ESupportedOS : unsigned
-    {
-        NotSet = 0,
-        WinVista = 1,
-        Win7 = 2,
-        Win8 = 4,
-        Win81 = 8,
-        Win10_1607 = 16,
-        Win11_22H2 = 32,
-        
-        All = WinVista | Win7 | Win8 | Win81 | Win10_1607 | Win11_22H2
-    };
-    
-    inline ESupportedOS operator|(ESupportedOS a, ESupportedOS b)
-    {
-        return (ESupportedOS)((int)a | (int)b);
-    }
-
-    inline bool operator&(ESupportedOS a, ESupportedOS b)
-    {
-        return (bool)((int)a & (int)b);
-    }
-    
+{   
     struct TMPROPINFO
     {
         LPCWSTR pszName;
