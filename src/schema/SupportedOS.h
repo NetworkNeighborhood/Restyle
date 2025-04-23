@@ -12,9 +12,10 @@ namespace Restyle
         Win81      = (1 << 3),
         Win10_1507 = (1 << 4),
         Win10_1607 = (1 << 5),
-        Win11_22H2 = (1 << 6),
+        Win10_1703 = (1 << 6),
+        Win11_22H2 = (1 << 7),
 
-        All = WinVista | Win7 | Win8 | Win81 | Win10_1507 | Win10_1607 | Win11_22H2
+        All = WinVista | Win7 | Win8 | Win81 | Win10_1507 | Win10_1607 | Win10_1703 | Win11_22H2
     };
 
 #define MAP_OS(os) { L ## #os, ESupportedOS::os },
@@ -29,6 +30,7 @@ namespace Restyle
         MAP_OS(Win81)
         MAP_OS(Win10_1507)
         MAP_OS(Win10_1607)
+        MAP_OS(Win10_1703)
         MAP_OS(Win11_22H2)
     };
 #undef MAP_OS

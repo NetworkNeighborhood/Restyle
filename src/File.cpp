@@ -172,7 +172,7 @@ HRESULT CSimpleFile::WriteString(LPCWSTR szStr, DWORD cbInputStr)
                 return E_INVALIDARG;
             }
             
-            int cbBuffer = WideCharToMultiByte(uCodePage, 0, szStr, wcslen(szStr), nullptr, -1, nullptr, nullptr);
+            int cbBuffer = WideCharToMultiByte(uCodePage, 0, szStr, -1, nullptr, 0, nullptr, nullptr);
             
             std::unique_ptr<BYTE[]> pszNewEncoding;
             try

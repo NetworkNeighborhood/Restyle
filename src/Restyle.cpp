@@ -197,8 +197,8 @@ int wmain(int argc, wchar_t *argv[])
 
 		if (eSupportedOS == Restyle::ESupportedOS::NotSet)
 		{
-			eSupportedOS = Restyle::ESupportedOS::Win10_1607;
-			Log(L"WARNING: No OS defined, defaulting to Win10_1607.\n", ELogLevel::Warning);
+			eSupportedOS = Restyle::ESupportedOS::Win10_1703;
+			Log(L"WARNING: No OS defined, defaulting to Win10_1703.\n", ELogLevel::Warning);
 		}
 
 		if (!DecompileTheme(szOutPath, eSupportedOS))

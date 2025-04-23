@@ -6,6 +6,7 @@
 #include <memory>
 #include <assert.h>
 #include <shlwapi.h>
+#include <pathcch.h>
 #include "schema/restyle_TmSchema.h"
 #define SCHEMA_STRINGS
 #include "schema/restyle_TmSchema.h"
