@@ -16,6 +16,8 @@ void PrintUsage(void)
 	wprintf(
 		L"Usage: restyle <action> [file/folder] [options]\n"
 		L"\n"
+		L"Example: restyle /d \"C:\\Windows\\Resources\\Themes\\Aero\\aero.msstyles\" /out:\"C:\\aero\" /os:Win10_1703\\n"
+		L"\n"
 		L"Actions:\n"
 		L"    /?, /help: Display this help.\n"
 		L"    /c: Compile a theme folder into a .MSSTYLES theme.\n"

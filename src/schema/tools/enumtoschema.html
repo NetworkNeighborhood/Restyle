@@ -30,7 +30,7 @@
         const input = document.querySelector("#input");
         const output = document.querySelector("#output");
         const ENUM_NAME_REGEX = /enum (.*?)(?:STATES|PARTS)(?:| {)/;
-        const ENUM_VAL_REGEX = /\s+([A-Z0-9_]+)_([A-Z0-9]+)(?:[\s]+|)=(?:[\s]+|)([0-9])+(?:|,)/;
+        const ENUM_VAL_REGEX = /\s+([A-Z0-9_]+)_([A-Z0-9]+)(?:[\s]+|)=(?:[\s]+|)([0-9]+)(?:|,)/;
 
         document.querySelector("button").addEventListener("click", () => {
             let out = "";
