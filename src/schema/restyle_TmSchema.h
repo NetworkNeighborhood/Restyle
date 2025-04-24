@@ -2968,6 +2968,13 @@ BEGIN_TM_PART_STATES(LEFTHIGHLIGHTCORNER)
     TM_STATE(4, DWMLHCS, MAXINACTIVE, "MaxInactive")
 END_TM_PART_STATES()
 
+BEGIN_TM_PART_STATES(RIGHTHIGHLIGHTCORNER)
+    TM_STATE(1, DWMRHCS, ACTIVE, "Active")
+    TM_STATE(2, DWMRHCS, INACTIVE, "Inactive")
+    TM_STATE(3, DWMRHCS, MAXACTIVE, "MaxActive")
+    TM_STATE(4, DWMRHCS, MAXINACTIVE, "MaxInactive")
+END_TM_PART_STATES()
+
 BEGIN_TM_PART_STATES(FLIP3DTOPFRAME)
     TM_STATE(1, DWMFLIP3DTFS, ACTIVE, "Active")
     TM_STATE(2, DWMFLIP3DTFS, INACTIVE, "Inactive")
@@ -3602,6 +3609,32 @@ END_TM_CLASS_PARTS()
 BEGIN_TM_PART_STATES(CLOSEGLYPH)
     TM_STATE(1, FEBCCGS, NORMAL, "Normal")
     TM_STATE(2, FEBCCGS, ACTIVE, "Active")
+END_TM_PART_STATES()
+
+//---------------------------------------------------------------------------------------
+//   "Query Builder" Parts & States (Windows Vista)
+//---------------------------------------------------------------------------------------
+BEGIN_TM_CLASS_PARTS(QUERYBUILDER)
+    TM_PART(1, QB, NORMALTEXT, "NormalText")
+    TM_PART(2, QB, LABELTEXT, "LabelText")
+    TM_PART(3, QB, BACKGROUNDSPRAY, "BackgroundSpray")
+    TM_PART(4, QB, MENUBUTTON, "MenuButton")
+    TM_PART(5, QB, QUICKFILTER, "QuickFilter")
+    TM_PART(6, QB, OVERFLOW, "Overflow")
+    TM_PART(7, QB, QBEXPANDBUTTON, "QBExpandButton")
+    TM_PART(8, QB, QBCOLLAPSEBUTTON, "QBCollapseButton")
+END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(QBEXPANDBUTTON)
+    TM_STATE(1, QBEB, NORMAL, "Normal")
+    TM_STATE(2, QBEB, HOT, "Hot")
+    TM_STATE(3, QBEB, PRESSED, "Pressed")
+END_TM_PART_STATES()
+
+BEGIN_TM_PART_STATES(QBCOLLAPSEBUTTON)
+    TM_STATE(1, QBCB, NORMAL, "Normal")
+    TM_STATE(2, QBCB, HOT, "Hot")
+    TM_STATE(3, QBCB, PRESSED, "Pressed")
 END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------
