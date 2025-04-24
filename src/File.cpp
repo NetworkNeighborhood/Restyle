@@ -186,7 +186,7 @@ HRESULT CSimpleFile::WriteString(LPCWSTR szStr, DWORD cbInputStr)
             
             WideCharToMultiByte(uCodePage, 0, szStr, wcslen(szStr), (LPSTR)pszNewEncoding.get(), cbBuffer, nullptr, nullptr);
             
-            return Write((void *)pszNewEncoding.get(), cbBuffer);
+            return Write((void *)pszNewEncoding.get(), cbBuffer - 1);
             
             break;
         }

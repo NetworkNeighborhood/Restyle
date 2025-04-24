@@ -4,6 +4,6 @@
 #include "BinParser.h"
 #include "File.h"
 #include "schema/SchemaUtils.h"
-#include <map>
+#include <unordered_map>
 
 bool DecompileTheme(LPCWSTR pszOutFolder, Restyle::ESupportedOS eSupportedOS);

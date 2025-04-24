@@ -48,6 +48,7 @@ void PrintUsage(void)
 		L"             Win81\n"
 		L"             Win10_1507\n"
 		L"             Win10_1607\n"
+		L"             Win10_1703\n"
 		L"             Win11_22H2\n"
 	);
 }
@@ -181,9 +182,9 @@ int wmain(int argc, wchar_t *argv[])
 					}
 				}
 
-				if (!PathIsDirectoryEmptyW(szOutPath))
+				if (!PathIsDirectoryEmptyW(szOutPath) && !EmptyDirectory(szOutPath))
 				{
-					Log(L"FATAL: Directory '%s' is not empty.\n", ELogLevel::Fatal, szOutPath);
+					Log(L"FATAL: Could not empty directory '%s'.\n", ELogLevel::Fatal, szOutPath);
 					return 1;
 				}
 			}

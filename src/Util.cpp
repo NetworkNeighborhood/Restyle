@@ -373,3 +373,50 @@ std::wstring GetClassSearchName(const std::wstring &spszClassName)
 	}
 	return spszSearchClassName;
 }
+
+bool EmptyDirectory(LPCWSTR pszDir)
+{
+	bool fResult = true;
+	WIN32_FIND_DATAW ffd;
+	WCHAR szPath[MAX_PATH];
+	wcscpy_s(szPath, pszDir);
+	PathCchAppend(szPath, MAX_PATH, L"*");
+
+	HANDLE hFind = FindFirstFileW(szPath, &ffd);
+	if (hFind == INVALID_HANDLE_VALUE)
+		return false;
+
+	do
+	{
+		// SKIP ourselves and parent dir:
+		if (0 == wcscmp(ffd.cFileName, L".") || 0 == wcscmp(ffd.cFileName, L".."))
+			continue;
+
+		WCHAR szDirectPath[MAX_PATH];
+		wcscpy_s(szDirectPath, pszDir);
+		PathCchAppend(szDirectPath, MAX_PATH, ffd.cFileName);
+
+		if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			if (!EmptyDirectory(szDirectPath) || !RemoveDirectoryW(szDirectPath))
+			{
+				fResult = false;
+				goto exit;
+			}
+		}
+		else
+		{
+			if (!DeleteFileW(szDirectPath))
+			{
+				fResult = false;
+				goto exit;
+			}
+		}
+	}
+	while (FindNextFileW(hFind, &ffd));
+
+exit:
+	FindClose(hFind);
+	int lastErr = GetLastError();
+	return fResult;
+}

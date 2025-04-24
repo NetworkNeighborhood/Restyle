@@ -1,8 +1,8 @@
 #include "Decompiler.h"
 
-Restyle::ESupportedOS g_eSupportedOS = Restyle::ESupportedOS::NotSet;
-WCHAR                 g_szOutFolder[MAX_PATH];
-std::wstring          g_spszCurrentVariant;
+Restyle::ESupportedOS        g_eSupportedOS = Restyle::ESupportedOS::NotSet;
+WCHAR                        g_szOutFolder[MAX_PATH];
+std::wstring                 g_spszCurrentVariant;
 
 struct ThemeINILine
 {
@@ -11,7 +11,23 @@ struct ThemeINILine
 	std::wstring spszComment;
 };
 
-typedef std::map<std::wstring, std::vector<ThemeINILine>> ThemeINIFile;
+struct ThemeINISection
+{
+	std::wstring spszName;
+	std::vector<ThemeINILine> lines;
+};
+
+typedef std::vector<ThemeINISection> ThemeINIFile;
+
+ThemeINISection *FindSection(ThemeINIFile &file, std::wstring spszName)
+{
+	for (ThemeINISection &section : file)
+	{
+		if (section.spszName == spszName)
+			return &section;
+	}
+	return nullptr;
+}
 
 /* Multiple types are glorified int lists, so this is its own function. */
 std::wstring ParseIntListValue(int *rgInts, size_t cInts)
@@ -206,6 +222,118 @@ HRESULT ValueToString(const VSRECORD *lpRecord, std::wstring &spszValue)
 #undef MINIMUM_SIZE
 }
 
+bool DumpImageOrStream(const VSRECORD *lpRecord, std::wstring &spszFilePath)
+{
+	static std::unordered_map<UINT, std::wstring> dumpedImages;
+	static std::unordered_map<UINT, std::wstring> dumpedStreams;
+
+	assert(lpRecord->lType == Restyle::TMT_FILENAME || lpRecord->lType == Restyle::TMT_DISKSTREAM);
+
+	if (!lpRecord->uResID)
+	{
+		Log(L"FATAL: Missing resource ID on FileName/DiskStream\n", ELogLevel::Fatal);
+		return false;
+	}
+	
+	bool fStream = lpRecord->lType == Restyle::TMT_DISKSTREAM;
+	std::unordered_map<UINT, std::wstring> &dumpMap = fStream ? dumpedStreams : dumpedImages;
+
+	if (dumpMap.count(lpRecord->uResID))
+		spszFilePath = dumpMap[lpRecord->uResID];
+
+	LPVOID pvData;
+	DWORD cbData;
+	if (!GetBinaryResource(fStream ? L"STREAM" : L"IMAGE", MAKEINTRESOURCEW(lpRecord->uResID), &pvData, &cbData))
+		return false;
+
+	WCHAR szFileName[MAX_PATH], szFilePath[MAX_PATH];
+	wcscpy_s(szFileName, g_spszCurrentVariant.c_str());
+
+	LPCWSTR lpClassName = BinParser::NameOfClass(lpRecord->iClass);
+	std::wstring spszName;
+	spszName += lpClassName;
+
+	// Sanitize class name
+	std::wstring::size_type n = 0;
+	while ((n = spszName.find(L"::", n)) != std::wstring::npos)
+	{
+		spszName.replace(n, 2, L"_");
+		n++;
+	}
+
+	std::wstring spszSearchName = GetClassSearchName(lpClassName);
+	std::wstring spszStateSearchName = spszSearchName;
+
+	if (lpRecord->iPart)
+	{
+		spszName += L'_';
+
+		std::wstring spszEnumName = spszSearchName;
+		spszEnumName += L"PARTS";
+
+		const Restyle::TMPROPINFO *pPropInfo =
+			Restyle::FindEnumValueInfo(spszEnumName.c_str(), lpRecord->iPart, g_eSupportedOS);
+
+		if (pPropInfo)
+		{
+			spszName += pPropInfo->pszName;
+			spszStateSearchName = pPropInfo->pszName;
+		}
+		else
+		{
+			spszName += L"Part";
+			spszName += std::to_wstring(lpRecord->iPart);
+		}
+	}
+
+	if (lpRecord->iState)
+	{
+		spszName += L'_';
+
+		spszStateSearchName += L"STATES";
+
+		const Restyle::TMPROPINFO *pPropInfo =
+			Restyle::FindEnumValueInfo(spszStateSearchName.c_str(), lpRecord->iState, g_eSupportedOS);
+
+		if (pPropInfo)
+		{
+			spszName += pPropInfo->pszName;
+		}
+		else
+		{
+			spszName += L"State";
+			spszName += std::to_wstring(lpRecord->iState);
+		}
+	}
+
+	Restyle::SearchSchemaParams params = { 0 };
+	params.cbSize = sizeof(params);
+	params.eSearchQuery = Restyle::ESchemaSearchQuery::Property;
+	params.sEnumVal = lpRecord->lSymbolVal;
+	const Restyle::TMPROPINFO *pPropInfo = Restyle::SearchSchema(&params);
+	if (pPropInfo)
+	{
+		spszName += L'_';
+		spszName += pPropInfo->pszName;
+	}
+
+	spszName += L".png";
+
+	PathCchAppend(szFileName, MAX_PATH, spszName.c_str());
+	wcscpy_s(szFilePath, g_szOutFolder);
+	PathCchAppend(szFilePath, MAX_PATH, szFileName);
+
+	CSimpleFile file;
+	if (FAILED(file.Create(szFilePath)))
+		return false;
+	if (FAILED(file.Write(pvData, cbData)))
+		return false;
+
+	dumpMap[lpRecord->uResID] = szFileName;
+	spszFilePath = szFileName;
+	return true;
+}
+
 std::wstring GetSectionName(int iClass, int iPart, int iState)
 {
 	std::wstring spszResult;
@@ -281,24 +409,15 @@ std::wstring GetSectionName(int iClass, int iPart, int iState)
 
 void EnsureClassBaseSection(int iClass, ThemeINIFile &file)
 {
-	/* These classes in RMAP don't need a base section. */
-	static LPCWSTR kNoBaseSectionClasses[] = {
-		L"colorvariant",
-		L"sizevariant",
-	};
-
 	std::wstring spszSectionName = GetSectionName(iClass, 0, 0);
-	for (LPCWSTR pszNoBase : kNoBaseSectionClasses)
-	{
-		if (spszSectionName == pszNoBase)
-			return;
-	}
-
 	// Already initialized
-	if (file.count(spszSectionName))
+	if (FindSection(file, spszSectionName))
 		return;
 
-	file[spszSectionName] = {};
+	ThemeINISection section;
+	section.spszName = spszSectionName;
+	file.push_back(section);
+	ThemeINISection *pSection = &file.back();
 
 	DWORD dwBaseClass = BinParser::GetBaseClass(iClass);
 	if (dwBaseClass != (DWORD)-1)
@@ -307,7 +426,7 @@ void EnsureClassBaseSection(int iClass, ThemeINIFile &file)
 		ThemeINILine line;
 		line.spszKey = L"Base";
 		line.spszValue = lpBaseClassName;
-		file[spszSectionName].push_back(line);
+		pSection->lines.push_back(line);
 	}
 }
 
@@ -322,8 +441,14 @@ bool ParseRecordToThemeINIFile(const VSRECORD *lpRecord, void *lpParam)
 		lpRecord->iState
 	);
 
-	if (!file.count(spszHeaderName))
-		file[spszHeaderName] = {};
+	ThemeINISection *pSection = FindSection(file, spszHeaderName);
+	if (!pSection)
+	{
+		ThemeINISection section;
+		section.spszName = spszHeaderName;
+		file.push_back(section);
+		pSection = &file.back();
+	}
 
 	Restyle::SearchSchemaParams params = { 0 };
 	params.cbSize = sizeof(params);
@@ -340,7 +465,8 @@ bool ParseRecordToThemeINIFile(const VSRECORD *lpRecord, void *lpParam)
 	if (lpRecord->lType == Restyle::TMT_FILENAME
 	|| lpRecord->lType == Restyle::TMT_DISKSTREAM)
 	{
-
+		if (!DumpImageOrStream(lpRecord, spszValue))
+			return false;
 	}
 	else
 	{
@@ -355,7 +481,7 @@ bool ParseRecordToThemeINIFile(const VSRECORD *lpRecord, void *lpParam)
 	line.spszValue = spszValue;
 	if (pszComment)
 		line.spszComment = pszComment;
-	file[spszHeaderName].push_back(line);
+	pSection->lines.push_back(line);
 
 	return true;
 }
@@ -373,14 +499,13 @@ bool DumpThemeINIFile(ThemeINIFile &outFile, LPCWSTR pszOutPath)
 	output += pszOutPath;
 	output += L"\r\n; --------------------------------------------";
 
-	ThemeINIFile::iterator it;
-	for (it = outFile.begin(); it != outFile.end(); it++)
+	for (const ThemeINISection &section : outFile)
 	{
 		output += L"\r\n\r\n[";
-		output += it->first;
+		output += section.spszName;
 		output += L"]";
 
-		for (const ThemeINILine &line : it->second)
+		for (const ThemeINILine &line : section.lines)
 		{
 			if (!line.spszComment.empty())
 			{
@@ -422,12 +547,40 @@ bool DecompileTheme(LPCWSTR pszOutFolder, Restyle::ESupportedOS eSupportedOS)
 	wcscpy_s(g_szOutFolder, pszOutFolder);
 
 	ThemeINIFile rmap;
-	if (!BinParser::ParseRecordResource(L"VARIANT", L"NORMAL", &rmap, ParseRecordToThemeINIFile))
+	if (!BinParser::ParseRecordResource(L"RMAP", L"RMAP", &rmap, ParseRecordToThemeINIFile))
 		return false;
 
 	if (!DumpThemeINIFile(rmap, L"themes.ini"))
 		return false;
 
-	rmap;
+	for (const VSVARIANT &var : BinParser::variantMap)
+	{
+		g_spszCurrentVariant = var.resourceName;
+		for (size_t i = 1; i < g_spszCurrentVariant.size(); i++)
+		{
+			g_spszCurrentVariant[i] = __ascii_towlower(g_spszCurrentVariant[i]);
+		}
+		
+		WCHAR szOutFolder[MAX_PATH];
+		wcscpy_s(szOutFolder, g_szOutFolder);
+		PathCchAppend(szOutFolder, MAX_PATH, g_spszCurrentVariant.c_str());
+		if (!CreateDirectoryW(szOutFolder, nullptr))
+		{
+			Log(L"FATAL: Failed to create directory '%s'.\n", ELogLevel::Fatal, szOutFolder);
+			return false;
+		}
+
+		ThemeINIFile file;
+		if (!BinParser::ParseRecordResource(L"VARIANT", var.resourceName.c_str(), &file, ParseRecordToThemeINIFile))
+			return false;
+
+		std::wstring spszOutFile = g_spszCurrentVariant;
+		spszOutFile += L'/';
+		spszOutFile += g_spszCurrentVariant;
+		spszOutFile += L".ini";
+		if (!DumpThemeINIFile(file, spszOutFile.c_str()))
+			return false;
+	}
+
 	return true;
 }

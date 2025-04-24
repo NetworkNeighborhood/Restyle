@@ -131,3 +131,5 @@ std::wstring GetBaseClassName(const std::wstring &spszClassName);
 // e.g. Explorer::ListView -> ListView
 // e.g. ButtonStyle -> Button
 std::wstring GetClassSearchName(const std::wstring &spszClassName);
+
+bool EmptyDirectory(LPCWSTR pszDir);
