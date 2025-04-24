@@ -128,7 +128,7 @@ bool ParseRecordResource(LPCWSTR lpType, LPCWSTR lpName, void *lpParam, RecordPa
 	while ((long long)lpRecord < ((long long)lpResource + dwSize))
 	{
 		if (!pfnCallback(lpRecord, lpParam))
-			break;
+			return false;
 
 		DWORD dwNextOffset = 0;
 		if (!lpRecord->uResID)
@@ -408,9 +408,9 @@ EParseResult GetRecordValueString(const VSRECORD *lpRecord, LPWSTR pszBuffer, DW
 		}
 
 		// FileName = IMAGE resource
-		// DiskStream = STREAM resource
+		// AtlasImage = STREAM resource
 		case Restyle::TMT_FILENAME:
-		case Restyle::TMT_DISKSTREAM:
+		case Restyle::TMT_ATLASIMAGE:
 		{
 			if (!lpRecord->uResID)
 				return EParseResult::Fail;

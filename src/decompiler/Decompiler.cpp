@@ -197,7 +197,7 @@ HRESULT ValueToString(const VSRECORD *lpRecord, std::wstring &spszValue)
 		}
 
 		// FUCK this type. They made a primitive type for an enum...
-		case Restyle::TMT_HCCOLOR:
+		case Restyle::TMT_HIGHCONTRASTCOLORTYPE:
 		{
 			EXPECTED_SIZE(sizeof(int));
 			int iVal = *(int *)lpData;
@@ -214,8 +214,17 @@ HRESULT ValueToString(const VSRECORD *lpRecord, std::wstring &spszValue)
 		}
 
 		default:
+		{
+#if DEBUG
+			unsigned char *data = new unsigned char[lpRecord->cbData];
+			memcpy(data, lpData, lpRecord->cbData);
+#endif
 			Log(L"FATAL: Type %d does not exist or cannot be represented as a string\n", ELogLevel::Fatal, lpRecord->lType);
+#if DEBUG
+			delete[] data;
+#endif
 			return E_FAIL;
+		}
 	}
 
 #undef EXPECTED_SIZE
@@ -227,15 +236,15 @@ bool DumpImageOrStream(const VSRECORD *lpRecord, std::wstring &spszFilePath)
 	static std::unordered_map<UINT, std::wstring> dumpedImages;
 	static std::unordered_map<UINT, std::wstring> dumpedStreams;
 
-	assert(lpRecord->lType == Restyle::TMT_FILENAME || lpRecord->lType == Restyle::TMT_DISKSTREAM);
+	assert(lpRecord->lType == Restyle::TMT_FILENAME || lpRecord->lType == Restyle::TMT_ATLASIMAGE);
 
 	if (!lpRecord->uResID)
 	{
-		Log(L"FATAL: Missing resource ID on FileName/DiskStream\n", ELogLevel::Fatal);
+		Log(L"FATAL: Missing resource ID on FileName/AtlasImage\n", ELogLevel::Fatal);
 		return false;
 	}
 	
-	bool fStream = lpRecord->lType == Restyle::TMT_DISKSTREAM;
+	bool fStream = lpRecord->lType == Restyle::TMT_ATLASIMAGE;
 	std::unordered_map<UINT, std::wstring> &dumpMap = fStream ? dumpedStreams : dumpedImages;
 
 	if (dumpMap.count(lpRecord->uResID))
@@ -463,7 +472,7 @@ bool ParseRecordToThemeINIFile(const VSRECORD *lpRecord, void *lpParam)
 	std::wstring spszValue;
 	// Special handler to dump images
 	if (lpRecord->lType == Restyle::TMT_FILENAME
-	|| lpRecord->lType == Restyle::TMT_DISKSTREAM)
+	|| lpRecord->lType == Restyle::TMT_ATLASIMAGE)
 	{
 		if (!DumpImageOrStream(lpRecord, spszValue))
 			return false;

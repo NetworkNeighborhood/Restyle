@@ -285,7 +285,7 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
         {
             case TMT_ENUM:
             case TMT_HBITMAP:
-            case TMT_DISKSTREAM:
+            case TMT_ATLASIMAGE:
             case TMT_STREAM:
             case TMT_BITMAPREF:
                 return SourceError(
