@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Enum to Schema converter</title>
+        <style>
+            body {
+                font-family: sans-serif;
+            }
+
+            textarea {
+                font-family: monospace;
+                width: 600px;
+                height: 275px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Enum to Schema converter</h1>
+        <p>
+            This tool converts raw C enum definitions to TmSchema definitions. Note that the preferred
+            capitalization is approximated, and you will most likely need to tweak it yourself.
+        </p>
+        <textarea id="input"></textarea>
+        <br>
+        <button>Convert</button>
+        <br>
+        <textarea id="output" readonly></textarea>
+    </body>
+    <script>
+        const input = document.querySelector("#input");
+        const output = document.querySelector("#output");
+        const ENUM_NAME_REGEX = /enum (.*?)(?:STATES|PARTS)(?:| {)/;
+        const ENUM_VAL_REGEX = /\s+([A-Z0-9_]+)_([A-Z0-9]+) = ([0-9])+(?:|,)/;
+
+        document.querySelector("button").addEventListener("click", () => {
+            let out = "";
+            let lines = input.value.split("\n");
+            let parts = lines[0].includes("PARTS");
+
+            out += `${parts ? "BEGIN_TM_CLASS_PARTS" : "BEGIN_TM_PART_STATES"}(${lines[0].match(ENUM_NAME_REGEX)[1]})`;
+            out += "\n";
+
+            for (let i = 1; i < (lines.length - 1); i++)
+            {
+                if (i == 1 && lines[i].includes("{")) continue;
+                let match = lines[i].match(ENUM_VAL_REGEX);
+
+                out += `    ${parts ? "TM_PART" : "TM_STATE"}(${match[3]}, ${match[1]}, ${match[2]}, "${match[2].slice(0, 1)}${match[2].slice(1).toLowerCase()}")`;
+                out += "\n";
+            }
+
+            out += parts ? "END_TM_CLASS_PARTS()" : "END_TM_PART_STATES()";
+
+            output.value = out;
+        });
+    </script>
+</html>
