@@ -13,6 +13,8 @@ std::vector<VSVARIANT> variantMap;
 
 bool ParseClassMap(void)
 {
+	Log(L"Parsing class map...\n");
+
 	LPVOID lpResource;
 	DWORD dwSize;
 	if (!GetBinaryResource(L"CMAP", L"CMAP", &lpResource, &dwSize))
@@ -31,6 +33,8 @@ bool ParseClassMap(void)
 
 bool ParseBaseClassMap(void)
 {
+	Log(L"Parsing base class map...\n");
+
 	LPBCMAP lpBCMap;
 	DWORD dwSize;
 	if (!GetBinaryResource(L"BCMAP", L"BCMAP", (LPVOID *)&lpBCMap, &dwSize))
@@ -61,6 +65,8 @@ bool ParseBaseClassMap(void)
 
 bool ParseVariantMap(void)
 {
+	Log(L"Parsing variant map...\n");
+
 	LPVMAPENTRY lpVMap;
 	DWORD dwSize;
 	if (!GetBinaryResource(L"VMAP", L"VMAP", (LPVOID *)&lpVMap, &dwSize))

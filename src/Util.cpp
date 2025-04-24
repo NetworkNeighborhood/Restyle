@@ -1,7 +1,7 @@
 #include "Util.h"
 #include "schema/SchemaUtils.h"
 
-// #define NO_SCHEMAUTILS
+int g_iWarningCount = 0;
 
 void LogV(LPCWSTR pszFormat, ELogLevel eLevel, va_list args)
 {
@@ -10,9 +10,13 @@ void LogV(LPCWSTR pszFormat, ELogLevel eLevel, va_list args)
 	{
 		case ELogLevel::Warning:
 			fwprintf(stderr, L"\x1b[1;33m");
+			g_iWarningCount++;
 			break;
 		case ELogLevel::Fatal:
 			fwprintf(stderr, L"\x1b[1;31m");
+			break;
+		case ELogLevel::Success:
+			fwprintf(stderr, L"\x1b[1;32m");
 			break;
 	}
 

@@ -6,6 +6,7 @@ enum class ELogLevel
 	Info = 0,
 	Warning = 1,
 	Fatal = 2,
+    Success = 3,
 };
 
 // WIL clone
@@ -20,6 +21,7 @@ enum class ELogLevel
     }                          \
     while ((void)0, 0)
 
+extern int g_iWarningCount;
 
 // Outputs a user-displayed message to stderr. For output that can be written
 // to files by the user (e.g. /precord option), use wprintf.

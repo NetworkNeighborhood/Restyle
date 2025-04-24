@@ -540,11 +540,19 @@ bool DumpThemeINIFile(ThemeINIFile &outFile, LPCWSTR pszOutPath)
 
 bool DecompileTheme(LPCWSTR pszOutFolder, Restyle::ESupportedOS eSupportedOS)
 {
+	Log(L"Attempting to decompile theme '%s'.\n", g_szThemeFilePath);
+
+	LARGE_INTEGER frequency, start, end;
+	QueryPerformanceFrequency(&frequency);
+	QueryPerformanceCounter(&start);
+
 	if (!BinParser::ParseClassMap() || !BinParser::ParseBaseClassMap() || !BinParser::ParseVariantMap())
 		return false;
 
 	g_eSupportedOS = eSupportedOS;
 	wcscpy_s(g_szOutFolder, pszOutFolder);
+
+	Log(L"Parsing root map (themes.ini)...\n");
 
 	ThemeINIFile rmap;
 	if (!BinParser::ParseRecordResource(L"RMAP", L"RMAP", &rmap, ParseRecordToThemeINIFile))
@@ -570,6 +578,8 @@ bool DecompileTheme(LPCWSTR pszOutFolder, Restyle::ESupportedOS eSupportedOS)
 			return false;
 		}
 
+		Log(L"Parsing variant '%s'...\n", g_spszCurrentVariant.c_str());
+
 		ThemeINIFile file;
 		if (!BinParser::ParseRecordResource(L"VARIANT", var.resourceName.c_str(), &file, ParseRecordToThemeINIFile))
 			return false;
@@ -582,5 +592,15 @@ bool DecompileTheme(LPCWSTR pszOutFolder, Restyle::ESupportedOS eSupportedOS)
 			return false;
 	}
 
+	QueryPerformanceCounter(&end);
+
+	double elapsedSeconds = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
+	int minutes = elapsedSeconds / 60;
+	double seconds = elapsedSeconds - (minutes * 60);
+
+	Log(
+		L"\nDecompiled theme successfully with %d warnings in %d:%06.3f.\n", ELogLevel::Success,
+		g_iWarningCount, minutes, seconds
+	);
 	return true;
 }
