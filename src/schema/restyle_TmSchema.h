@@ -180,7 +180,6 @@ BEGIN_TM_PROPS()
     TM_PROP(212, TMT, HBITMAP, "HBitmap",          HBITMAP)
     TM_PROP(213, TMT, ATLASIMAGE, "AtlasImage", ATLASIMAGE)
     TM_PROP(214, TMT, STREAM, "Stream",             STREAM)
-    TM_PROP(215, TMT, BITMAPREF, "BitmapRef",    BITMAPREF)
     TM_PROP(216, TMT, FLOAT, "Float",                FLOAT)
     TM_PROP(217, TMT, FLOATLIST, "FloatList",    FLOATLIST)
 
@@ -188,7 +187,7 @@ BEGIN_TM_PROPS()
     TM_PROP(240, TMT, SIMPLIFIEDIMAGETYPE, "SimplifiedImageType", SIMPLIFIEDIMAGETYPE)
     TM_PROP(241, TMT, HIGHCONTRASTCOLORTYPE, "HighContrastColorType", HIGHCONTRASTCOLORTYPE)
     TM_PROP(242, TMT, BITMAPIMAGETYPE, "BitmapImageType", BITMAPIMAGETYPE)
-    TM_PROP(243, TMT, COMPOSEDIMAGETYPE, "ComposedImageType",       COMPOSEDIMAGETYPE)
+    TM_PROP(243, TMT, COMPOSEDIMAGETYPE, "ComposedImageType", COMPOSEDIMAGETYPE)
 
     //---- special misc. properties ----
     TM_PROP(401, TMT, COLORSCHEMES, "ColorSchemes",   STRING)
@@ -526,9 +525,11 @@ BEGIN_TM_PROPS()
 
     // --- extra values (v4 only) ----
     // source: https://github.com/gix/PresentationTheme.Aero/blob/2c582016ffb9c6e74e65a18a42adf5c1a1f1e3d3/Source/UxThemeEx/UxThemeHelpers.h#L36
-    TM_PROP(5100, TMT, SIMPLIFIEDIMAGE, "SimplifiedImage", FILENAME)
-    TM_PROP(5101, TMT, HCSIMPLIFIEDIMAGE, "HcSimplifiedImage", FILENAME)
-    TM_PROP(5102, TMT, HCGLYPHBGCOLOR, "HcGlyphBgColor", COLOR)
+    TM_PROP(5100, TMT, SIMPLIFIEDIMAGE, "SimplifiedImage", SIMPLIFIEDIMAGETYPE)
+    TM_PROP(5101, TMT, HCSIMPLIFIEDIMAGE, "HcSimplifiedImage", SIMPLIFIEDIMAGETYPE)
+    TM_PROP(5102, TMT, HCGLYPHBGCOLOR, "HcGlyphBgColor", HIGHCONTRASTCOLORTYPE)
+    TM_PROP(5103, TMT, HCATLASSIMPLIFIEDIMAGE, "HcAtlasSimplifiedImage", SIMPLIFIEDIMAGETYPE) // guessed
+    TM_PROP(5105, TMT, HCATLASSIMPLIFIEDGLYPHIMAGE, "HcAtlasSimplifiedGlyphImage", SIMPLIFIEDIMAGETYPE) // guessed
     TM_PROP(5107, TMT, TRANSPARENTMARGINS, "TransparentMargins", MARGINS)
     TM_PROP(5110, TMT, HCBORDERCOLOR, "HcBorderColor", HIGHCONTRASTCOLORTYPE)
     TM_PROP(5111, TMT, HCFILLCOLOR, "HcFillColor", HIGHCONTRASTCOLORTYPE)
@@ -1613,6 +1614,13 @@ BEGIN_TM_CLASS_PARTS(TaskbandExtendedUI) // Microsoft didn't use an all-caps nam
     TM_PART(15, TBEUIP, THUMBSHADOWBOTTOM, "ThumbShadowBottom")
     TM_PART(16, TBEUIP, WINDOWBORDER, "WindowBorder")
 END_TM_CLASS_PARTS()
+
+BEGIN_TM_PART_STATES(WINDOWTEXT)
+    TM_STATE(1, TBEUIWT, NORMAL, "Normal")
+    TM_STATE(2, TBEUIWT, HOVER, "Hover")
+    TM_STATE(3, TBEUIWT, PRESSED, "Pressed")
+    TM_STATE(4, TBEUIWT, FLASH, "Flash")
+END_TM_PART_STATES()
 
 //---------------------------------------------------------------------------------------
 //   "TaskBand 2" Parts & States (Windows 7+ Superbar)

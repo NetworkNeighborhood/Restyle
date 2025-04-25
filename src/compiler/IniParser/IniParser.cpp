@@ -287,7 +287,6 @@ auto CIniParser::ParseNextManualSymbolSegment(ESymbolType eExpectType, bool fPar
             case TMT_HBITMAP:
             case TMT_ATLASIMAGE:
             case TMT_STREAM:
-            case TMT_BITMAPREF:
                 return SourceError(
                     UnexpectedSymbol, 
                     L"Properties may not be special type '%s', as values thereof are impossible to represent",

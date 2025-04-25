@@ -84,7 +84,12 @@ HRESULT ValueToString(const VSRECORD *lpRecord, std::wstring &spszValue)
 			EXPECTED_SIZE(sizeof(int));
 			long lValue = *(int *)lpData;
 
-			const Restyle::TMPROPINFO *pEnumValInfo = Restyle::FindEnumValueInfo(lpRecord->lSymbolVal, lValue, g_eSupportedOS);
+			const Restyle::TMPROPINFO *pEnumValInfo;
+			// WHY
+			if (lpRecord->lSymbolVal == Restyle::TMT_HCGLYPHBGCOLOR)
+				pEnumValInfo = Restyle::FindEnumValueInfo(L"HIGHCONTRASTCOLOR", lValue, g_eSupportedOS);
+			else
+				pEnumValInfo = Restyle::FindEnumValueInfo(lpRecord->lSymbolVal, lValue, g_eSupportedOS);
 			if (!pEnumValInfo)
 			{
 				Log(L"FATAL: Failed to find enum value name for enum %d, value %d.\n", ELogLevel::Fatal, lpRecord->lSymbolVal, lValue);
@@ -213,16 +218,13 @@ HRESULT ValueToString(const VSRECORD *lpRecord, std::wstring &spszValue)
 			return S_OK;
 		}
 
+		case Restyle::TMT_SIMPLIFIEDIMAGETYPE:
+			spszValue = L"!!! FIXME !!!";
+			return S_OK;
+
 		default:
 		{
-#if DEBUG
-			unsigned char *data = new unsigned char[lpRecord->cbData];
-			memcpy(data, lpData, lpRecord->cbData);
-#endif
 			Log(L"FATAL: Type %d does not exist or cannot be represented as a string\n", ELogLevel::Fatal, lpRecord->lType);
-#if DEBUG
-			delete[] data;
-#endif
 			return E_FAIL;
 		}
 	}
@@ -236,7 +238,10 @@ bool DumpImageOrStream(const VSRECORD *lpRecord, std::wstring &spszFilePath)
 	static std::unordered_map<UINT, std::wstring> dumpedImages;
 	static std::unordered_map<UINT, std::wstring> dumpedStreams;
 
-	assert(lpRecord->lType == Restyle::TMT_FILENAME || lpRecord->lType == Restyle::TMT_ATLASIMAGE);
+	assert(
+		lpRecord->lType == Restyle::TMT_FILENAME
+		|| lpRecord->lType == Restyle::TMT_COMPOSEDIMAGETYPE
+		|| lpRecord->lType == Restyle::TMT_ATLASIMAGE);
 
 	if (!lpRecord->uResID)
 	{
@@ -472,6 +477,7 @@ bool ParseRecordToThemeINIFile(const VSRECORD *lpRecord, void *lpParam)
 	std::wstring spszValue;
 	// Special handler to dump images
 	if (lpRecord->lType == Restyle::TMT_FILENAME
+	|| lpRecord->lType == Restyle::TMT_COMPOSEDIMAGETYPE
 	|| lpRecord->lType == Restyle::TMT_ATLASIMAGE)
 	{
 		if (!DumpImageOrStream(lpRecord, spszValue))
