@@ -116,6 +116,9 @@ Transforms = {
 BgType = ImageFile
 ContentAlignment = Center
 CharSet = 234
+FromColor1 = #3e3
+FromColor2 = 255, 255 255
+FromColor3 = #30efab
 )"""";
 
         CIniParser parser(spszText);

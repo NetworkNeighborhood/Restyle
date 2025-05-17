@@ -1053,7 +1053,7 @@ template <typename ItemType>
              std::is_same_v<ItemType, float>
 static ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, UINT uLimit)
 {
-    bool (CScanner:: *pfnGetNextValue)(OUT ItemType *);
+    bool (CScanner:: *pfnGetNextValue)(OUT ItemType *, bool);
 
     if constexpr (std::is_same_v<ItemType, int>)
          pfnGetNextValue = &CScanner::GetNumber;
@@ -1069,6 +1069,7 @@ static ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, U
     std::vector<ItemType> vecItems;
     do
     {
+        fLastCharWasComma = false;
         bool fIsFirstItemOfSecondaryLine = false;
 
         if (uLimit > 0 && iCurrentItem > uLimit - 1)
@@ -1082,7 +1083,7 @@ static ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, U
 
         // Parse the next value:
         ItemType next{};
-        if (!(pParser->_scanner.*pfnGetNextValue)(&next))
+        if (!(pParser->_scanner.*pfnGetNextValue)(&next, false))
         {
             return pParser->SourceError(
                 ExpectedNumber,
@@ -1098,11 +1099,13 @@ static ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, U
         // When we call SkipSpaces here, we want to avoid skipping to the next line so that we can perform our
         // own special checks for such an operation.
         pParser->_scanner.SkipSpaces(false);
-        fLastCharWasComma = pParser->_scanner.GetChar(L',');
+        fLastCharWasComma = pParser->_scanner.GetChar(L',', false);
         pParser->_scanner.SkipSpaces(false);
 
         // Since this flag isn't needed for the current iteration anymore, this is a good place to clear it.
         fIsFirstItemOfSecondaryLine = false;
+
+        vecItems.push_back(next);
 
         if (pParser->_scanner.Read() == 0) // 0 indicates end of line
         {
@@ -1118,7 +1121,6 @@ static ValueResult<std::vector<ItemType> > ParseListValue(CIniParser *pParser, U
             fIsFirstItemOfSecondaryLine = true;
         }
 
-        vecItems.push_back(next);
         iCurrentItem++;
     }
     while (!pParser->_scanner.EndOfFile());
@@ -1208,7 +1210,7 @@ static ValueResult<std::vector<T> > ValidateStrictLengthListValue(CIniParser *pP
     // If the error is not a parse error or if it is a non-item-count-mismatch parse error,
     // then propagate the error if so. We do this to override the error mismatch for our
     // strict count vector.
-    if (vrVecItems.GetResult() == HRESULT_FROM_WIN32(ERROR_UNKNOWN_PROPERTY) || pParser->_parseError.eCode == ItemCountMismatch)
+    if (vrVecItems.GetResult() == HRESULT_FROM_WIN32(ERROR_UNKNOWN_PROPERTY) && pParser->_parseError.eCode == ItemCountMismatch)
     {
         return pParser->SourceError(ItemCountMismatch, pszFailMsg);
     }
@@ -1379,19 +1381,101 @@ ValueResult<const PositionValue *> CIniParser::ParsePositionValue()
  */
 ValueResult<const ColorValue *> CIniParser::ParseColorValue()
 {
-    constexpr LPCWSTR pszInvalidCountErrorMsg = L"Color values must have exactly 3 specified values.";
+    if (_scanner.GetChar(L'#'))
+    {
+        // We're parsing a CSS-style colour code.
+        BYTE bRed = 0;
+        BYTE bGreen = 0;
+        BYTE bBlue = 0;
 
-    // XXX(isabella): The parser in XP does not reject lists with more than 3 values. The excess
-    // values are just ignored. This is good for Restyle, but it would be cool to implement an
-    // option to suppress this validation for the ease of porting XP custom themes which may be
-    // malformed (by our standards).
+        constexpr int kBytes = 3;
+        constexpr int kCharsPerByte = 2;
+        constexpr int kTotalChars = kCharsPerByte * kBytes;
 
-    ValueResult<std::vector<int> > vrVecItems = ValidateStrictLengthListValue<int>(this, 3, pszInvalidCountErrorMsg);
-    PROPAGATE_ERROR_IF_FAILED(vrVecItems);
-    auto &vec = vrVecItems.Unwrap();
+        // Two hexadecimal characters per a maximum of 3 bytes.
+        WCHAR szHexString[kTotalChars + sizeof('\0')] = { 0 };
 
-    // The parsed parts follow the order: red, green, blue
-    return _valueArena.CreateColorValue(RGB(vec[0], vec[1], vec[2]));
+        // Used for passing to the integer number parser, which expects hexadecimal input.
+        // As a hack, we'll just prepend 0x to the string used internally.
+        WCHAR szCharBuffer[sizeof("0x") + 2 + sizeof('\0')] = { '0', 'x', 0};
+
+        // Offset of the hexadecimal number (after the 0x prefix) in szCharBuffer.
+        constexpr int kCharBufferHexOffset = 2;
+
+        for (int i = 0; i < kTotalChars; i++)
+        {
+            WCHAR ch = _scanner.Read();
+
+            if (!(_scanner.IsHexDigit(ch) || _scanner.IsDigit(ch)))
+            {
+                // We're termininating the loop, so we'll implant the values as we need.
+                if (i == 6)
+                {
+                    // Make sure we write the last character to the buffer:
+                    szHexString[i] = ch;
+
+                    // Parse red:
+                    wcscpy_s(&szCharBuffer[kCharBufferHexOffset], 2, &szHexString[0]);
+                    bRed = ParseIntegerNumberLiteral<BYTE>(szCharBuffer);
+
+                    // Parse green:
+                    wcscpy_s(&szCharBuffer[kCharBufferHexOffset], 2, &szHexString[2]);
+                    bGreen = ParseIntegerNumberLiteral<BYTE>(szCharBuffer);
+
+                    // Parse blue:
+                    wcscpy_s(&szCharBuffer[kCharBufferHexOffset], 2, &szHexString[4]);
+                    bBlue = ParseIntegerNumberLiteral<BYTE>(szCharBuffer);
+                }
+                else if (i == 3)
+                {
+                    // Make sure we write the last character to the buffer:
+                    szHexString[i] = ch;
+
+                    // Parse red:
+                    szCharBuffer[kCharBufferHexOffset] = szCharBuffer[kCharBufferHexOffset + 1] = szHexString[0];
+                    bRed = ParseIntegerNumberLiteral<BYTE>(szCharBuffer);
+
+                    // Parse green:
+                    szCharBuffer[kCharBufferHexOffset] = szCharBuffer[kCharBufferHexOffset + 1] = szHexString[1];
+                    bGreen = ParseIntegerNumberLiteral<BYTE>(szCharBuffer);
+
+                    // Parse blue:
+                    szCharBuffer[kCharBufferHexOffset] = szCharBuffer[kCharBufferHexOffset + 1] = szHexString[2];
+                    bBlue = ParseIntegerNumberLiteral<BYTE>(szCharBuffer);
+                }
+                else
+                {
+                    // Invalid length.
+                    return SourceError(
+                        ItemCountMismatch, L"CSS-style color must be exactly either 6 or 3 hexadecimal digits."
+                    );
+                }
+
+                break;
+            }
+
+            szHexString[i] = ch;
+            _scanner.Next();
+        }
+
+        return _valueArena.CreateColorValue(RGB(bRed, bGreen, bBlue));
+    }
+    else
+    {
+        constexpr LPCWSTR pszInvalidCountErrorMsg = L"Color values must have exactly 3 specified values.";
+
+        // XXX(isabella): The parser in XP does not reject lists with more than 3 values. The excess
+        // values are just ignored. This is good for Restyle, but it would be cool to implement an
+        // option to suppress this validation for the ease of porting XP custom themes which may be
+        // malformed (by our standards).
+
+        ValueResult<std::vector<int> > vrVecItems = ValidateStrictLengthListValue<int>(this, 3, pszInvalidCountErrorMsg);
+        PROPAGATE_ERROR_IF_FAILED(vrVecItems);
+        auto &vec = vrVecItems.Unwrap();
+
+        // The parsed parts follow the order: red, green, blue
+        return _valueArena.CreateColorValue(RGB(vec[0], vec[1], vec[2]));
+    }
 }
 
 #ifdef ENABLE_PREPROCESSOR
