@@ -3,8 +3,22 @@
 
 int g_iWarningCount = 0;
 
+// Shim for enabling console virtualization to allow ANSI colour support if the user has it disabled
+void EnableConsoleVirtualization()
+{
+	HANDLE hConsole = GetStdHandle(STD_ERROR_HANDLE);
+	DWORD dwConsoleMode;
+
+	if (GetConsoleMode(hConsole, &dwConsoleMode))
+	{
+		dwConsoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+		SetConsoleMode(hConsole, dwConsoleMode);
+	}
+}
+
 void LogV(LPCWSTR pszFormat, ELogLevel eLevel, va_list args)
 {
+	EnableConsoleVirtualization();
 	// colorize
 	switch (eLevel)
 	{
